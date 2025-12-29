@@ -197,7 +197,7 @@ const MapView = ({ routes = [], sourceCoords, destinationCoords, selectedRoute }
   }, [routes, selectedRoute, mapReady]);
 
   return (
-    <div className="relative w-full min-h-[500px] rounded-2xl overflow-hidden" style={{ height: '500px' }}>
+    <div className="relative w-full h-full min-h-[400px] rounded-2xl overflow-hidden">
       <div 
         ref={initializeMap} 
         className="absolute inset-0 rounded-2xl z-0"

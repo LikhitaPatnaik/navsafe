@@ -195,7 +195,7 @@ const TripApp = () => {
         </div>
 
         {/* Map Area */}
-        <div className="flex-1 min-h-[400px] lg:min-h-0">
+        <div className="flex-1 min-h-[400px] lg:min-h-0 lg:h-[calc(100vh-8rem)]">
           <MapView 
             routes={trip.routes} 
             sourceCoords={trip.sourceCoords}
