@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, useCallback } from 'react';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import 'leaflet-routing-machine';
@@ -31,7 +31,7 @@ const MapView = ({ routes = [], sourceCoords, destinationCoords, selectedRoute }
   const routingControlRef = useRef<L.Routing.Control | null>(null);
   const markersRef = useRef<L.Marker[]>([]);
   const routeLayersRef = useRef<L.Polyline[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+  const [mapReady, setMapReady] = useState(false);
 
   const getRouteColor = (type: RouteInfo['type'], isSelected: boolean) => {
     const colors = {
@@ -42,44 +42,44 @@ const MapView = ({ routes = [], sourceCoords, destinationCoords, selectedRoute }
     return isSelected ? colors[type] : `${colors[type]}80`;
   };
 
-  // Initialize map
-  useEffect(() => {
-    if (!mapContainer.current) return;
+  // Initialize map using callback ref for reliable DOM access
+  const initializeMap = useCallback((node: HTMLDivElement | null) => {
+    if (!node || mapRef.current) return;
     
-    // If map already exists, skip initialization
-    if (mapRef.current) {
-      setIsLoading(false);
-      return;
-    }
-
-    // Small delay to ensure DOM is ready
-    const initTimeout = setTimeout(() => {
-      if (!mapContainer.current || mapRef.current) return;
-
-      const map = L.map(mapContainer.current, {
+    // Ensure the container has dimensions
+    node.style.height = '100%';
+    node.style.minHeight = '500px';
+    node.style.width = '100%';
+    
+    try {
+      const map = L.map(node, {
         center: [defaultCenter.lat, defaultCenter.lng],
         zoom: 12,
         zoomControl: true,
       });
 
-      // Add dark-themed OSM tiles
-      L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
-        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>',
-        subdomains: 'abcd',
-        maxZoom: 20,
+      // Add OSM tiles (using standard OSM for better reliability)
+      L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+        maxZoom: 19,
       }).addTo(map);
 
       mapRef.current = map;
-      setIsLoading(false);
-
-      // Invalidate size after a short delay to ensure proper rendering
-      setTimeout(() => {
+      mapContainer.current = node;
+      
+      // Force map to recalculate size
+      requestAnimationFrame(() => {
         map.invalidateSize();
-      }, 100);
-    }, 50);
+        setMapReady(true);
+      });
+    } catch (error) {
+      console.error('Map initialization error:', error);
+    }
+  }, []);
 
+  // Cleanup on unmount
+  useEffect(() => {
     return () => {
-      clearTimeout(initTimeout);
       if (mapRef.current) {
         mapRef.current.remove();
         mapRef.current = null;
@@ -89,7 +89,7 @@ const MapView = ({ routes = [], sourceCoords, destinationCoords, selectedRoute }
 
   // Handle routing when source and destination are set
   useEffect(() => {
-    if (!mapRef.current) return;
+    if (!mapRef.current || !mapReady) return;
 
     // Clear existing markers
     markersRef.current.forEach(marker => {
@@ -168,11 +168,11 @@ const MapView = ({ routes = [], sourceCoords, destinationCoords, selectedRoute }
       ]);
       mapRef.current.fitBounds(bounds, { padding: [50, 50] });
     }
-  }, [sourceCoords, destinationCoords]);
+  }, [sourceCoords, destinationCoords, mapReady]);
 
   // Draw route paths from routes array
   useEffect(() => {
-    if (!mapRef.current || routes.length === 0) return;
+    if (!mapRef.current || !mapReady || routes.length === 0) return;
 
     // Clear existing route layers
     routeLayersRef.current.forEach(layer => {
@@ -194,26 +194,27 @@ const MapView = ({ routes = [], sourceCoords, destinationCoords, selectedRoute }
         routeLayersRef.current.push(polyline);
       }
     });
-  }, [routes, selectedRoute]);
-
-  if (isLoading) {
-    return (
-      <div className="relative w-full h-full min-h-[500px] rounded-2xl overflow-hidden glass flex items-center justify-center">
-        <div className="text-center">
-          <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-primary/20 flex items-center justify-center animate-pulse">
-            <svg className="w-8 h-8 text-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7" />
-            </svg>
-          </div>
-          <p className="text-muted-foreground">Loading map...</p>
-        </div>
-      </div>
-    );
-  }
+  }, [routes, selectedRoute, mapReady]);
 
   return (
-    <div className="relative w-full h-full min-h-[500px] rounded-2xl overflow-hidden" style={{ height: '500px' }}>
-      <div ref={mapContainer} className="w-full rounded-2xl" style={{ height: '100%', minHeight: '500px' }} />
+    <div className="relative w-full min-h-[500px] rounded-2xl overflow-hidden" style={{ height: '500px' }}>
+      <div 
+        ref={initializeMap} 
+        className="absolute inset-0 rounded-2xl z-0"
+      />
+      
+      {!mapReady && (
+        <div className="absolute inset-0 glass flex items-center justify-center z-10">
+          <div className="text-center">
+            <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-primary/20 flex items-center justify-center animate-pulse">
+              <svg className="w-8 h-8 text-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7" />
+              </svg>
+            </div>
+            <p className="text-muted-foreground">Loading map...</p>
+          </div>
+        </div>
+      )}
 
       {/* Route Legend */}
       {routes.length > 0 && (
