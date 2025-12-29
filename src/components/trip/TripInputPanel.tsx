@@ -1,8 +1,9 @@
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import { MapPin, Navigation, Locate, ArrowRight } from 'lucide-react';
 import { useTrip } from '@/context/TripContext';
+import LocationAutocomplete from './LocationAutocomplete';
+import { LatLng } from '@/types/route';
 
 interface TripInputPanelProps {
   onFindRoutes: () => void;
@@ -16,12 +17,23 @@ const TripInputPanel = ({ onFindRoutes }: TripInputPanelProps) => {
     setIsLocating(true);
     if (navigator.geolocation) {
       navigator.geolocation.getCurrentPosition(
-        (position) => {
-          const coords = {
+        async (position) => {
+          const coords: LatLng = {
             lat: position.coords.latitude,
             lng: position.coords.longitude,
           };
-          setSource('Current Location', coords);
+          
+          // Reverse geocode to get address
+          try {
+            const response = await fetch(
+              `https://nominatim.openstreetmap.org/reverse?format=json&lat=${coords.lat}&lon=${coords.lng}`,
+              { headers: { 'Accept-Language': 'en' } }
+            );
+            const data = await response.json();
+            setSource(data.display_name || 'Current Location', coords);
+          } catch {
+            setSource('Current Location', coords);
+          }
           setIsLocating(false);
         },
         () => {
@@ -32,7 +44,15 @@ const TripInputPanel = ({ onFindRoutes }: TripInputPanelProps) => {
     }
   };
 
-  const canFindRoutes = trip.source && trip.destination;
+  const handleSourceChange = (value: string, coords?: LatLng) => {
+    setSource(value, coords);
+  };
+
+  const handleDestinationChange = (value: string, coords?: LatLng) => {
+    setDestination(value, coords);
+  };
+
+  const canFindRoutes = trip.source && trip.destination && trip.sourceCoords && trip.destinationCoords;
 
   return (
     <div className="glass-strong rounded-2xl p-6 w-full max-w-md shadow-elevated animate-slide-up">
@@ -53,14 +73,11 @@ const TripInputPanel = ({ onFindRoutes }: TripInputPanelProps) => {
             <MapPin className="w-4 h-4 text-primary" />
             Source Location
           </label>
-          <div className="relative">
-            <Input
-              placeholder="Enter starting point..."
-              value={trip.source}
-              onChange={(e) => setSource(e.target.value)}
-              className="pr-12"
-            />
-          </div>
+          <LocationAutocomplete
+            value={trip.source}
+            onChange={handleSourceChange}
+            placeholder="Enter starting point..."
+          />
           <Button
             variant="ghost"
             size="sm"
@@ -79,10 +96,10 @@ const TripInputPanel = ({ onFindRoutes }: TripInputPanelProps) => {
             <MapPin className="w-4 h-4 text-destructive" />
             Destination
           </label>
-          <Input
-            placeholder="Enter destination..."
+          <LocationAutocomplete
             value={trip.destination}
-            onChange={(e) => setDestination(e.target.value)}
+            onChange={handleDestinationChange}
+            placeholder="Enter destination..."
           />
         </div>
 
