@@ -44,27 +44,46 @@ const MapView = ({ routes = [], sourceCoords, destinationCoords, selectedRoute }
 
   // Initialize map
   useEffect(() => {
-    if (!mapContainer.current || mapRef.current) return;
+    if (!mapContainer.current) return;
+    
+    // If map already exists, skip initialization
+    if (mapRef.current) {
+      setIsLoading(false);
+      return;
+    }
 
-    const map = L.map(mapContainer.current, {
-      center: [defaultCenter.lat, defaultCenter.lng],
-      zoom: 12,
-      zoomControl: true,
-    });
+    // Small delay to ensure DOM is ready
+    const initTimeout = setTimeout(() => {
+      if (!mapContainer.current || mapRef.current) return;
 
-    // Add dark-themed OSM tiles
-    L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
-      attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>',
-      subdomains: 'abcd',
-      maxZoom: 20,
-    }).addTo(map);
+      const map = L.map(mapContainer.current, {
+        center: [defaultCenter.lat, defaultCenter.lng],
+        zoom: 12,
+        zoomControl: true,
+      });
 
-    mapRef.current = map;
-    setIsLoading(false);
+      // Add dark-themed OSM tiles
+      L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>',
+        subdomains: 'abcd',
+        maxZoom: 20,
+      }).addTo(map);
+
+      mapRef.current = map;
+      setIsLoading(false);
+
+      // Invalidate size after a short delay to ensure proper rendering
+      setTimeout(() => {
+        map.invalidateSize();
+      }, 100);
+    }, 50);
 
     return () => {
-      map.remove();
-      mapRef.current = null;
+      clearTimeout(initTimeout);
+      if (mapRef.current) {
+        mapRef.current.remove();
+        mapRef.current = null;
+      }
     };
   }, []);
 
@@ -193,8 +212,8 @@ const MapView = ({ routes = [], sourceCoords, destinationCoords, selectedRoute }
   }
 
   return (
-    <div className="relative w-full h-full min-h-[500px] rounded-2xl overflow-hidden">
-      <div ref={mapContainer} className="w-full h-full min-h-[500px] rounded-2xl" />
+    <div className="relative w-full h-full min-h-[500px] rounded-2xl overflow-hidden" style={{ height: '500px' }}>
+      <div ref={mapContainer} className="w-full rounded-2xl" style={{ height: '100%', minHeight: '500px' }} />
 
       {/* Route Legend */}
       {routes.length > 0 && (
