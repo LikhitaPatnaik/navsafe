@@ -1,15 +1,16 @@
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
-import { MapPin, Navigation, Locate, ArrowRight } from 'lucide-react';
+import { MapPin, Navigation, Locate, ArrowRight, Loader2 } from 'lucide-react';
 import { useTrip } from '@/context/TripContext';
 import LocationAutocomplete from './LocationAutocomplete';
 import { LatLng } from '@/types/route';
 
 interface TripInputPanelProps {
   onFindRoutes: () => void;
+  isLoading?: boolean;
 }
 
-const TripInputPanel = ({ onFindRoutes }: TripInputPanelProps) => {
+const TripInputPanel = ({ onFindRoutes, isLoading = false }: TripInputPanelProps) => {
   const { trip, setSource, setDestination } = useTrip();
   const [isLocating, setIsLocating] = useState(false);
 
@@ -107,11 +108,20 @@ const TripInputPanel = ({ onFindRoutes }: TripInputPanelProps) => {
         <Button
           variant="hero"
           className="w-full mt-4"
-          disabled={!canFindRoutes}
+          disabled={!canFindRoutes || isLoading}
           onClick={onFindRoutes}
         >
-          Find Safe Routes
-          <ArrowRight className="w-4 h-4 ml-2" />
+          {isLoading ? (
+            <>
+              <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+              Calculating Routes...
+            </>
+          ) : (
+            <>
+              Find Safe Routes
+              <ArrowRight className="w-4 h-4 ml-2" />
+            </>
+          )}
         </Button>
       </div>
     </div>

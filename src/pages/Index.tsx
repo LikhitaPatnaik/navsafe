@@ -8,9 +8,10 @@ import LiveStatusBanner from '@/components/trip/LiveStatusBanner';
 import AlertPopup from '@/components/trip/AlertPopup';
 import SafetyActionsPanel from '@/components/trip/SafetyActionsPanel';
 import TripSummaryComponent from '@/components/trip/TripSummary';
-import { RouteInfo } from '@/types/route';
 import { Button } from '@/components/ui/button';
-import { ArrowLeft, StopCircle } from 'lucide-react';
+import { ArrowLeft, StopCircle, Loader2 } from 'lucide-react';
+import { calculateRoutes } from '@/services/routingService';
+import { toast } from 'sonner';
 
 const TripApp = () => {
   const {
@@ -27,39 +28,33 @@ const TripApp = () => {
   } = useTrip();
   
   const [showLanding, setShowLanding] = useState(true);
+  const [isCalculatingRoutes, setIsCalculatingRoutes] = useState(false);
 
-  // Simulate route generation
-  const handleFindRoutes = () => {
-    const mockRoutes: RouteInfo[] = [
-      {
-        id: '1',
-        type: 'fastest',
-        distance: 12.5,
-        duration: 18,
-        safetyScore: 62,
-        riskLevel: 'moderate',
-        path: [],
-      },
-      {
-        id: '2',
-        type: 'safest',
-        distance: 14.8,
-        duration: 24,
-        safetyScore: 89,
-        riskLevel: 'safe',
-        path: [],
-      },
-      {
-        id: '3',
-        type: 'optimized',
-        distance: 13.2,
-        duration: 20,
-        safetyScore: 75,
-        riskLevel: 'moderate',
-        path: [],
-      },
-    ];
-    setRoutes(mockRoutes);
+  // Calculate routes using OSRM and safety data
+  const handleFindRoutes = async () => {
+    if (!trip.sourceCoords || !trip.destinationCoords) {
+      toast.error('Please select both source and destination');
+      return;
+    }
+
+    setIsCalculatingRoutes(true);
+    
+    try {
+      const routes = await calculateRoutes(trip.sourceCoords, trip.destinationCoords);
+      
+      if (routes.length === 0) {
+        toast.error('No routes found. Please try different locations.');
+        return;
+      }
+      
+      setRoutes(routes);
+      toast.success(`Found ${routes.length} route${routes.length > 1 ? 's' : ''} with safety analysis`);
+    } catch (error) {
+      console.error('Error calculating routes:', error);
+      toast.error('Failed to calculate routes. Please try again.');
+    } finally {
+      setIsCalculatingRoutes(false);
+    }
   };
 
   // Simulate position updates and alerts during monitoring
@@ -161,7 +156,7 @@ const TripApp = () => {
         {/* Left Panel */}
         <div className="lg:w-96 flex-shrink-0 space-y-4">
           {(trip.status === 'idle' || (trip.status === 'planning' && trip.routes.length === 0)) && (
-            <TripInputPanel onFindRoutes={handleFindRoutes} />
+            <TripInputPanel onFindRoutes={handleFindRoutes} isLoading={isCalculatingRoutes} />
           )}
 
           {/* Route Cards */}
