@@ -20,9 +20,10 @@ interface MapViewProps {
   selectedRoute?: RouteInfo | null;
 }
 
+// Visakhapatnam coordinates
 const defaultCenter: LatLng = {
-  lat: 28.6139,
-  lng: 77.209,
+  lat: 17.6868,
+  lng: 83.2185,
 };
 
 const MapView = ({ routes = [], sourceCoords, destinationCoords, selectedRoute }: MapViewProps) => {
