@@ -14,7 +14,39 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      safety_zones: {
+        Row: {
+          area: string
+          created_at: string
+          crime_count: number
+          id: string
+          safety_score: number
+          severity: string | null
+          street: string | null
+          updated_at: string
+        }
+        Insert: {
+          area: string
+          created_at?: string
+          crime_count?: number
+          id?: string
+          safety_score: number
+          severity?: string | null
+          street?: string | null
+          updated_at?: string
+        }
+        Update: {
+          area?: string
+          created_at?: string
+          crime_count?: number
+          id?: string
+          safety_score?: number
+          severity?: string | null
+          street?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
