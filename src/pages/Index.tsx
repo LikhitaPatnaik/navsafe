@@ -57,32 +57,50 @@ const TripApp = () => {
     }
   };
 
-  // Simulate position updates and alerts during monitoring
+  // Real GPS tracking during monitoring
   useEffect(() => {
     if (!trip.isMonitoring) return;
 
-    const positionInterval = setInterval(() => {
-      updatePosition({
-        lat: 40.7128 + (Math.random() - 0.5) * 0.01,
-        lng: -74.006 + (Math.random() - 0.5) * 0.01,
-      });
-    }, 2000);
+    let watchId: number | null = null;
 
-    // Simulate a deviation alert after 5 seconds
-    const alertTimeout = setTimeout(() => {
-      if (trip.isMonitoring) {
-        addAlert({
-          type: 'deviation',
-          message: '⚠ You are 200m off the trusted route near a low-safety area.',
-        });
-      }
-    }, 5000);
+    // Request location permission and start tracking
+    if (navigator.geolocation) {
+      toast.info('Starting GPS tracking...');
+      
+      watchId = navigator.geolocation.watchPosition(
+        (position) => {
+          const newPosition = {
+            lat: position.coords.latitude,
+            lng: position.coords.longitude,
+          };
+          updatePosition(newPosition);
+        },
+        (error) => {
+          console.error('Geolocation error:', error);
+          if (error.code === error.PERMISSION_DENIED) {
+            toast.error('Location permission denied. Please enable location access.');
+          } else if (error.code === error.POSITION_UNAVAILABLE) {
+            toast.error('Location unavailable. Please check your GPS settings.');
+          } else {
+            toast.error('Unable to get your location.');
+          }
+        },
+        {
+          enableHighAccuracy: true,
+          timeout: 10000,
+          maximumAge: 1000,
+        }
+      );
+    } else {
+      toast.error('Geolocation is not supported by your browser.');
+    }
 
     return () => {
-      clearInterval(positionInterval);
-      clearTimeout(alertTimeout);
+      if (watchId !== null) {
+        navigator.geolocation.clearWatch(watchId);
+      }
     };
-  }, [trip.isMonitoring, updatePosition, addAlert]);
+  }, [trip.isMonitoring, updatePosition]);
 
   const handleStartMonitoring = () => {
     if (trip.selectedRoute) {
@@ -196,6 +214,8 @@ const TripApp = () => {
             sourceCoords={trip.sourceCoords}
             destinationCoords={trip.destinationCoords}
             selectedRoute={trip.selectedRoute}
+            currentPosition={trip.currentPosition}
+            isMonitoring={trip.isMonitoring}
           />
         </div>
       </div>

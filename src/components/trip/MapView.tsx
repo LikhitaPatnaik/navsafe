@@ -18,6 +18,8 @@ interface MapViewProps {
   sourceCoords?: LatLng | null;
   destinationCoords?: LatLng | null;
   selectedRoute?: RouteInfo | null;
+  currentPosition?: LatLng | null;
+  isMonitoring?: boolean;
 }
 
 // Visakhapatnam coordinates
@@ -26,12 +28,13 @@ const defaultCenter: LatLng = {
   lng: 83.2185,
 };
 
-const MapView = ({ routes = [], sourceCoords, destinationCoords, selectedRoute }: MapViewProps) => {
+const MapView = ({ routes = [], sourceCoords, destinationCoords, selectedRoute, currentPosition, isMonitoring }: MapViewProps) => {
   const mapContainer = useRef<HTMLDivElement>(null);
   const mapRef = useRef<L.Map | null>(null);
   const routingControlRef = useRef<L.Routing.Control | null>(null);
   const markersRef = useRef<L.Marker[]>([]);
   const routeLayersRef = useRef<L.Polyline[]>([]);
+  const userMarkerRef = useRef<L.Marker | null>(null);
   const [mapReady, setMapReady] = useState(false);
 
   const getRouteColor = (type: RouteInfo['type'], isSelected: boolean) => {
@@ -196,6 +199,43 @@ const MapView = ({ routes = [], sourceCoords, destinationCoords, selectedRoute }
       }
     });
   }, [routes, selectedRoute, mapReady]);
+
+  // Handle current position marker during monitoring
+  useEffect(() => {
+    if (!mapRef.current || !mapReady) return;
+
+    // Remove existing user marker
+    if (userMarkerRef.current) {
+      mapRef.current.removeLayer(userMarkerRef.current);
+      userMarkerRef.current = null;
+    }
+
+    if (isMonitoring && currentPosition) {
+      // Create pulsing user location marker
+      const userIcon = L.divIcon({
+        className: 'user-location-marker',
+        html: `
+          <div style="position: relative; width: 24px; height: 24px;">
+            <div style="position: absolute; inset: 0; border-radius: 50%; background: hsl(217, 91%, 60%); opacity: 0.3; animation: pulse 2s infinite;"></div>
+            <div style="position: absolute; inset: 4px; border-radius: 50%; background: hsl(217, 91%, 60%); border: 3px solid white; box-shadow: 0 2px 8px rgba(0,0,0,0.3);"></div>
+            <div style="position: absolute; inset: 8px; border-radius: 50%; background: white;"></div>
+          </div>
+        `,
+        iconSize: [24, 24],
+        iconAnchor: [12, 12],
+      });
+
+      const marker = L.marker([currentPosition.lat, currentPosition.lng], { 
+        icon: userIcon,
+        zIndexOffset: 1000,
+      }).addTo(mapRef.current);
+      
+      userMarkerRef.current = marker;
+
+      // Pan map to follow user
+      mapRef.current.panTo([currentPosition.lat, currentPosition.lng], { animate: true });
+    }
+  }, [currentPosition, isMonitoring, mapReady]);
 
   return (
     <div className="relative w-full h-full min-h-[400px] rounded-2xl overflow-hidden">
