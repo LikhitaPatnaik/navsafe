@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { TripProvider, useTrip } from '@/context/TripContext';
 import HeroSection from '@/components/landing/HeroSection';
 import TripInputPanel from '@/components/trip/TripInputPanel';
@@ -57,15 +57,24 @@ const TripApp = () => {
     }
   };
 
+  // Track if GPS toast has been shown
+  const gpsToastShownRef = useRef(false);
+
   // Real GPS tracking during monitoring
   useEffect(() => {
-    if (!trip.isMonitoring) return;
+    if (!trip.isMonitoring) {
+      gpsToastShownRef.current = false;
+      return;
+    }
 
     let watchId: number | null = null;
 
     // Request location permission and start tracking
     if (navigator.geolocation) {
-      toast.info('Starting GPS tracking...');
+      if (!gpsToastShownRef.current) {
+        toast.info('Starting GPS tracking...');
+        gpsToastShownRef.current = true;
+      }
       
       watchId = navigator.geolocation.watchPosition(
         (position) => {
@@ -100,7 +109,7 @@ const TripApp = () => {
         navigator.geolocation.clearWatch(watchId);
       }
     };
-  }, [trip.isMonitoring, updatePosition]);
+  }, [trip.isMonitoring]);
 
   const handleStartMonitoring = () => {
     if (trip.selectedRoute) {
