@@ -4,6 +4,7 @@ import 'leaflet/dist/leaflet.css';
 import 'leaflet-routing-machine';
 import 'leaflet-routing-machine/dist/leaflet-routing-machine.css';
 import { RouteInfo, LatLng } from '@/types/route';
+import { fetchSafetyZones } from '@/services/routingService';
 
 // Fix default marker icons
 delete (L.Icon.Default.prototype as any)._getIconUrl;
@@ -20,6 +21,7 @@ interface MapViewProps {
   selectedRoute?: RouteInfo | null;
   currentPosition?: LatLng | null;
   isMonitoring?: boolean;
+  showSafetyZones?: boolean;
 }
 
 // Visakhapatnam coordinates
@@ -28,22 +30,69 @@ const defaultCenter: LatLng = {
   lng: 83.2185,
 };
 
-const MapView = ({ routes = [], sourceCoords, destinationCoords, selectedRoute, currentPosition, isMonitoring }: MapViewProps) => {
+// Safety zone coordinates for Visakhapatnam areas
+const areaCoordinates: Record<string, LatLng> = {
+  'Gajuwaka': { lat: 17.7047, lng: 83.2113 },
+  'Gopalapatnam': { lat: 17.7458, lng: 83.2614 },
+  'Dwaraka Nagar': { lat: 17.7242, lng: 83.3059 },
+  'MVP Colony': { lat: 17.7367, lng: 83.2851 },
+  'Kancharapalem': { lat: 17.7180, lng: 83.2760 },
+  'Madhurawada': { lat: 17.7833, lng: 83.3667 },
+  'Pendurthi': { lat: 17.7909, lng: 83.2467 },
+  'Seethammadhara': { lat: 17.7305, lng: 83.2987 },
+  'Simhachalam': { lat: 17.7667, lng: 83.2500 },
+  'Visakhapatnam Steel Plant Area': { lat: 17.6403, lng: 83.1638 },
+  'Akkayyapalem': { lat: 17.7294, lng: 83.2935 },
+  'Arilova': { lat: 17.7633, lng: 83.3083 },
+  'Lawsons Bay': { lat: 17.7200, lng: 83.3400 },
+  'Beach Road': { lat: 17.7050, lng: 83.3217 },
+  'Jagadamba': { lat: 17.7142, lng: 83.3017 },
+  'Railway New Colony': { lat: 17.7100, lng: 83.2900 },
+  'One Town': { lat: 17.6967, lng: 83.2917 },
+  'CBM Compound': { lat: 17.6900, lng: 83.2850 },
+  'Allipuram': { lat: 17.7058, lng: 83.2942 },
+  'Dabagardens': { lat: 17.7283, lng: 83.3017 },
+  'Pothinamallayya Palem': { lat: 17.7450, lng: 83.2750 },
+  'Kurmannapalem': { lat: 17.7550, lng: 83.2350 },
+  'Naidu Thota': { lat: 17.7025, lng: 83.2958 },
+  'Waltair': { lat: 17.7217, lng: 83.3200 },
+  'Kirlampudi': { lat: 17.7333, lng: 83.3233 },
+  'Rushikonda': { lat: 17.7689, lng: 83.3842 },
+  'NAD Junction': { lat: 17.7283, lng: 83.2533 },
+  'Isukathota': { lat: 17.7700, lng: 83.3700 },
+  'Kommadi': { lat: 17.8000, lng: 83.3850 },
+  'PM Palem': { lat: 17.7550, lng: 83.3650 },
+  'Yendada': { lat: 17.7833, lng: 83.3833 },
+  'Sagar Nagar': { lat: 17.7617, lng: 83.3533 },
+  'Thatichetlapalem': { lat: 17.7383, lng: 83.2933 },
+};
+
+const MapView = ({ routes = [], sourceCoords, destinationCoords, selectedRoute, currentPosition, isMonitoring, showSafetyZones = true }: MapViewProps) => {
   const mapContainer = useRef<HTMLDivElement>(null);
   const mapRef = useRef<L.Map | null>(null);
   const routingControlRef = useRef<L.Routing.Control | null>(null);
   const markersRef = useRef<L.Marker[]>([]);
   const routeLayersRef = useRef<L.Polyline[]>([]);
+  const safetyZoneLayersRef = useRef<L.CircleMarker[]>([]);
   const userMarkerRef = useRef<L.Marker | null>(null);
   const [mapReady, setMapReady] = useState(false);
 
+  // Get distinct colors for routes - BLUE for fastest, GREEN for safest
   const getRouteColor = (type: RouteInfo['type'], isSelected: boolean) => {
     const colors = {
-      fastest: '#60a5fa',
-      safest: '#34d399',
-      optimized: '#fbbf24',
+      fastest: '#3b82f6', // Blue - fastest route
+      safest: '#22c55e',  // Green - safest route  
+      optimized: '#f59e0b', // Orange - optimized
     };
-    return isSelected ? colors[type] : `${colors[type]}80`;
+    return isSelected ? colors[type] : `${colors[type]}99`;
+  };
+
+  // Get color for safety zone based on safety score
+  const getSafetyZoneColor = (safetyScore: number): string => {
+    if (safetyScore >= 75) return '#22c55e'; // Green - safe
+    if (safetyScore >= 50) return '#f59e0b'; // Orange - moderate  
+    if (safetyScore >= 35) return '#ef4444'; // Red - risky
+    return '#7f1d1d'; // Dark red - critical/black spot
   };
 
   // Initialize map using callback ref for reliable DOM access
@@ -135,27 +184,20 @@ const MapView = ({ routes = [], sourceCoords, destinationCoords, selectedRoute, 
       const destMarker = L.marker([destinationCoords.lat, destinationCoords.lng], { icon: destIcon }).addTo(mapRef.current);
       markersRef.current.push(sourceMarker, destMarker);
 
-      // Add routing control
+      // Add routing control - hide default routes as we draw our own
       const routingControl = L.Routing.control({
         waypoints: [
           L.latLng(sourceCoords.lat, sourceCoords.lng),
           L.latLng(destinationCoords.lat, destinationCoords.lng),
         ],
         routeWhileDragging: false,
-        showAlternatives: true,
+        showAlternatives: false,
         fitSelectedRoutes: true,
         show: false, // Hide the directions panel
         addWaypoints: false,
         lineOptions: {
           styles: [
-            { color: '#34d399', weight: 6, opacity: 0.8 }
-          ],
-          extendToWaypoints: true,
-          missingRouteTolerance: 0
-        },
-        altLineOptions: {
-          styles: [
-            { color: '#60a5fa', weight: 5, opacity: 0.6 }
+            { color: 'transparent', weight: 0, opacity: 0 } // Hide default route
           ],
           extendToWaypoints: true,
           missingRouteTolerance: 0
@@ -199,6 +241,88 @@ const MapView = ({ routes = [], sourceCoords, destinationCoords, selectedRoute, 
       }
     });
   }, [routes, selectedRoute, mapReady]);
+
+  // Load and display safety zones on map
+  useEffect(() => {
+    if (!mapRef.current || !mapReady || !showSafetyZones) return;
+
+    // Clear existing safety zone layers
+    safetyZoneLayersRef.current.forEach(layer => {
+      mapRef.current?.removeLayer(layer);
+    });
+    safetyZoneLayersRef.current = [];
+
+    // Fetch and display safety zones
+    const loadSafetyZones = async () => {
+      try {
+        const zones = await fetchSafetyZones();
+        
+        zones.forEach(zone => {
+          const normalizedArea = zone.area.toLowerCase();
+          let coords: LatLng | null = null;
+          
+          for (const [key, value] of Object.entries(areaCoordinates)) {
+            if (key.toLowerCase() === normalizedArea || normalizedArea.includes(key.toLowerCase())) {
+              coords = value;
+              break;
+            }
+          }
+          
+          if (!coords || !mapRef.current) return;
+
+          const color = getSafetyZoneColor(zone.safety_score);
+          const isDangerous = zone.safety_score < 50;
+          const radius = isDangerous ? 800 : 500; // Larger circles for dangerous areas
+
+          // Create circle marker for the zone
+          const circle = L.circleMarker([coords.lat, coords.lng], {
+            radius: isDangerous ? 15 : 10,
+            fillColor: color,
+            color: isDangerous ? '#991b1b' : color,
+            weight: isDangerous ? 3 : 2,
+            opacity: 0.9,
+            fillOpacity: isDangerous ? 0.5 : 0.3,
+          });
+
+          // Add popup with zone info
+          const popupContent = `
+            <div style="padding: 8px; min-width: 150px;">
+              <strong style="font-size: 14px; color: ${color};">${zone.area}</strong>
+              <br/>
+              <span style="font-size: 12px; color: #666;">Safety Score: ${zone.safety_score}/100</span>
+              <br/>
+              <span style="font-size: 12px; color: #666;">Crime Count: ${zone.crime_count}</span>
+              <br/>
+              <span style="font-size: 11px; padding: 2px 6px; border-radius: 4px; background: ${color}20; color: ${color};">
+                ${zone.severity?.toUpperCase() || 'N/A'}
+              </span>
+              ${isDangerous ? '<br/><span style="font-size: 11px; color: #ef4444; font-weight: bold;">⚠️ HIGH RISK AREA</span>' : ''}
+            </div>
+          `;
+          circle.bindPopup(popupContent);
+
+          circle.addTo(mapRef.current);
+          safetyZoneLayersRef.current.push(circle);
+
+          // Add a larger semi-transparent area circle for dangerous zones
+          if (isDangerous) {
+            const areaCircle = L.circle([coords.lat, coords.lng], {
+              radius: radius,
+              fillColor: color,
+              color: 'transparent',
+              fillOpacity: 0.15,
+            });
+            areaCircle.addTo(mapRef.current);
+            safetyZoneLayersRef.current.push(areaCircle as unknown as L.CircleMarker);
+          }
+        });
+      } catch (error) {
+        console.error('Error loading safety zones:', error);
+      }
+    };
+
+    loadSafetyZones();
+  }, [mapReady, showSafetyZones]);
 
   // Handle current position marker during monitoring
   useEffect(() => {
@@ -257,25 +381,51 @@ const MapView = ({ routes = [], sourceCoords, destinationCoords, selectedRoute, 
         </div>
       )}
 
-      {/* Route Legend */}
-      {routes.length > 0 && (
-        <div className="absolute bottom-6 left-6 right-6">
-          <div className="glass rounded-xl p-4">
-            <p className="text-sm font-medium text-foreground mb-3">Route Legend</p>
-            <div className="flex flex-wrap gap-4">
-              {routes.map((route) => (
-                <div key={route.id} className="flex items-center gap-2">
-                  <div
-                    className="w-4 h-1 rounded-full"
-                    style={{ backgroundColor: getRouteColor(route.type, selectedRoute?.id === route.id) }}
-                  />
-                  <span className="text-xs text-muted-foreground capitalize">{route.type}</span>
-                </div>
-              ))}
+      {/* Legend */}
+      <div className="absolute bottom-6 left-6 right-6">
+        <div className="glass rounded-xl p-4">
+          {/* Route Legend */}
+          {routes.length > 0 && (
+            <>
+              <p className="text-sm font-medium text-foreground mb-2">Routes</p>
+              <div className="flex flex-wrap gap-4 mb-3">
+                {routes.map((route) => (
+                  <div key={route.id} className="flex items-center gap-2">
+                    <div
+                      className="w-6 h-1.5 rounded-full"
+                      style={{ backgroundColor: getRouteColor(route.type, selectedRoute?.id === route.id) }}
+                    />
+                    <span className="text-xs text-muted-foreground capitalize">
+                      {route.type === 'fastest' ? '🔵 Fastest' : route.type === 'safest' ? '🟢 Safest' : '🟠 Optimized'}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </>
+          )}
+          
+          {/* Safety Zone Legend */}
+          <p className="text-sm font-medium text-foreground mb-2">Safety Zones</p>
+          <div className="flex flex-wrap gap-3">
+            <div className="flex items-center gap-1.5">
+              <div className="w-3 h-3 rounded-full bg-green-500" />
+              <span className="text-xs text-muted-foreground">Safe (75+)</span>
+            </div>
+            <div className="flex items-center gap-1.5">
+              <div className="w-3 h-3 rounded-full bg-amber-500" />
+              <span className="text-xs text-muted-foreground">Moderate (50-74)</span>
+            </div>
+            <div className="flex items-center gap-1.5">
+              <div className="w-3 h-3 rounded-full bg-red-500" />
+              <span className="text-xs text-muted-foreground">Risky (35-49)</span>
+            </div>
+            <div className="flex items-center gap-1.5">
+              <div className="w-3.5 h-3.5 rounded-full bg-red-900 border-2 border-red-700" />
+              <span className="text-xs text-muted-foreground font-medium">⚠️ Black Spot (&lt;35)</span>
             </div>
           </div>
         </div>
-      )}
+      </div>
     </div>
   );
 };
