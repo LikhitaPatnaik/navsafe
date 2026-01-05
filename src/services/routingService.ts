@@ -6,7 +6,8 @@ import {
   calculateOptimizedRoute, 
   analyzeRouteSafety, 
   haversineDistance,
-  getSafetyScoreForPoint
+  getSafetyScoreForPoint,
+  generateAlternativeSafeRoutes
 } from './astarRouting';
 
 interface SafetyZone {
@@ -151,52 +152,81 @@ export const calculateRoutes = async (
 
   // ===== ROUTE 2: SAFEST (A* Algorithm with safety heuristic) =====
   // Maximizes safety while limiting extra distance to 5km
-  console.log('Calculating SAFEST route using A*...');
+  // Uses multiple alternative strategies to find the best safe route
+  console.log('Calculating SAFEST route using A* with multiple alternatives...');
   const maxExtraDistance = 5000; // 5km max extra distance
   
   try {
-    // Generate safe waypoints and get OSRM to route through them
-    const safeResult = aStarSafest(basePath, source, destination, safetyZones, maxExtraDistance);
+    // Generate multiple alternative safe routes
+    const alternatives = generateAlternativeSafeRoutes(basePath, safetyZones, source, destination);
     
-    // Get a valid road path through the safe waypoints
-    const safeWaypoints = samplePathForWaypoints(safeResult.path);
-    const validSafePath = await getOSRMRouteWithWaypoints(safeWaypoints);
+    let bestSafeRoute: RouteInfo | null = null;
+    let bestSafetyScore = 0;
     
-    const safePathDistance = calculatePathDistance(validSafePath);
-    const fastestDistance = baseDistance;
-    
-    // Ensure safest route doesn't exceed fastest + 5km
-    let finalSafePath = validSafePath;
-    let finalSafeDistance = safePathDistance;
-    
-    if (safePathDistance > fastestDistance + maxExtraDistance) {
-      // Path too long, use a more moderate deviation
-      finalSafePath = basePath;
-      finalSafeDistance = baseDistance;
-      console.log('Safe path exceeded limit, using base path with safety analysis');
+    // Evaluate each alternative
+    for (const alt of alternatives) {
+      try {
+        // Get valid road path through OSRM
+        const waypoints = samplePathForWaypoints(alt.path);
+        const validPath = await getOSRMRouteWithWaypoints(waypoints);
+        
+        const pathDistance = calculatePathDistance(validPath);
+        
+        // Skip if exceeds max distance
+        if (pathDistance > baseDistance + maxExtraDistance) {
+          console.log(`Alternative ${alt.strategy} exceeded distance limit, skipping`);
+          continue;
+        }
+        
+        const analysis = analyzeRouteSafety(validPath, safetyZones);
+        
+        // Track the route with the best safety score
+        if (analysis.overallScore > bestSafetyScore) {
+          bestSafetyScore = analysis.overallScore;
+          bestSafeRoute = {
+            id: 'route-safest-1',
+            type: 'safest',
+            distance: Math.round(pathDistance / 100) / 10,
+            duration: estimateDuration(pathDistance),
+            safetyScore: analysis.overallScore,
+            riskLevel: analysis.riskLevel,
+            path: validPath,
+          };
+          console.log(`Alternative ${alt.strategy}: safety=${analysis.overallScore}, distance=${Math.round(pathDistance/1000)}km`);
+        }
+      } catch (error) {
+        console.error(`Error evaluating alternative ${alt.strategy}:`, error);
+      }
     }
     
-    const safetyAnalysis = analyzeRouteSafety(finalSafePath, safetyZones);
-    
-    const safestRoute: RouteInfo = {
-      id: 'route-safest-1',
-      type: 'safest',
-      distance: Math.round(finalSafeDistance / 100) / 10,
-      duration: estimateDuration(finalSafeDistance),
-      safetyScore: safetyAnalysis.overallScore,
-      riskLevel: safetyAnalysis.riskLevel,
-      path: finalSafePath,
-    };
+    // If no good alternative found, use A* result
+    if (!bestSafeRoute) {
+      const safeResult = aStarSafest(basePath, source, destination, safetyZones, maxExtraDistance);
+      const safeWaypoints = samplePathForWaypoints(safeResult.path);
+      const validSafePath = await getOSRMRouteWithWaypoints(safeWaypoints);
+      const safePathDistance = calculatePathDistance(validSafePath);
+      const safetyAnalysis = analyzeRouteSafety(validSafePath, safetyZones);
+      
+      bestSafeRoute = {
+        id: 'route-safest-1',
+        type: 'safest',
+        distance: Math.round(safePathDistance / 100) / 10,
+        duration: estimateDuration(safePathDistance),
+        safetyScore: safetyAnalysis.overallScore,
+        riskLevel: safetyAnalysis.riskLevel,
+        path: validSafePath,
+      };
+    }
     
     // Only add if different from fastest (higher safety or different path)
-    if (safestRoute.safetyScore > fastestRoute.safetyScore || 
-        safestRoute.distance > fastestRoute.distance) {
-      routes.push(safestRoute);
-      console.log('Safest route:', { 
-        distance: safestRoute.distance, 
-        duration: safestRoute.duration, 
-        safety: safestRoute.safetyScore,
-        extraKm: safestRoute.distance - fastestRoute.distance
+    if (bestSafeRoute.safetyScore > fastestRoute.safetyScore || 
+        bestSafeRoute.distance > fastestRoute.distance) {
+      routes.push(bestSafeRoute);
+      console.log('Best safest route:', { 
+        distance: bestSafeRoute.distance, 
+        duration: bestSafeRoute.duration, 
+        safety: bestSafeRoute.safetyScore,
+        extraKm: bestSafeRoute.distance - fastestRoute.distance
       });
     }
   } catch (error) {

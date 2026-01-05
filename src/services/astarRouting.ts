@@ -30,7 +30,8 @@ export const haversineDistance = (p1: LatLng, p2: LatLng): number => {
 };
 
 // Map known Visakhapatnam areas to approximate coordinates
-const areaCoordinates: Record<string, LatLng> = {
+export const areaCoordinates: Record<string, LatLng> = {
+  // Original 33 areas
   'Gajuwaka': { lat: 17.7047, lng: 83.2113 },
   'Gopalapatnam': { lat: 17.7458, lng: 83.2614 },
   'Dwaraka Nagar': { lat: 17.7242, lng: 83.3059 },
@@ -64,6 +65,32 @@ const areaCoordinates: Record<string, LatLng> = {
   'Yendada': { lat: 17.7833, lng: 83.3833 },
   'Sagar Nagar': { lat: 17.7617, lng: 83.3533 },
   'Thatichetlapalem': { lat: 17.7383, lng: 83.2933 },
+  // Additional 25 areas
+  'Bheemunipatnam': { lat: 17.8908, lng: 83.4528 },
+  'Anakapalli': { lat: 17.6914, lng: 83.0042 },
+  'Pedagantyada': { lat: 17.7583, lng: 83.2833 },
+  'Chinagadili': { lat: 17.8167, lng: 83.4000 },
+  'Gnanapuram': { lat: 17.7175, lng: 83.3100 },
+  'Maharanipeta': { lat: 17.7050, lng: 83.3050 },
+  'Siripuram': { lat: 17.7200, lng: 83.3150 },
+  'Dondaparthy': { lat: 17.7517, lng: 83.2967 },
+  'Murali Nagar': { lat: 17.7400, lng: 83.2800 },
+  'Ramnagar': { lat: 17.7133, lng: 83.2867 },
+  'Peda Waltair': { lat: 17.7267, lng: 83.3267 },
+  'Chinna Waltair': { lat: 17.7183, lng: 83.3317 },
+  'RK Beach': { lat: 17.7117, lng: 83.3283 },
+  'Kailasapuram': { lat: 17.7583, lng: 83.2617 },
+  'Gidijala': { lat: 17.7950, lng: 83.3050 },
+  'Marripalem': { lat: 17.7750, lng: 83.3600 },
+  'Hanumanthawaka': { lat: 17.6850, lng: 83.2783 },
+  'Malkapuram': { lat: 17.7100, lng: 83.2200 },
+  'Nathayyapalem': { lat: 17.6950, lng: 83.2650 },
+  'Kommadi Junction': { lat: 17.8050, lng: 83.3900 },
+  'Timmapuram': { lat: 17.8200, lng: 83.4100 },
+  'Lankelapalem': { lat: 17.8350, lng: 83.4200 },
+  'Sriharipuram': { lat: 17.7350, lng: 83.2700 },
+  'HB Colony': { lat: 17.7450, lng: 83.3050 },
+  'Jodugullapalem': { lat: 17.7600, lng: 83.3950 },
 };
 
 // Get safety score for a point based on nearby safety zones
@@ -341,15 +368,16 @@ export const aStarSafest = (
 
 /**
  * Generate waypoints that avoid dangerous areas
+ * @param strategy - 'left', 'right', or 'optimal' deviation strategy
  */
 const generateSafeWaypoints = (
   originalPath: LatLng[],
   safetyZones: SafetyZone[],
   source: LatLng,
-  destination: LatLng
+  destination: LatLng,
+  strategy: 'left' | 'right' | 'optimal' = 'optimal'
 ): LatLng[] => {
   const waypoints: LatLng[] = [source];
-  const dangerousZones = safetyZones.filter(zone => zone.safety_score < 50);
   
   // Sample original path and add deviation points for dangerous areas
   const sampleRate = Math.max(1, Math.floor(originalPath.length / 20));
@@ -369,27 +397,42 @@ const generateSafeWaypoints = (
       const perpMag = Math.sqrt(perpLat * perpLat + perpLng * perpLng);
       
       if (perpMag > 0) {
-        const offset = 0.008; // ~800m offset
-        const deviatedPoint = {
-          lat: point.lat + (perpLat / perpMag) * offset,
-          lng: point.lng + (perpLng / perpMag) * offset,
-        };
+        const offset = 0.01; // ~1km offset for better deviation
         
-        // Check if deviation is safer
-        const deviatedSafety = getSafetyScoreForPoint(deviatedPoint, safetyZones);
-        if (deviatedSafety > safetyScore) {
-          waypoints.push(deviatedPoint);
-        } else {
-          // Try opposite direction
-          const oppositePoint = {
+        if (strategy === 'left') {
+          // Always deviate left
+          const leftPoint = {
+            lat: point.lat + (perpLat / perpMag) * offset,
+            lng: point.lng + (perpLng / perpMag) * offset,
+          };
+          waypoints.push(leftPoint);
+        } else if (strategy === 'right') {
+          // Always deviate right
+          const rightPoint = {
             lat: point.lat - (perpLat / perpMag) * offset,
             lng: point.lng - (perpLng / perpMag) * offset,
           };
-          const oppositeSafety = getSafetyScoreForPoint(oppositePoint, safetyZones);
-          if (oppositeSafety > safetyScore) {
-            waypoints.push(oppositePoint);
+          waypoints.push(rightPoint);
+        } else {
+          // Optimal: try both directions, pick safer
+          const leftPoint = {
+            lat: point.lat + (perpLat / perpMag) * offset,
+            lng: point.lng + (perpLng / perpMag) * offset,
+          };
+          const rightPoint = {
+            lat: point.lat - (perpLat / perpMag) * offset,
+            lng: point.lng - (perpLng / perpMag) * offset,
+          };
+          
+          const leftSafety = getSafetyScoreForPoint(leftPoint, safetyZones);
+          const rightSafety = getSafetyScoreForPoint(rightPoint, safetyZones);
+          
+          if (leftSafety >= rightSafety && leftSafety > safetyScore) {
+            waypoints.push(leftPoint);
+          } else if (rightSafety > safetyScore) {
+            waypoints.push(rightPoint);
           } else {
-            waypoints.push(point); // Keep original if no better option
+            waypoints.push(point);
           }
         }
       } else {
@@ -402,6 +445,92 @@ const generateSafeWaypoints = (
   
   waypoints.push(destination);
   return waypoints;
+};
+
+/**
+ * Generate multiple alternative safe routes using different deviation strategies
+ */
+export const generateAlternativeSafeRoutes = (
+  originalPath: LatLng[],
+  safetyZones: SafetyZone[],
+  source: LatLng,
+  destination: LatLng
+): { path: LatLng[]; strategy: string }[] => {
+  const alternatives: { path: LatLng[]; strategy: string }[] = [];
+  
+  // Strategy 1: Optimal (pick best at each point)
+  alternatives.push({
+    path: generateSafeWaypoints(originalPath, safetyZones, source, destination, 'optimal'),
+    strategy: 'optimal'
+  });
+  
+  // Strategy 2: Left deviation
+  alternatives.push({
+    path: generateSafeWaypoints(originalPath, safetyZones, source, destination, 'left'),
+    strategy: 'left'
+  });
+  
+  // Strategy 3: Right deviation
+  alternatives.push({
+    path: generateSafeWaypoints(originalPath, safetyZones, source, destination, 'right'),
+    strategy: 'right'
+  });
+  
+  // Strategy 4: Route through known safe areas
+  const safeAreaRoute = generateRouteThroughSafeAreas(source, destination, safetyZones);
+  if (safeAreaRoute.length > 2) {
+    alternatives.push({
+      path: safeAreaRoute,
+      strategy: 'safe-areas'
+    });
+  }
+  
+  return alternatives;
+};
+
+/**
+ * Generate a route that passes through known safe areas
+ */
+const generateRouteThroughSafeAreas = (
+  source: LatLng,
+  destination: LatLng,
+  safetyZones: SafetyZone[]
+): LatLng[] => {
+  // Get safe areas (score >= 80)
+  const safeAreas = safetyZones
+    .filter(zone => zone.safety_score >= 80)
+    .map(zone => {
+      const normalizedArea = zone.area.toLowerCase();
+      for (const [key, coords] of Object.entries(areaCoordinates)) {
+        if (key.toLowerCase() === normalizedArea || normalizedArea.includes(key.toLowerCase())) {
+          return { ...coords, score: zone.safety_score, name: zone.area };
+        }
+      }
+      return null;
+    })
+    .filter((area): area is LatLng & { score: number; name: string } => area !== null);
+  
+  if (safeAreas.length === 0) return [source, destination];
+  
+  // Find safe areas that are along the general direction of travel
+  const directDistance = haversineDistance(source, destination);
+  const relevantSafeAreas = safeAreas.filter(area => {
+    const distToSource = haversineDistance(source, area);
+    const distToDest = haversineDistance(area, destination);
+    // Only include if it's not too far out of the way (within 50% extra distance)
+    return distToSource + distToDest < directDistance * 1.5;
+  });
+  
+  // Sort by safety score (highest first)
+  relevantSafeAreas.sort((a, b) => b.score - a.score);
+  
+  // Take top 3 safe waypoints
+  const waypoints = relevantSafeAreas.slice(0, 3);
+  
+  // Sort waypoints by distance from source
+  waypoints.sort((a, b) => haversineDistance(source, a) - haversineDistance(source, b));
+  
+  return [source, ...waypoints, destination];
 };
 
 /**

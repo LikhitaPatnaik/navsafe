@@ -30,42 +30,8 @@ const defaultCenter: LatLng = {
   lng: 83.2185,
 };
 
-// Safety zone coordinates for Visakhapatnam areas
-const areaCoordinates: Record<string, LatLng> = {
-  'Gajuwaka': { lat: 17.7047, lng: 83.2113 },
-  'Gopalapatnam': { lat: 17.7458, lng: 83.2614 },
-  'Dwaraka Nagar': { lat: 17.7242, lng: 83.3059 },
-  'MVP Colony': { lat: 17.7367, lng: 83.2851 },
-  'Kancharapalem': { lat: 17.7180, lng: 83.2760 },
-  'Madhurawada': { lat: 17.7833, lng: 83.3667 },
-  'Pendurthi': { lat: 17.7909, lng: 83.2467 },
-  'Seethammadhara': { lat: 17.7305, lng: 83.2987 },
-  'Simhachalam': { lat: 17.7667, lng: 83.2500 },
-  'Visakhapatnam Steel Plant Area': { lat: 17.6403, lng: 83.1638 },
-  'Akkayyapalem': { lat: 17.7294, lng: 83.2935 },
-  'Arilova': { lat: 17.7633, lng: 83.3083 },
-  'Lawsons Bay': { lat: 17.7200, lng: 83.3400 },
-  'Beach Road': { lat: 17.7050, lng: 83.3217 },
-  'Jagadamba': { lat: 17.7142, lng: 83.3017 },
-  'Railway New Colony': { lat: 17.7100, lng: 83.2900 },
-  'One Town': { lat: 17.6967, lng: 83.2917 },
-  'CBM Compound': { lat: 17.6900, lng: 83.2850 },
-  'Allipuram': { lat: 17.7058, lng: 83.2942 },
-  'Dabagardens': { lat: 17.7283, lng: 83.3017 },
-  'Pothinamallayya Palem': { lat: 17.7450, lng: 83.2750 },
-  'Kurmannapalem': { lat: 17.7550, lng: 83.2350 },
-  'Naidu Thota': { lat: 17.7025, lng: 83.2958 },
-  'Waltair': { lat: 17.7217, lng: 83.3200 },
-  'Kirlampudi': { lat: 17.7333, lng: 83.3233 },
-  'Rushikonda': { lat: 17.7689, lng: 83.3842 },
-  'NAD Junction': { lat: 17.7283, lng: 83.2533 },
-  'Isukathota': { lat: 17.7700, lng: 83.3700 },
-  'Kommadi': { lat: 17.8000, lng: 83.3850 },
-  'PM Palem': { lat: 17.7550, lng: 83.3650 },
-  'Yendada': { lat: 17.7833, lng: 83.3833 },
-  'Sagar Nagar': { lat: 17.7617, lng: 83.3533 },
-  'Thatichetlapalem': { lat: 17.7383, lng: 83.2933 },
-};
+// Safety zone coordinates for Visakhapatnam areas (imported from astarRouting for consistency)
+import { areaCoordinates } from '@/services/astarRouting';
 
 const MapView = ({ routes = [], sourceCoords, destinationCoords, selectedRoute, currentPosition, isMonitoring, showSafetyZones = true }: MapViewProps) => {
   const mapContainer = useRef<HTMLDivElement>(null);
