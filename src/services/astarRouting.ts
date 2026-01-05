@@ -9,13 +9,9 @@ interface SafetyZone {
   safety_score: number;
 }
 
-interface AStarNode {
+interface GraphNode {
   point: LatLng;
-  g: number; // Cost from start
-  h: number; // Heuristic to goal
-  f: number; // Total cost (g + h)
-  parent: AStarNode | null;
-  safetyPenalty: number;
+  neighbors: { node: GraphNode; distance: number; safetyScore: number }[];
 }
 
 // Haversine distance in meters
@@ -33,21 +29,64 @@ export const haversineDistance = (p1: LatLng, p2: LatLng): number => {
   return R * c;
 };
 
+// Map known Visakhapatnam areas to approximate coordinates
+const areaCoordinates: Record<string, LatLng> = {
+  'Gajuwaka': { lat: 17.7047, lng: 83.2113 },
+  'Gopalapatnam': { lat: 17.7458, lng: 83.2614 },
+  'Dwaraka Nagar': { lat: 17.7242, lng: 83.3059 },
+  'MVP Colony': { lat: 17.7367, lng: 83.2851 },
+  'Kancharapalem': { lat: 17.7180, lng: 83.2760 },
+  'Madhurawada': { lat: 17.7833, lng: 83.3667 },
+  'Pendurthi': { lat: 17.7909, lng: 83.2467 },
+  'Seethammadhara': { lat: 17.7305, lng: 83.2987 },
+  'Simhachalam': { lat: 17.7667, lng: 83.2500 },
+  'Visakhapatnam Steel Plant Area': { lat: 17.6403, lng: 83.1638 },
+  'Akkayyapalem': { lat: 17.7294, lng: 83.2935 },
+  'Arilova': { lat: 17.7633, lng: 83.3083 },
+  'Lawsons Bay': { lat: 17.7200, lng: 83.3400 },
+  'Beach Road': { lat: 17.7050, lng: 83.3217 },
+  'Jagadamba': { lat: 17.7142, lng: 83.3017 },
+  'Railway New Colony': { lat: 17.7100, lng: 83.2900 },
+  'One Town': { lat: 17.6967, lng: 83.2917 },
+  'CBM Compound': { lat: 17.6900, lng: 83.2850 },
+  'Allipuram': { lat: 17.7058, lng: 83.2942 },
+  'Dabagardens': { lat: 17.7283, lng: 83.3017 },
+  'Pothinamallayya Palem': { lat: 17.7450, lng: 83.2750 },
+  'Kurmannapalem': { lat: 17.7550, lng: 83.2350 },
+  'Naidu Thota': { lat: 17.7025, lng: 83.2958 },
+  'Waltair': { lat: 17.7217, lng: 83.3200 },
+  'Kirlampudi': { lat: 17.7333, lng: 83.3233 },
+  'Rushikonda': { lat: 17.7689, lng: 83.3842 },
+  'NAD Junction': { lat: 17.7283, lng: 83.2533 },
+  'Isukathota': { lat: 17.7700, lng: 83.3700 },
+  'Kommadi': { lat: 17.8000, lng: 83.3850 },
+  'PM Palem': { lat: 17.7550, lng: 83.3650 },
+  'Yendada': { lat: 17.7833, lng: 83.3833 },
+  'Sagar Nagar': { lat: 17.7617, lng: 83.3533 },
+  'Thatichetlapalem': { lat: 17.7383, lng: 83.2933 },
+};
+
 // Get safety score for a point based on nearby safety zones
-const getSafetyScoreForPoint = (
+export const getSafetyScoreForPoint = (
   point: LatLng,
   safetyZones: SafetyZone[]
 ): number => {
   if (safetyZones.length === 0) return 70;
 
-  // Find zones that might be relevant (simple proximity check)
-  // In a real implementation, this would use proper geospatial queries
   let nearestScore = 70;
   let nearestDistance = Infinity;
 
   for (const zone of safetyZones) {
-    // Create approximate center for each zone based on known Visakhapatnam areas
-    const zoneCenter = getApproximateZoneCenter(zone.area);
+    const normalizedArea = zone.area.toLowerCase();
+    let zoneCenter: LatLng | null = null;
+    
+    for (const [key, coords] of Object.entries(areaCoordinates)) {
+      if (key.toLowerCase() === normalizedArea || normalizedArea.includes(key.toLowerCase())) {
+        zoneCenter = coords;
+        break;
+      }
+    }
+    
     if (!zoneCenter) continue;
 
     const distance = haversineDistance(point, zoneCenter);
@@ -62,185 +101,401 @@ const getSafetyScoreForPoint = (
   return nearestScore;
 };
 
-// Map known Visakhapatnam areas to approximate coordinates
-const getApproximateZoneCenter = (area: string): LatLng | null => {
-  const areaCoordinates: Record<string, LatLng> = {
-    'Gajuwaka': { lat: 17.7047, lng: 83.2113 },
-    'Gopalapatnam': { lat: 17.7458, lng: 83.2614 },
-    'Dwaraka Nagar': { lat: 17.7242, lng: 83.3059 },
-    'MVP Colony': { lat: 17.7367, lng: 83.2851 },
-    'Kancharapalem': { lat: 17.7180, lng: 83.2760 },
-    'Madhurawada': { lat: 17.7833, lng: 83.3667 },
-    'Pendurthi': { lat: 17.7909, lng: 83.2467 },
-    'Seethammadhara': { lat: 17.7305, lng: 83.2987 },
-    'Simhachalam': { lat: 17.7667, lng: 83.2500 },
-    'Visakhapatnam Steel Plant Area': { lat: 17.6403, lng: 83.1638 },
-    'Akkayyapalem': { lat: 17.7294, lng: 83.2935 },
-    'Arilova': { lat: 17.7633, lng: 83.3083 },
-    'Lawsons Bay': { lat: 17.7200, lng: 83.3400 },
-    'Beach Road': { lat: 17.7050, lng: 83.3217 },
-    'Jagadamba': { lat: 17.7142, lng: 83.3017 },
-    'Railway New Colony': { lat: 17.7100, lng: 83.2900 },
-    'One Town': { lat: 17.6967, lng: 83.2917 },
-    'CBM Compound': { lat: 17.6900, lng: 83.2850 },
-    'Allipuram': { lat: 17.7058, lng: 83.2942 },
-    'Dabagardens': { lat: 17.7283, lng: 83.3017 },
-    'Pothinamallayya Palem': { lat: 17.7450, lng: 83.2750 },
-    'Kurmannapalem': { lat: 17.7550, lng: 83.2350 },
-    'Naidu Thota': { lat: 17.7025, lng: 83.2958 },
-    'Waltair': { lat: 17.7217, lng: 83.3200 },
-    'Kirlampudi': { lat: 17.7333, lng: 83.3233 },
-    'Rushikonda': { lat: 17.7689, lng: 83.3842 },
-    'NAD Junction': { lat: 17.7283, lng: 83.2533 },
-    'Isukathota': { lat: 17.7700, lng: 83.3700 },
-    'Kommadi': { lat: 17.8000, lng: 83.3850 },
-    'PM Palem': { lat: 17.7550, lng: 83.3650 },
-    'Yendada': { lat: 17.7833, lng: 83.3833 },
-    'Sagar Nagar': { lat: 17.7617, lng: 83.3533 },
-    'Thatichetlapalem': { lat: 17.7383, lng: 83.2933 },
-  };
-
-  // Case-insensitive lookup
-  const normalizedArea = area.toLowerCase();
-  for (const [key, coords] of Object.entries(areaCoordinates)) {
-    if (key.toLowerCase() === normalizedArea || normalizedArea.includes(key.toLowerCase())) {
-      return coords;
-    }
-  }
-
-  return null;
-};
-
 // Calculate safety penalty (higher penalty for lower safety scores)
 const calculateSafetyPenalty = (safetyScore: number): number => {
-  // Convert safety score (0-100) to penalty multiplier
-  // Higher safety = lower penalty, lower safety = higher penalty
   const normalizedScore = Math.max(0, Math.min(100, safetyScore));
   // Penalty ranges from 1 (safest) to 5 (most dangerous)
   return 1 + (4 * (100 - normalizedScore)) / 100;
 };
 
-// Generate waypoints around a dangerous area
-const generateDeviationPoints = (
+// Build a graph from route path for pathfinding
+const buildGraphFromPath = (
+  path: LatLng[],
+  safetyZones: SafetyZone[]
+): Map<string, GraphNode> => {
+  const graph = new Map<string, GraphNode>();
+  
+  // Create nodes for each point
+  path.forEach((point, idx) => {
+    const key = `${point.lat.toFixed(6)},${point.lng.toFixed(6)}`;
+    graph.set(key, {
+      point,
+      neighbors: [],
+    });
+  });
+  
+  // Connect sequential nodes
+  const nodes = Array.from(graph.values());
+  for (let i = 0; i < nodes.length - 1; i++) {
+    const current = nodes[i];
+    const next = nodes[i + 1];
+    const distance = haversineDistance(current.point, next.point);
+    const midPoint = {
+      lat: (current.point.lat + next.point.lat) / 2,
+      lng: (current.point.lng + next.point.lng) / 2,
+    };
+    const safetyScore = getSafetyScoreForPoint(midPoint, safetyZones);
+    
+    current.neighbors.push({ node: next, distance, safetyScore });
+    next.neighbors.push({ node: current, distance, safetyScore });
+  }
+  
+  return graph;
+};
+
+// Priority Queue for Dijkstra/A*
+class PriorityQueue<T> {
+  private items: { element: T; priority: number }[] = [];
+  
+  enqueue(element: T, priority: number) {
+    this.items.push({ element, priority });
+    this.items.sort((a, b) => a.priority - b.priority);
+  }
+  
+  dequeue(): T | undefined {
+    return this.items.shift()?.element;
+  }
+  
+  isEmpty(): boolean {
+    return this.items.length === 0;
+  }
+}
+
+/**
+ * DIJKSTRA'S ALGORITHM for fastest route
+ * Pure shortest path - minimizes distance only
+ */
+export const dijkstraFastest = (
+  path: LatLng[],
   source: LatLng,
   destination: LatLng,
   safetyZones: SafetyZone[]
+): { path: LatLng[]; totalDistance: number; safetyScore: number; riskLevel: RiskLevel } => {
+  if (path.length < 2) {
+    return { path, totalDistance: 0, safetyScore: 70, riskLevel: 'moderate' };
+  }
+  
+  const graph = buildGraphFromPath(path, safetyZones);
+  const nodes = Array.from(graph.values());
+  
+  // Distance map
+  const distances = new Map<GraphNode, number>();
+  const previous = new Map<GraphNode, GraphNode | null>();
+  const pq = new PriorityQueue<GraphNode>();
+  
+  // Initialize
+  nodes.forEach(node => {
+    distances.set(node, Infinity);
+    previous.set(node, null);
+  });
+  
+  const startNode = nodes[0];
+  const endNode = nodes[nodes.length - 1];
+  
+  distances.set(startNode, 0);
+  pq.enqueue(startNode, 0);
+  
+  while (!pq.isEmpty()) {
+    const current = pq.dequeue()!;
+    
+    if (current === endNode) break;
+    
+    const currentDist = distances.get(current) || Infinity;
+    
+    for (const { node: neighbor, distance } of current.neighbors) {
+      const newDist = currentDist + distance;
+      
+      if (newDist < (distances.get(neighbor) || Infinity)) {
+        distances.set(neighbor, newDist);
+        previous.set(neighbor, current);
+        pq.enqueue(neighbor, newDist);
+      }
+    }
+  }
+  
+  // Reconstruct path
+  const resultPath: LatLng[] = [];
+  let current: GraphNode | null = endNode;
+  while (current) {
+    resultPath.unshift(current.point);
+    current = previous.get(current) || null;
+  }
+  
+  // Calculate safety score for the path
+  const { overallScore, riskLevel } = analyzeRouteSafety(resultPath, safetyZones);
+  
+  return {
+    path: resultPath.length > 0 ? resultPath : path,
+    totalDistance: distances.get(endNode) || 0,
+    safetyScore: overallScore,
+    riskLevel,
+  };
+};
+
+/**
+ * A* ALGORITHM for safest route
+ * Minimizes combined cost: distance * safety_penalty
+ * Constrained to max 5km more than fastest route
+ */
+export const aStarSafest = (
+  path: LatLng[],
+  source: LatLng,
+  destination: LatLng,
+  safetyZones: SafetyZone[],
+  maxExtraDistance: number = 5000 // 5km max extra distance
+): { path: LatLng[]; totalDistance: number; safetyScore: number; riskLevel: RiskLevel } => {
+  if (path.length < 2) {
+    return { path, totalDistance: 0, safetyScore: 70, riskLevel: 'moderate' };
+  }
+  
+  // First get shortest distance using Dijkstra
+  const fastestResult = dijkstraFastest(path, source, destination, safetyZones);
+  const shortestDistance = fastestResult.totalDistance;
+  const maxAllowedDistance = shortestDistance + maxExtraDistance;
+  
+  // Generate alternative waypoints that avoid dangerous areas
+  const alternativePath = generateSafeWaypoints(path, safetyZones, source, destination);
+  const graph = buildGraphFromPath(alternativePath, safetyZones);
+  const nodes = Array.from(graph.values());
+  
+  // A* with safety-weighted cost
+  const gScore = new Map<GraphNode, number>();
+  const fScore = new Map<GraphNode, number>();
+  const previous = new Map<GraphNode, GraphNode | null>();
+  const pq = new PriorityQueue<GraphNode>();
+  
+  nodes.forEach(node => {
+    gScore.set(node, Infinity);
+    fScore.set(node, Infinity);
+    previous.set(node, null);
+  });
+  
+  const startNode = nodes[0];
+  const endNode = nodes[nodes.length - 1];
+  
+  gScore.set(startNode, 0);
+  const h = haversineDistance(startNode.point, endNode.point);
+  fScore.set(startNode, h);
+  pq.enqueue(startNode, h);
+  
+  while (!pq.isEmpty()) {
+    const current = pq.dequeue()!;
+    
+    if (current === endNode) break;
+    
+    const currentG = gScore.get(current) || Infinity;
+    
+    // Skip if we've exceeded max allowed distance
+    if (currentG > maxAllowedDistance) continue;
+    
+    for (const { node: neighbor, distance, safetyScore } of current.neighbors) {
+      // A* cost: distance * safety penalty (lower safety = higher cost)
+      const safetyPenalty = calculateSafetyPenalty(safetyScore);
+      const edgeCost = distance * safetyPenalty;
+      
+      const tentativeG = currentG + edgeCost;
+      
+      if (tentativeG < (gScore.get(neighbor) || Infinity)) {
+        previous.set(neighbor, current);
+        gScore.set(neighbor, tentativeG);
+        
+        const heuristic = haversineDistance(neighbor.point, endNode.point);
+        const avgSafetyToEnd = getSafetyScoreForPoint(neighbor.point, safetyZones);
+        const hPenalty = calculateSafetyPenalty(avgSafetyToEnd);
+        
+        fScore.set(neighbor, tentativeG + heuristic * hPenalty);
+        pq.enqueue(neighbor, fScore.get(neighbor)!);
+      }
+    }
+  }
+  
+  // Reconstruct path
+  const resultPath: LatLng[] = [];
+  let current: GraphNode | null = endNode;
+  let actualDistance = 0;
+  
+  while (current) {
+    resultPath.unshift(current.point);
+    const prev = previous.get(current);
+    if (prev) {
+      actualDistance += haversineDistance(prev.point, current.point);
+    }
+    current = prev;
+  }
+  
+  // If no valid path found or path exceeds limit, return modified fastest
+  if (resultPath.length === 0 || actualDistance > maxAllowedDistance) {
+    // Return fastest path but with safety analysis
+    return fastestResult;
+  }
+  
+  const { overallScore, riskLevel } = analyzeRouteSafety(resultPath, safetyZones);
+  
+  return {
+    path: resultPath,
+    totalDistance: actualDistance,
+    safetyScore: overallScore,
+    riskLevel,
+  };
+};
+
+/**
+ * Generate waypoints that avoid dangerous areas
+ */
+const generateSafeWaypoints = (
+  originalPath: LatLng[],
+  safetyZones: SafetyZone[],
+  source: LatLng,
+  destination: LatLng
 ): LatLng[] => {
   const waypoints: LatLng[] = [source];
-  
-  // Find dangerous zones along the path
   const dangerousZones = safetyZones.filter(zone => zone.safety_score < 50);
   
-  // Create intermediate points that avoid dangerous areas
-  const numIntermediatePoints = 10;
+  // Sample original path and add deviation points for dangerous areas
+  const sampleRate = Math.max(1, Math.floor(originalPath.length / 20));
   
-  for (let i = 1; i <= numIntermediatePoints; i++) {
-    const t = i / (numIntermediatePoints + 1);
-    let basePoint: LatLng = {
-      lat: source.lat + t * (destination.lat - source.lat),
-      lng: source.lng + t * (destination.lng - source.lng),
-    };
-
-    // Check if this point is in a dangerous zone
-    const safetyScore = getSafetyScoreForPoint(basePoint, safetyZones);
+  for (let i = sampleRate; i < originalPath.length - sampleRate; i += sampleRate) {
+    const point = originalPath[i];
+    const safetyScore = getSafetyScoreForPoint(point, safetyZones);
     
     if (safetyScore < 50) {
-      // Find a safer nearby point by shifting perpendicular to the path
-      const perpLat = -(destination.lng - source.lng);
-      const perpLng = destination.lat - source.lat;
+      // Add deviated point
+      const direction = {
+        lat: destination.lat - source.lat,
+        lng: destination.lng - source.lng,
+      };
+      const perpLat = -direction.lng;
+      const perpLng = direction.lat;
       const perpMag = Math.sqrt(perpLat * perpLat + perpLng * perpLng);
       
       if (perpMag > 0) {
-        const offset = 0.01; // ~1km offset
-        basePoint = {
-          lat: basePoint.lat + (perpLat / perpMag) * offset,
-          lng: basePoint.lng + (perpLng / perpMag) * offset,
+        const offset = 0.008; // ~800m offset
+        const deviatedPoint = {
+          lat: point.lat + (perpLat / perpMag) * offset,
+          lng: point.lng + (perpLng / perpMag) * offset,
         };
+        
+        // Check if deviation is safer
+        const deviatedSafety = getSafetyScoreForPoint(deviatedPoint, safetyZones);
+        if (deviatedSafety > safetyScore) {
+          waypoints.push(deviatedPoint);
+        } else {
+          // Try opposite direction
+          const oppositePoint = {
+            lat: point.lat - (perpLat / perpMag) * offset,
+            lng: point.lng - (perpLng / perpMag) * offset,
+          };
+          const oppositeSafety = getSafetyScoreForPoint(oppositePoint, safetyZones);
+          if (oppositeSafety > safetyScore) {
+            waypoints.push(oppositePoint);
+          } else {
+            waypoints.push(point); // Keep original if no better option
+          }
+        }
+      } else {
+        waypoints.push(point);
       }
+    } else {
+      waypoints.push(point);
     }
-    
-    waypoints.push(basePoint);
   }
   
   waypoints.push(destination);
   return waypoints;
 };
 
-// A* algorithm for finding safest route
-export const findSafestRoute = (
+/**
+ * OPTIMIZED ROUTE: Blend of fastest and safest
+ * Uses weighted average: 50% distance priority, 50% safety priority
+ */
+export const calculateOptimizedRoute = (
+  path: LatLng[],
   source: LatLng,
   destination: LatLng,
   safetyZones: SafetyZone[],
-  baseRoutePath: LatLng[]
-): { path: LatLng[]; safetyScore: number; riskLevel: RiskLevel } => {
-  // Generate candidate waypoints
-  const waypoints = generateDeviationPoints(source, destination, safetyZones);
+  fastestResult: { path: LatLng[]; totalDistance: number },
+  safestResult: { path: LatLng[]; totalDistance: number }
+): { path: LatLng[]; totalDistance: number; safetyScore: number; riskLevel: RiskLevel } => {
+  if (path.length < 2) {
+    return { path, totalDistance: 0, safetyScore: 70, riskLevel: 'moderate' };
+  }
   
-  // Simple path smoothing with safety consideration
-  const safePath: LatLng[] = [source];
-  let totalSafetyScore = 0;
-  let scoreCount = 0;
-
-  for (let i = 1; i < waypoints.length - 1; i++) {
-    const point = waypoints[i];
-    const pointSafety = getSafetyScoreForPoint(point, safetyZones);
+  const graph = buildGraphFromPath(path, safetyZones);
+  const nodes = Array.from(graph.values());
+  
+  // Optimized uses balanced cost: 0.5 * distance + 0.5 * (distance * safety_penalty)
+  const gScore = new Map<GraphNode, number>();
+  const fScore = new Map<GraphNode, number>();
+  const previous = new Map<GraphNode, GraphNode | null>();
+  const pq = new PriorityQueue<GraphNode>();
+  
+  nodes.forEach(node => {
+    gScore.set(node, Infinity);
+    fScore.set(node, Infinity);
+    previous.set(node, null);
+  });
+  
+  const startNode = nodes[0];
+  const endNode = nodes[nodes.length - 1];
+  
+  gScore.set(startNode, 0);
+  fScore.set(startNode, haversineDistance(startNode.point, endNode.point));
+  pq.enqueue(startNode, fScore.get(startNode)!);
+  
+  // Max distance is average of fastest and safest + small buffer
+  const maxDistance = (fastestResult.totalDistance + safestResult.totalDistance) / 2 + 2000;
+  
+  while (!pq.isEmpty()) {
+    const current = pq.dequeue()!;
     
-    // Only add points that improve safety or are necessary for navigation
-    if (pointSafety >= 50 || i === 1 || i === waypoints.length - 2) {
-      safePath.push(point);
-      totalSafetyScore += pointSafety;
-      scoreCount++;
+    if (current === endNode) break;
+    
+    const currentG = gScore.get(current) || Infinity;
+    if (currentG > maxDistance) continue;
+    
+    for (const { node: neighbor, distance, safetyScore } of current.neighbors) {
+      // Balanced cost: 50% pure distance, 50% safety-adjusted
+      const safetyPenalty = calculateSafetyPenalty(safetyScore);
+      const balancedCost = 0.5 * distance + 0.5 * (distance * safetyPenalty);
+      
+      const tentativeG = currentG + balancedCost;
+      
+      if (tentativeG < (gScore.get(neighbor) || Infinity)) {
+        previous.set(neighbor, current);
+        gScore.set(neighbor, tentativeG);
+        
+        const heuristic = haversineDistance(neighbor.point, endNode.point);
+        fScore.set(neighbor, tentativeG + heuristic);
+        pq.enqueue(neighbor, fScore.get(neighbor)!);
+      }
     }
   }
   
-  safePath.push(destination);
-
-  // Calculate overall safety score
-  const avgSafetyScore = scoreCount > 0 ? totalSafetyScore / scoreCount : 70;
+  // Reconstruct path
+  const resultPath: LatLng[] = [];
+  let current: GraphNode | null = endNode;
+  let actualDistance = 0;
   
-  // Determine risk level
-  let riskLevel: RiskLevel = 'moderate';
-  if (avgSafetyScore >= 70) riskLevel = 'safe';
-  else if (avgSafetyScore < 50) riskLevel = 'risky';
-
+  while (current) {
+    resultPath.unshift(current.point);
+    const prev = previous.get(current);
+    if (prev) {
+      actualDistance += haversineDistance(prev.point, current.point);
+    }
+    current = prev;
+  }
+  
+  const { overallScore, riskLevel } = analyzeRouteSafety(
+    resultPath.length > 0 ? resultPath : path, 
+    safetyZones
+  );
+  
   return {
-    path: safePath,
-    safetyScore: Math.round(avgSafetyScore),
+    path: resultPath.length > 0 ? resultPath : path,
+    totalDistance: actualDistance || fastestResult.totalDistance,
+    safetyScore: overallScore,
     riskLevel,
   };
-};
-
-// Get safety-adjusted OSRM route
-export const calculateSafetyAdjustedRoute = async (
-  source: LatLng,
-  destination: LatLng,
-  safetyZones: SafetyZone[],
-  originalPath: LatLng[]
-): Promise<{ path: LatLng[]; safetyScore: number; riskLevel: RiskLevel }> => {
-  // Analyze the original path for dangerous segments
-  const pathScores: number[] = [];
-  const dangerousSegments: number[] = [];
-
-  for (let i = 0; i < originalPath.length; i++) {
-    const score = getSafetyScoreForPoint(originalPath[i], safetyZones);
-    pathScores.push(score);
-    if (score < 50) {
-      dangerousSegments.push(i);
-    }
-  }
-
-  // If original path is safe, use it
-  const avgScore = pathScores.reduce((a, b) => a + b, 0) / pathScores.length;
-  if (avgScore >= 70 && dangerousSegments.length === 0) {
-    return {
-      path: originalPath,
-      safetyScore: Math.round(avgScore),
-      riskLevel: 'safe',
-    };
-  }
-
-  // Otherwise, find a safer route using A*
-  return findSafestRoute(source, destination, safetyZones, originalPath);
 };
 
 // Calculate safety statistics for a route
@@ -256,15 +511,25 @@ export const analyzeRouteSafety = (
   const areaScores: Map<string, number[]> = new Map();
   const scores: number[] = [];
 
-  // Sample every 5th point for performance
-  for (let i = 0; i < path.length; i += 5) {
+  // Sample points for performance
+  const sampleRate = Math.max(1, Math.floor(path.length / 50));
+  for (let i = 0; i < path.length; i += sampleRate) {
     const point = path[i];
     const score = getSafetyScoreForPoint(point, safetyZones);
     scores.push(score);
 
     // Find matching zone
     for (const zone of safetyZones) {
-      const zoneCenter = getApproximateZoneCenter(zone.area);
+      const normalizedArea = zone.area.toLowerCase();
+      let zoneCenter: LatLng | null = null;
+      
+      for (const [key, coords] of Object.entries(areaCoordinates)) {
+        if (key.toLowerCase() === normalizedArea || normalizedArea.includes(key.toLowerCase())) {
+          zoneCenter = coords;
+          break;
+        }
+      }
+      
       if (zoneCenter && haversineDistance(point, zoneCenter) < 2000) {
         const existing = areaScores.get(zone.area) || [];
         existing.push(zone.safety_score);
@@ -300,3 +565,7 @@ export const analyzeRouteSafety = (
     safeAreas,
   };
 };
+
+// Export for backward compatibility
+export const calculateSafetyAdjustedRoute = aStarSafest;
+export const findSafestRoute = aStarSafest;

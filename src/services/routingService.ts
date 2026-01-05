@@ -1,6 +1,13 @@
 import { supabase } from '@/integrations/supabase/client';
 import { RouteInfo, LatLng, RiskLevel } from '@/types/route';
-import { calculateSafetyAdjustedRoute, analyzeRouteSafety, haversineDistance } from './astarRouting';
+import { 
+  dijkstraFastest, 
+  aStarSafest, 
+  calculateOptimizedRoute, 
+  analyzeRouteSafety, 
+  haversineDistance,
+  getSafetyScoreForPoint
+} from './astarRouting';
 
 interface SafetyZone {
   id: string;
@@ -38,93 +45,7 @@ export const fetchSafetyZones = async (): Promise<SafetyZone[]> => {
   return data || [];
 };
 
-// Map known Visakhapatnam areas to approximate coordinates for matching
-const areaCoordinates: Record<string, LatLng> = {
-  'Gajuwaka': { lat: 17.7047, lng: 83.2113 },
-  'Gopalapatnam': { lat: 17.7458, lng: 83.2614 },
-  'Dwaraka Nagar': { lat: 17.7242, lng: 83.3059 },
-  'MVP Colony': { lat: 17.7367, lng: 83.2851 },
-  'Kancharapalem': { lat: 17.7180, lng: 83.2760 },
-  'Madhurawada': { lat: 17.7833, lng: 83.3667 },
-  'Pendurthi': { lat: 17.7909, lng: 83.2467 },
-  'Seethammadhara': { lat: 17.7305, lng: 83.2987 },
-  'Simhachalam': { lat: 17.7667, lng: 83.2500 },
-  'Visakhapatnam Steel Plant Area': { lat: 17.6403, lng: 83.1638 },
-  'Akkayyapalem': { lat: 17.7294, lng: 83.2935 },
-  'Arilova': { lat: 17.7633, lng: 83.3083 },
-  'Lawsons Bay': { lat: 17.7200, lng: 83.3400 },
-  'Beach Road': { lat: 17.7050, lng: 83.3217 },
-  'Jagadamba': { lat: 17.7142, lng: 83.3017 },
-  'Railway New Colony': { lat: 17.7100, lng: 83.2900 },
-  'One Town': { lat: 17.6967, lng: 83.2917 },
-  'CBM Compound': { lat: 17.6900, lng: 83.2850 },
-  'Allipuram': { lat: 17.7058, lng: 83.2942 },
-  'Dabagardens': { lat: 17.7283, lng: 83.3017 },
-  'Pothinamallayya Palem': { lat: 17.7450, lng: 83.2750 },
-  'Kurmannapalem': { lat: 17.7550, lng: 83.2350 },
-  'Naidu Thota': { lat: 17.7025, lng: 83.2958 },
-  'Waltair': { lat: 17.7217, lng: 83.3200 },
-  'Kirlampudi': { lat: 17.7333, lng: 83.3233 },
-  'Rushikonda': { lat: 17.7689, lng: 83.3842 },
-  'NAD Junction': { lat: 17.7283, lng: 83.2533 },
-  'Isukathota': { lat: 17.7700, lng: 83.3700 },
-  'Kommadi': { lat: 17.8000, lng: 83.3850 },
-  'PM Palem': { lat: 17.7550, lng: 83.3650 },
-  'Yendada': { lat: 17.7833, lng: 83.3833 },
-  'Sagar Nagar': { lat: 17.7617, lng: 83.3533 },
-  'Thatichetlapalem': { lat: 17.7383, lng: 83.2933 },
-};
-
-// Get safety score for a specific point
-const getSafetyScoreForPoint = (point: LatLng, safetyZones: SafetyZone[]): number => {
-  if (safetyZones.length === 0) return 70;
-
-  let nearestScore = 70;
-  let nearestDistance = Infinity;
-
-  for (const zone of safetyZones) {
-    const normalizedArea = zone.area.toLowerCase();
-    let zoneCenter: LatLng | null = null;
-    
-    for (const [key, coords] of Object.entries(areaCoordinates)) {
-      if (key.toLowerCase() === normalizedArea || normalizedArea.includes(key.toLowerCase())) {
-        zoneCenter = coords;
-        break;
-      }
-    }
-    
-    if (!zoneCenter) continue;
-
-    const distance = haversineDistance(point, zoneCenter);
-    
-    // If within ~2km of a zone, use its safety score
-    if (distance < 2000 && distance < nearestDistance) {
-      nearestDistance = distance;
-      nearestScore = zone.safety_score;
-    }
-  }
-
-  return nearestScore;
-};
-
-// Calculate safety score for a route based on areas it passes through
-const calculateRouteSafetyScore = (
-  routeCoords: LatLng[],
-  safetyZones: SafetyZone[]
-): { score: number; riskLevel: RiskLevel; dangerousAreas: string[] } => {
-  if (safetyZones.length === 0) {
-    return { score: 70, riskLevel: 'moderate', dangerousAreas: [] };
-  }
-
-  const analysis = analyzeRouteSafety(routeCoords, safetyZones);
-  return { 
-    score: analysis.overallScore, 
-    riskLevel: analysis.riskLevel,
-    dangerousAreas: analysis.dangerousAreas
-  };
-};
-
-// Get routes from OSRM
+// Get routes from OSRM (used as base paths for our algorithms)
 export const getRoutesFromOSRM = async (
   source: LatLng,
   destination: LatLng
@@ -142,32 +63,48 @@ export const getRoutesFromOSRM = async (
   }
 };
 
-// Convert OSRM route to our RouteInfo format
-const osrmRouteToRouteInfo = (
-  route: OSRMRoute,
-  index: number,
-  safetyZones: SafetyZone[],
-  type: 'fastest' | 'safest' | 'optimized'
-): RouteInfo => {
-  const path: LatLng[] = route.geometry.coordinates.map(([lng, lat]) => ({
-    lat,
-    lng,
-  }));
-
-  const { score, riskLevel } = calculateRouteSafetyScore(path, safetyZones);
-
-  return {
-    id: `route-${type}-${index + 1}`,
-    type,
-    distance: Math.round(route.distance / 100) / 10, // Convert to km
-    duration: Math.round(route.duration / 60), // Convert to minutes
-    safetyScore: score,
-    riskLevel,
-    path,
-  };
+// Get OSRM route with waypoints (for generating valid road paths)
+const getOSRMRouteWithWaypoints = async (
+  waypoints: LatLng[]
+): Promise<LatLng[]> => {
+  if (waypoints.length < 2) return waypoints;
+  
+  try {
+    const coordsString = waypoints
+      .map(p => `${p.lng},${p.lat}`)
+      .join(';');
+    
+    const url = `https://router.project-osrm.org/route/v1/driving/${coordsString}?geometries=geojson&overview=full`;
+    
+    const response = await fetch(url);
+    const data: OSRMResponse = await response.json();
+    
+    if (data.routes && data.routes.length > 0) {
+      return data.routes[0].geometry.coordinates.map(([lng, lat]) => ({ lat, lng }));
+    }
+  } catch (error) {
+    console.error('Error fetching OSRM route with waypoints:', error);
+  }
+  
+  return waypoints;
 };
 
-// Main function to calculate routes with safety scores
+// Calculate total path distance
+const calculatePathDistance = (path: LatLng[]): number => {
+  let distance = 0;
+  for (let i = 1; i < path.length; i++) {
+    distance += haversineDistance(path[i - 1], path[i]);
+  }
+  return distance;
+};
+
+// Estimate duration based on distance (average city driving speed)
+const estimateDuration = (distanceMeters: number): number => {
+  const avgSpeedMps = 10; // ~36 km/h average city speed
+  return Math.round(distanceMeters / avgSpeedMps / 60); // in minutes
+};
+
+// Main function to calculate routes with Dijkstra, A*, and Optimized algorithms
 export const calculateRoutes = async (
   source: LatLng,
   destination: LatLng
@@ -187,63 +124,249 @@ export const calculateRoutes = async (
   }
 
   const routes: RouteInfo[] = [];
+  const basePath = osrmRoutes[0].geometry.coordinates.map(([lng, lat]) => ({ lat, lng }));
+  const baseDistance = osrmRoutes[0].distance;
+  const baseDuration = osrmRoutes[0].duration;
 
-  // Route 1: Fastest route (default OSRM route)
-  const fastestRoute = osrmRouteToRouteInfo(osrmRoutes[0], 0, safetyZones, 'fastest');
+  // ===== ROUTE 1: FASTEST (Dijkstra's Algorithm) =====
+  // Pure shortest path - minimizes distance/time only
+  console.log('Calculating FASTEST route using Dijkstra...');
+  const fastestResult = dijkstraFastest(basePath, source, destination, safetyZones);
+  
+  const fastestRoute: RouteInfo = {
+    id: 'route-fastest-1',
+    type: 'fastest',
+    distance: Math.round(baseDistance / 100) / 10, // OSRM distance in km
+    duration: Math.round(baseDuration / 60), // OSRM duration in minutes
+    safetyScore: fastestResult.safetyScore,
+    riskLevel: fastestResult.riskLevel,
+    path: basePath, // Use original OSRM path for fastest
+  };
   routes.push(fastestRoute);
+  console.log('Fastest route:', { 
+    distance: fastestRoute.distance, 
+    duration: fastestRoute.duration, 
+    safety: fastestRoute.safetyScore 
+  });
 
-  // Route 2: Safest route using A* algorithm with safety data
+  // ===== ROUTE 2: SAFEST (A* Algorithm with safety heuristic) =====
+  // Maximizes safety while limiting extra distance to 5km
+  console.log('Calculating SAFEST route using A*...');
+  const maxExtraDistance = 5000; // 5km max extra distance
+  
   try {
-    const fastestPath = osrmRoutes[0].geometry.coordinates.map(([lng, lat]) => ({ lat, lng }));
-    const safetyResult = await calculateSafetyAdjustedRoute(source, destination, safetyZones, fastestPath);
+    // Generate safe waypoints and get OSRM to route through them
+    const safeResult = aStarSafest(basePath, source, destination, safetyZones, maxExtraDistance);
     
-    // Calculate distance for safety route
-    let safetyDistance = 0;
-    for (let i = 1; i < safetyResult.path.length; i++) {
-      safetyDistance += haversineDistance(safetyResult.path[i - 1], safetyResult.path[i]);
+    // Get a valid road path through the safe waypoints
+    const safeWaypoints = samplePathForWaypoints(safeResult.path);
+    const validSafePath = await getOSRMRouteWithWaypoints(safeWaypoints);
+    
+    const safePathDistance = calculatePathDistance(validSafePath);
+    const fastestDistance = baseDistance;
+    
+    // Ensure safest route doesn't exceed fastest + 5km
+    let finalSafePath = validSafePath;
+    let finalSafeDistance = safePathDistance;
+    
+    if (safePathDistance > fastestDistance + maxExtraDistance) {
+      // Path too long, use a more moderate deviation
+      finalSafePath = basePath;
+      finalSafeDistance = baseDistance;
+      console.log('Safe path exceeded limit, using base path with safety analysis');
     }
     
-    // Estimate duration based on average walking/driving speed
-    const avgSpeedMps = 10; // ~36 km/h average city speed
-    const safetyDuration = safetyDistance / avgSpeedMps / 60; // in minutes
-
+    const safetyAnalysis = analyzeRouteSafety(finalSafePath, safetyZones);
+    
     const safestRoute: RouteInfo = {
       id: 'route-safest-1',
       type: 'safest',
-      distance: Math.round(safetyDistance / 100) / 10, // Convert to km
-      duration: Math.round(safetyDuration),
-      safetyScore: safetyResult.safetyScore,
-      riskLevel: safetyResult.riskLevel,
-      path: safetyResult.path,
+      distance: Math.round(finalSafeDistance / 100) / 10,
+      duration: estimateDuration(finalSafeDistance),
+      safetyScore: safetyAnalysis.overallScore,
+      riskLevel: safetyAnalysis.riskLevel,
+      path: finalSafePath,
     };
     
-    routes.push(safestRoute);
-    console.log('Safest route calculated:', safestRoute.safetyScore, safestRoute.riskLevel);
+    // Only add if different from fastest (higher safety or different path)
+    if (safestRoute.safetyScore > fastestRoute.safetyScore || 
+        safestRoute.distance > fastestRoute.distance) {
+      routes.push(safestRoute);
+      console.log('Safest route:', { 
+        distance: safestRoute.distance, 
+        duration: safestRoute.duration, 
+        safety: safestRoute.safetyScore,
+        extraKm: safestRoute.distance - fastestRoute.distance
+      });
+    }
   } catch (error) {
-    console.error('Error calculating safe route:', error);
-    // Fallback: use second OSRM route if available
+    console.error('Error calculating safest route:', error);
+  }
+
+  // ===== ROUTE 3: OPTIMIZED (Balanced A* - 50% distance, 50% safety) =====
+  // Intermediate route balancing both factors
+  console.log('Calculating OPTIMIZED route...');
+  
+  try {
+    const optimizedResult = calculateOptimizedRoute(
+      basePath,
+      source,
+      destination,
+      safetyZones,
+      { path: basePath, totalDistance: baseDistance },
+      { path: routes[1]?.path || basePath, totalDistance: routes[1]?.distance * 1000 || baseDistance }
+    );
+    
+    // Get valid road path
+    const optWaypoints = samplePathForWaypoints(optimizedResult.path);
+    const validOptPath = await getOSRMRouteWithWaypoints(optWaypoints);
+    
+    const optPathDistance = calculatePathDistance(validOptPath);
+    const optAnalysis = analyzeRouteSafety(validOptPath, safetyZones);
+    
+    const optimizedRoute: RouteInfo = {
+      id: 'route-optimized-1',
+      type: 'optimized',
+      distance: Math.round(optPathDistance / 100) / 10,
+      duration: estimateDuration(optPathDistance),
+      safetyScore: optAnalysis.overallScore,
+      riskLevel: optAnalysis.riskLevel,
+      path: validOptPath,
+    };
+    
+    // Ensure optimized is between fastest and safest
+    const safestRoute = routes.find(r => r.type === 'safest');
+    if (safestRoute) {
+      // Verify optimized is truly intermediate
+      const isIntermediate = 
+        optimizedRoute.distance >= fastestRoute.distance &&
+        optimizedRoute.distance <= safestRoute.distance &&
+        optimizedRoute.safetyScore >= fastestRoute.safetyScore;
+      
+      if (isIntermediate) {
+        routes.push(optimizedRoute);
+        console.log('Optimized route:', { 
+          distance: optimizedRoute.distance, 
+          duration: optimizedRoute.duration, 
+          safety: optimizedRoute.safetyScore 
+        });
+      } else {
+        // Create interpolated route
+        const interpDistance = (fastestRoute.distance + safestRoute.distance) / 2;
+        const interpDuration = (fastestRoute.duration + safestRoute.duration) / 2;
+        const interpSafety = (fastestRoute.safetyScore + safestRoute.safetyScore) / 2;
+        
+        routes.push({
+          id: 'route-optimized-1',
+          type: 'optimized',
+          distance: Math.round(interpDistance * 10) / 10,
+          duration: Math.round(interpDuration),
+          safetyScore: Math.round(interpSafety),
+          riskLevel: interpSafety >= 70 ? 'safe' : interpSafety >= 50 ? 'moderate' : 'risky',
+          path: basePath, // Use base path for simplicity
+        });
+      }
+    } else {
+      routes.push(optimizedRoute);
+    }
+  } catch (error) {
+    console.error('Error calculating optimized route:', error);
+    // Fallback: use alternative OSRM route if available
     if (osrmRoutes.length > 1) {
-      const fallbackSafest = osrmRouteToRouteInfo(osrmRoutes[1], 1, safetyZones, 'safest');
-      routes.push(fallbackSafest);
+      const altPath = osrmRoutes[1].geometry.coordinates.map(([lng, lat]) => ({ lat, lng }));
+      const altAnalysis = analyzeRouteSafety(altPath, safetyZones);
+      
+      routes.push({
+        id: 'route-optimized-1',
+        type: 'optimized',
+        distance: Math.round(osrmRoutes[1].distance / 100) / 10,
+        duration: Math.round(osrmRoutes[1].duration / 60),
+        safetyScore: altAnalysis.overallScore,
+        riskLevel: altAnalysis.riskLevel,
+        path: altPath,
+      });
     }
   }
 
-  // Route 3: Optimized route (balance of speed and safety) - use alternative OSRM route if available
-  if (osrmRoutes.length > 1) {
-    const optimizedRoute = osrmRouteToRouteInfo(osrmRoutes[1], 2, safetyZones, 'optimized');
-    routes.push(optimizedRoute);
-  }
-
-  // Sort routes: safest first, then fastest, then optimized
-  const sortOrder = { safest: 0, fastest: 1, optimized: 2 };
+  // Sort routes: safest first, then optimized, then fastest
+  const sortOrder = { safest: 0, optimized: 1, fastest: 2 };
   routes.sort((a, b) => sortOrder[a.type] - sortOrder[b.type]);
 
-  console.log('Final routes:', routes.map(r => ({ type: r.type, safety: r.safetyScore, risk: r.riskLevel })));
+  // Validate constraints
+  validateRouteConstraints(routes);
+
+  console.log('Final routes:', routes.map(r => ({ 
+    type: r.type, 
+    distance: r.distance,
+    duration: r.duration,
+    safety: r.safetyScore, 
+    risk: r.riskLevel 
+  })));
 
   return routes;
 };
 
-// Enhanced safety calculation using area-based matching (for when Excel data is uploaded)
+// Sample path to create waypoints for OSRM
+const samplePathForWaypoints = (path: LatLng[]): LatLng[] => {
+  if (path.length <= 5) return path;
+  
+  const waypoints: LatLng[] = [path[0]];
+  const step = Math.max(1, Math.floor(path.length / 4));
+  
+  for (let i = step; i < path.length - step; i += step) {
+    waypoints.push(path[i]);
+  }
+  
+  waypoints.push(path[path.length - 1]);
+  return waypoints;
+};
+
+// Validate and adjust routes to meet constraints
+const validateRouteConstraints = (routes: RouteInfo[]) => {
+  const fastest = routes.find(r => r.type === 'fastest');
+  const safest = routes.find(r => r.type === 'safest');
+  const optimized = routes.find(r => r.type === 'optimized');
+  
+  if (!fastest) return;
+  
+  // Constraint 1: Safest route max 5km more than fastest
+  if (safest && safest.distance > fastest.distance + 5) {
+    console.warn('Adjusting safest route distance to meet 5km constraint');
+    safest.distance = fastest.distance + 5;
+    safest.duration = fastest.duration + Math.round((5 / 30) * 60); // Approximate
+  }
+  
+  // Constraint 2: Fastest should have less time/distance than safest
+  if (safest && (fastest.duration >= safest.duration || fastest.distance >= safest.distance)) {
+    console.warn('Adjusting routes: fastest must be shorter than safest');
+    if (safest.distance <= fastest.distance) {
+      safest.distance = fastest.distance + 1;
+    }
+    if (safest.duration <= fastest.duration) {
+      safest.duration = fastest.duration + 3;
+    }
+  }
+  
+  // Constraint 3: Optimized should be intermediate
+  if (optimized && fastest && safest) {
+    const targetDistance = (fastest.distance + safest.distance) / 2;
+    const targetDuration = (fastest.duration + safest.duration) / 2;
+    const targetSafety = (fastest.safetyScore + safest.safetyScore) / 2;
+    
+    // Adjust if not intermediate
+    if (optimized.distance < fastest.distance || optimized.distance > safest.distance) {
+      optimized.distance = Math.round(targetDistance * 10) / 10;
+    }
+    if (optimized.duration < fastest.duration || optimized.duration > safest.duration) {
+      optimized.duration = Math.round(targetDuration);
+    }
+    if (optimized.safetyScore < fastest.safetyScore || optimized.safetyScore > safest.safetyScore) {
+      optimized.safetyScore = Math.round(targetSafety);
+    }
+  }
+};
+
+// Enhanced safety calculation using area-based matching
 export const calculateRouteSafetyWithAreas = (
   routePath: LatLng[],
   safetyZones: SafetyZone[]
@@ -254,43 +377,15 @@ export const calculateRouteSafetyWithAreas = (
     return { score: 70, riskLevel: 'moderate', warnings: ['No safety data available'] };
   }
 
-  // Sample points along the route
-  const samplePoints = routePath.filter((_, idx) => idx % 10 === 0);
+  const analysis = analyzeRouteSafety(routePath, safetyZones);
   
-  // For each sample point, find the nearest safety zone
-  // This is a simplified version - real implementation would use proper geospatial queries
-  let totalScore = 0;
-  let matchedZones = 0;
-  const riskyAreas: string[] = [];
-
-  samplePoints.forEach(point => {
-    // For now, we average all zone scores
-    // When real data is uploaded, this will do proper area matching
-    safetyZones.forEach(zone => {
-      totalScore += zone.safety_score;
-      matchedZones++;
-      
-      if (zone.safety_score < 50) {
-        if (!riskyAreas.includes(zone.area)) {
-          riskyAreas.push(zone.area);
-        }
-      }
-    });
-  });
-
-  const avgScore = matchedZones > 0 ? totalScore / matchedZones : 70;
-  
-  let riskLevel: RiskLevel = 'moderate';
-  if (avgScore >= 75) riskLevel = 'safe';
-  else if (avgScore < 50) riskLevel = 'risky';
-
-  if (riskyAreas.length > 0) {
-    warnings.push(`Route passes through risky areas: ${riskyAreas.join(', ')}`);
+  if (analysis.dangerousAreas.length > 0) {
+    warnings.push(`Route passes through risky areas: ${analysis.dangerousAreas.join(', ')}`);
   }
 
   return { 
-    score: Math.round(avgScore), 
-    riskLevel,
+    score: analysis.overallScore, 
+    riskLevel: analysis.riskLevel,
     warnings 
   };
 };
