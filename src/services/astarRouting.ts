@@ -9,11 +9,6 @@ interface SafetyZone {
   safety_score: number;
 }
 
-interface GraphNode {
-  point: LatLng;
-  neighbors: { node: GraphNode; distance: number; safetyScore: number }[];
-}
-
 // Haversine distance in meters
 export const haversineDistance = (p1: LatLng, p2: LatLng): number => {
   const R = 6371000; // Earth's radius in meters
@@ -128,503 +123,217 @@ export const getSafetyScoreForPoint = (
   return nearestScore;
 };
 
-// Calculate safety penalty (higher penalty for lower safety scores)
-const calculateSafetyPenalty = (safetyScore: number): number => {
-  const normalizedScore = Math.max(0, Math.min(100, safetyScore));
-  // Penalty ranges from 1 (safest) to 5 (most dangerous)
-  return 1 + (4 * (100 - normalizedScore)) / 100;
-};
-
-// Build a graph from route path for pathfinding
-const buildGraphFromPath = (
-  path: LatLng[],
-  safetyZones: SafetyZone[]
-): Map<string, GraphNode> => {
-  const graph = new Map<string, GraphNode>();
-  
-  // Create nodes for each point
-  path.forEach((point, idx) => {
-    const key = `${point.lat.toFixed(6)},${point.lng.toFixed(6)}`;
-    graph.set(key, {
-      point,
-      neighbors: [],
-    });
-  });
-  
-  // Connect sequential nodes
-  const nodes = Array.from(graph.values());
-  for (let i = 0; i < nodes.length - 1; i++) {
-    const current = nodes[i];
-    const next = nodes[i + 1];
-    const distance = haversineDistance(current.point, next.point);
-    const midPoint = {
-      lat: (current.point.lat + next.point.lat) / 2,
-      lng: (current.point.lng + next.point.lng) / 2,
-    };
-    const safetyScore = getSafetyScoreForPoint(midPoint, safetyZones);
-    
-    current.neighbors.push({ node: next, distance, safetyScore });
-    next.neighbors.push({ node: current, distance, safetyScore });
-  }
-  
-  return graph;
-};
-
-// Priority Queue for Dijkstra/A*
-class PriorityQueue<T> {
-  private items: { element: T; priority: number }[] = [];
-  
-  enqueue(element: T, priority: number) {
-    this.items.push({ element, priority });
-    this.items.sort((a, b) => a.priority - b.priority);
-  }
-  
-  dequeue(): T | undefined {
-    return this.items.shift()?.element;
-  }
-  
-  isEmpty(): boolean {
-    return this.items.length === 0;
-  }
-}
-
 /**
- * DIJKSTRA'S ALGORITHM for fastest route
- * Pure shortest path - minimizes distance only
+ * Find the best safe waypoints to create a distinct safe path
+ * This generates waypoints through high-safety areas
  */
-export const dijkstraFastest = (
-  path: LatLng[],
-  source: LatLng,
-  destination: LatLng,
-  safetyZones: SafetyZone[]
-): { path: LatLng[]; totalDistance: number; safetyScore: number; riskLevel: RiskLevel } => {
-  if (path.length < 2) {
-    return { path, totalDistance: 0, safetyScore: 70, riskLevel: 'moderate' };
-  }
-  
-  const graph = buildGraphFromPath(path, safetyZones);
-  const nodes = Array.from(graph.values());
-  
-  // Distance map
-  const distances = new Map<GraphNode, number>();
-  const previous = new Map<GraphNode, GraphNode | null>();
-  const pq = new PriorityQueue<GraphNode>();
-  
-  // Initialize
-  nodes.forEach(node => {
-    distances.set(node, Infinity);
-    previous.set(node, null);
-  });
-  
-  const startNode = nodes[0];
-  const endNode = nodes[nodes.length - 1];
-  
-  distances.set(startNode, 0);
-  pq.enqueue(startNode, 0);
-  
-  while (!pq.isEmpty()) {
-    const current = pq.dequeue()!;
-    
-    if (current === endNode) break;
-    
-    const currentDist = distances.get(current) || Infinity;
-    
-    for (const { node: neighbor, distance } of current.neighbors) {
-      const newDist = currentDist + distance;
-      
-      if (newDist < (distances.get(neighbor) || Infinity)) {
-        distances.set(neighbor, newDist);
-        previous.set(neighbor, current);
-        pq.enqueue(neighbor, newDist);
-      }
-    }
-  }
-  
-  // Reconstruct path
-  const resultPath: LatLng[] = [];
-  let current: GraphNode | null = endNode;
-  while (current) {
-    resultPath.unshift(current.point);
-    current = previous.get(current) || null;
-  }
-  
-  // Calculate safety score for the path
-  const { overallScore, riskLevel } = analyzeRouteSafety(resultPath, safetyZones);
-  
-  return {
-    path: resultPath.length > 0 ? resultPath : path,
-    totalDistance: distances.get(endNode) || 0,
-    safetyScore: overallScore,
-    riskLevel,
-  };
-};
-
-/**
- * A* ALGORITHM for safest route
- * Minimizes combined cost: distance * safety_penalty
- * Constrained to max 5km more than fastest route
- */
-export const aStarSafest = (
-  path: LatLng[],
+export const findSafeWaypoints = (
   source: LatLng,
   destination: LatLng,
   safetyZones: SafetyZone[],
-  maxExtraDistance: number = 5000 // 5km max extra distance
-): { path: LatLng[]; totalDistance: number; safetyScore: number; riskLevel: RiskLevel } => {
-  if (path.length < 2) {
-    return { path, totalDistance: 0, safetyScore: 70, riskLevel: 'moderate' };
-  }
-  
-  // First get shortest distance using Dijkstra
-  const fastestResult = dijkstraFastest(path, source, destination, safetyZones);
-  const shortestDistance = fastestResult.totalDistance;
-  const maxAllowedDistance = shortestDistance + maxExtraDistance;
-  
-  // Generate alternative waypoints that avoid dangerous areas
-  const alternativePath = generateSafeWaypoints(path, safetyZones, source, destination);
-  const graph = buildGraphFromPath(alternativePath, safetyZones);
-  const nodes = Array.from(graph.values());
-  
-  // A* with safety-weighted cost
-  const gScore = new Map<GraphNode, number>();
-  const fScore = new Map<GraphNode, number>();
-  const previous = new Map<GraphNode, GraphNode | null>();
-  const pq = new PriorityQueue<GraphNode>();
-  
-  nodes.forEach(node => {
-    gScore.set(node, Infinity);
-    fScore.set(node, Infinity);
-    previous.set(node, null);
-  });
-  
-  const startNode = nodes[0];
-  const endNode = nodes[nodes.length - 1];
-  
-  gScore.set(startNode, 0);
-  const h = haversineDistance(startNode.point, endNode.point);
-  fScore.set(startNode, h);
-  pq.enqueue(startNode, h);
-  
-  while (!pq.isEmpty()) {
-    const current = pq.dequeue()!;
-    
-    if (current === endNode) break;
-    
-    const currentG = gScore.get(current) || Infinity;
-    
-    // Skip if we've exceeded max allowed distance
-    if (currentG > maxAllowedDistance) continue;
-    
-    for (const { node: neighbor, distance, safetyScore } of current.neighbors) {
-      // A* cost: distance * safety penalty (lower safety = higher cost)
-      const safetyPenalty = calculateSafetyPenalty(safetyScore);
-      const edgeCost = distance * safetyPenalty;
-      
-      const tentativeG = currentG + edgeCost;
-      
-      if (tentativeG < (gScore.get(neighbor) || Infinity)) {
-        previous.set(neighbor, current);
-        gScore.set(neighbor, tentativeG);
-        
-        const heuristic = haversineDistance(neighbor.point, endNode.point);
-        const avgSafetyToEnd = getSafetyScoreForPoint(neighbor.point, safetyZones);
-        const hPenalty = calculateSafetyPenalty(avgSafetyToEnd);
-        
-        fScore.set(neighbor, tentativeG + heuristic * hPenalty);
-        pq.enqueue(neighbor, fScore.get(neighbor)!);
-      }
-    }
-  }
-  
-  // Reconstruct path
-  const resultPath: LatLng[] = [];
-  let current: GraphNode | null = endNode;
-  let actualDistance = 0;
-  
-  while (current) {
-    resultPath.unshift(current.point);
-    const prev = previous.get(current);
-    if (prev) {
-      actualDistance += haversineDistance(prev.point, current.point);
-    }
-    current = prev;
-  }
-  
-  // If no valid path found or path exceeds limit, return modified fastest
-  if (resultPath.length === 0 || actualDistance > maxAllowedDistance) {
-    // Return fastest path but with safety analysis
-    return fastestResult;
-  }
-  
-  const { overallScore, riskLevel } = analyzeRouteSafety(resultPath, safetyZones);
-  
-  return {
-    path: resultPath,
-    totalDistance: actualDistance,
-    safetyScore: overallScore,
-    riskLevel,
-  };
-};
-
-/**
- * Generate waypoints that avoid dangerous areas
- * @param strategy - 'left', 'right', or 'optimal' deviation strategy
- */
-const generateSafeWaypoints = (
-  originalPath: LatLng[],
-  safetyZones: SafetyZone[],
-  source: LatLng,
-  destination: LatLng,
-  strategy: 'left' | 'right' | 'optimal' = 'optimal'
+  maxExtraDistance: number = 7000
 ): LatLng[] => {
-  const waypoints: LatLng[] = [source];
-  
-  // Sample original path and add deviation points for dangerous areas
-  const sampleRate = Math.max(1, Math.floor(originalPath.length / 20));
-  
-  for (let i = sampleRate; i < originalPath.length - sampleRate; i += sampleRate) {
-    const point = originalPath[i];
-    const safetyScore = getSafetyScoreForPoint(point, safetyZones);
-    
-    if (safetyScore < 50) {
-      // Add deviated point
-      const direction = {
-        lat: destination.lat - source.lat,
-        lng: destination.lng - source.lng,
-      };
-      const perpLat = -direction.lng;
-      const perpLng = direction.lat;
-      const perpMag = Math.sqrt(perpLat * perpLat + perpLng * perpLng);
-      
-      if (perpMag > 0) {
-        const offset = 0.01; // ~1km offset for better deviation
-        
-        if (strategy === 'left') {
-          // Always deviate left
-          const leftPoint = {
-            lat: point.lat + (perpLat / perpMag) * offset,
-            lng: point.lng + (perpLng / perpMag) * offset,
-          };
-          waypoints.push(leftPoint);
-        } else if (strategy === 'right') {
-          // Always deviate right
-          const rightPoint = {
-            lat: point.lat - (perpLat / perpMag) * offset,
-            lng: point.lng - (perpLng / perpMag) * offset,
-          };
-          waypoints.push(rightPoint);
-        } else {
-          // Optimal: try both directions, pick safer
-          const leftPoint = {
-            lat: point.lat + (perpLat / perpMag) * offset,
-            lng: point.lng + (perpLng / perpMag) * offset,
-          };
-          const rightPoint = {
-            lat: point.lat - (perpLat / perpMag) * offset,
-            lng: point.lng - (perpLng / perpMag) * offset,
-          };
-          
-          const leftSafety = getSafetyScoreForPoint(leftPoint, safetyZones);
-          const rightSafety = getSafetyScoreForPoint(rightPoint, safetyZones);
-          
-          if (leftSafety >= rightSafety && leftSafety > safetyScore) {
-            waypoints.push(leftPoint);
-          } else if (rightSafety > safetyScore) {
-            waypoints.push(rightPoint);
-          } else {
-            waypoints.push(point);
-          }
-        }
-      } else {
-        waypoints.push(point);
-      }
-    } else {
-      waypoints.push(point);
-    }
-  }
-  
-  waypoints.push(destination);
-  return waypoints;
-};
+  const directDistance = haversineDistance(source, destination);
+  const maxTotalDistance = directDistance + maxExtraDistance;
 
-/**
- * Generate multiple alternative safe routes using different deviation strategies
- */
-export const generateAlternativeSafeRoutes = (
-  originalPath: LatLng[],
-  safetyZones: SafetyZone[],
-  source: LatLng,
-  destination: LatLng
-): { path: LatLng[]; strategy: string }[] => {
-  const alternatives: { path: LatLng[]; strategy: string }[] = [];
+  // Get all safe areas (score >= 70) with their coordinates
+  const safeAreaPoints: { point: LatLng; score: number; name: string }[] = [];
   
-  // Strategy 1: Optimal (pick best at each point)
-  alternatives.push({
-    path: generateSafeWaypoints(originalPath, safetyZones, source, destination, 'optimal'),
-    strategy: 'optimal'
-  });
-  
-  // Strategy 2: Left deviation
-  alternatives.push({
-    path: generateSafeWaypoints(originalPath, safetyZones, source, destination, 'left'),
-    strategy: 'left'
-  });
-  
-  // Strategy 3: Right deviation
-  alternatives.push({
-    path: generateSafeWaypoints(originalPath, safetyZones, source, destination, 'right'),
-    strategy: 'right'
-  });
-  
-  // Strategy 4: Route through known safe areas
-  const safeAreaRoute = generateRouteThroughSafeAreas(source, destination, safetyZones);
-  if (safeAreaRoute.length > 2) {
-    alternatives.push({
-      path: safeAreaRoute,
-      strategy: 'safe-areas'
-    });
-  }
-  
-  return alternatives;
-};
-
-/**
- * Generate a route that passes through known safe areas
- */
-const generateRouteThroughSafeAreas = (
-  source: LatLng,
-  destination: LatLng,
-  safetyZones: SafetyZone[]
-): LatLng[] => {
-  // Get safe areas (score >= 80)
-  const safeAreas = safetyZones
-    .filter(zone => zone.safety_score >= 80)
-    .map(zone => {
+  for (const zone of safetyZones) {
+    if (zone.safety_score >= 70) {
       const normalizedArea = zone.area.toLowerCase();
       for (const [key, coords] of Object.entries(areaCoordinates)) {
         if (key.toLowerCase() === normalizedArea || normalizedArea.includes(key.toLowerCase())) {
-          return { ...coords, score: zone.safety_score, name: zone.area };
+          safeAreaPoints.push({
+            point: coords,
+            score: zone.safety_score,
+            name: zone.area
+          });
+          break;
         }
       }
-      return null;
-    })
-    .filter((area): area is LatLng & { score: number; name: string } => area !== null);
-  
-  if (safeAreas.length === 0) return [source, destination];
-  
-  // Find safe areas that are along the general direction of travel
-  const directDistance = haversineDistance(source, destination);
-  const relevantSafeAreas = safeAreas.filter(area => {
-    const distToSource = haversineDistance(source, area);
-    const distToDest = haversineDistance(area, destination);
-    // Only include if it's not too far out of the way (within 50% extra distance)
-    return distToSource + distToDest < directDistance * 1.5;
+    }
+  }
+
+  if (safeAreaPoints.length === 0) {
+    return [source, destination];
+  }
+
+  // Filter areas that are reachable within distance constraint
+  const reachableAreas = safeAreaPoints.filter(area => {
+    const distViaArea = haversineDistance(source, area.point) + haversineDistance(area.point, destination);
+    return distViaArea <= maxTotalDistance;
   });
-  
+
+  if (reachableAreas.length === 0) {
+    return [source, destination];
+  }
+
   // Sort by safety score (highest first)
-  relevantSafeAreas.sort((a, b) => b.score - a.score);
+  reachableAreas.sort((a, b) => b.score - a.score);
+
+  // Use A* to find the best path through safe areas
+  const bestPath = aStarThroughSafeAreas(source, destination, reachableAreas, maxTotalDistance);
   
-  // Take top 3 safe waypoints
-  const waypoints = relevantSafeAreas.slice(0, 3);
-  
-  // Sort waypoints by distance from source
-  waypoints.sort((a, b) => haversineDistance(source, a) - haversineDistance(source, b));
-  
-  return [source, ...waypoints, destination];
+  console.log('Safe waypoints found:', bestPath.map(p => 
+    reachableAreas.find(a => a.point.lat === p.lat && a.point.lng === p.lng)?.name || 'start/end'
+  ));
+
+  return bestPath;
 };
 
 /**
- * OPTIMIZED ROUTE: Blend of fastest and safest
- * Uses weighted average: 50% distance priority, 50% safety priority
+ * A* algorithm to find optimal path through safe areas
  */
-export const calculateOptimizedRoute = (
-  path: LatLng[],
+const aStarThroughSafeAreas = (
   source: LatLng,
   destination: LatLng,
-  safetyZones: SafetyZone[],
-  fastestResult: { path: LatLng[]; totalDistance: number },
-  safestResult: { path: LatLng[]; totalDistance: number }
-): { path: LatLng[]; totalDistance: number; safetyScore: number; riskLevel: RiskLevel } => {
-  if (path.length < 2) {
-    return { path, totalDistance: 0, safetyScore: 70, riskLevel: 'moderate' };
+  safeAreas: { point: LatLng; score: number; name: string }[],
+  maxDistance: number
+): LatLng[] => {
+  interface Node {
+    point: LatLng;
+    score: number;
+    g: number; // distance from start
+    h: number; // heuristic (distance to goal)
+    f: number; // g + h - safety bonus
+    parent: Node | null;
   }
-  
-  const graph = buildGraphFromPath(path, safetyZones);
-  const nodes = Array.from(graph.values());
-  
-  // Optimized uses balanced cost: 0.5 * distance + 0.5 * (distance * safety_penalty)
-  const gScore = new Map<GraphNode, number>();
-  const fScore = new Map<GraphNode, number>();
-  const previous = new Map<GraphNode, GraphNode | null>();
-  const pq = new PriorityQueue<GraphNode>();
-  
-  nodes.forEach(node => {
-    gScore.set(node, Infinity);
-    fScore.set(node, Infinity);
-    previous.set(node, null);
-  });
-  
-  const startNode = nodes[0];
-  const endNode = nodes[nodes.length - 1];
-  
-  gScore.set(startNode, 0);
-  fScore.set(startNode, haversineDistance(startNode.point, endNode.point));
-  pq.enqueue(startNode, fScore.get(startNode)!);
-  
-  // Max distance is average of fastest and safest + small buffer
-  const maxDistance = (fastestResult.totalDistance + safestResult.totalDistance) / 2 + 2000;
-  
-  while (!pq.isEmpty()) {
-    const current = pq.dequeue()!;
-    
-    if (current === endNode) break;
-    
-    const currentG = gScore.get(current) || Infinity;
-    if (currentG > maxDistance) continue;
-    
-    for (const { node: neighbor, distance, safetyScore } of current.neighbors) {
-      // Balanced cost: 50% pure distance, 50% safety-adjusted
-      const safetyPenalty = calculateSafetyPenalty(safetyScore);
-      const balancedCost = 0.5 * distance + 0.5 * (distance * safetyPenalty);
+
+  const startNode: Node = {
+    point: source,
+    score: 70,
+    g: 0,
+    h: haversineDistance(source, destination),
+    f: haversineDistance(source, destination),
+    parent: null
+  };
+
+  const endNode: Node = {
+    point: destination,
+    score: 70,
+    g: Infinity,
+    h: 0,
+    f: Infinity,
+    parent: null
+  };
+
+  const openSet: Node[] = [startNode];
+  const closedSet = new Set<string>();
+
+  const pointKey = (p: LatLng) => `${p.lat.toFixed(5)},${p.lng.toFixed(5)}`;
+
+  while (openSet.length > 0) {
+    // Get node with lowest f score
+    openSet.sort((a, b) => a.f - b.f);
+    const current = openSet.shift()!;
+
+    const key = pointKey(current.point);
+    if (closedSet.has(key)) continue;
+    closedSet.add(key);
+
+    // Check if we've reached destination
+    const distToDest = haversineDistance(current.point, destination);
+    if (distToDest < 500) { // Within 500m of destination
+      // Reconstruct path
+      const path: LatLng[] = [destination];
+      let node: Node | null = current;
+      while (node) {
+        path.unshift(node.point);
+        node = node.parent;
+      }
+      return path;
+    }
+
+    // Explore neighbors: all safe areas + destination
+    const neighbors = [...safeAreas.map(a => ({ point: a.point, score: a.score })), { point: destination, score: 70 }];
+
+    for (const neighbor of neighbors) {
+      const nKey = pointKey(neighbor.point);
+      if (closedSet.has(nKey)) continue;
+
+      const g = current.g + haversineDistance(current.point, neighbor.point);
       
-      const tentativeG = currentG + balancedCost;
-      
-      if (tentativeG < (gScore.get(neighbor) || Infinity)) {
-        previous.set(neighbor, current);
-        gScore.set(neighbor, tentativeG);
-        
-        const heuristic = haversineDistance(neighbor.point, endNode.point);
-        fScore.set(neighbor, tentativeG + heuristic);
-        pq.enqueue(neighbor, fScore.get(neighbor)!);
+      // Skip if exceeds max distance
+      if (g + haversineDistance(neighbor.point, destination) > maxDistance) continue;
+
+      const h = haversineDistance(neighbor.point, destination);
+      // f = g + h - safetyBonus (higher safety = lower cost)
+      const safetyBonus = (neighbor.score - 50) * 50; // Convert safety to distance bonus
+      const f = g + h - safetyBonus;
+
+      const existingIdx = openSet.findIndex(n => pointKey(n.point) === nKey);
+      if (existingIdx >= 0 && openSet[existingIdx].g <= g) continue;
+
+      const newNode: Node = {
+        point: neighbor.point,
+        score: neighbor.score,
+        g,
+        h,
+        f,
+        parent: current
+      };
+
+      if (existingIdx >= 0) {
+        openSet[existingIdx] = newNode;
+      } else {
+        openSet.push(newNode);
       }
     }
   }
+
+  // No path found through safe areas, return direct
+  return [source, destination];
+};
+
+/**
+ * Generate waypoints for optimized route (intermediate between fast and safe)
+ */
+export const findOptimizedWaypoints = (
+  source: LatLng,
+  destination: LatLng,
+  safetyZones: SafetyZone[],
+  fastestDistance: number
+): LatLng[] => {
+  const directDistance = haversineDistance(source, destination);
+  // Allow 3-4km extra for optimized (between 0 for fastest and 5-7 for safest)
+  const maxExtraDistance = Math.min(4000, (7000 - 0) / 2);
+
+  // Get moderately safe areas (score >= 60)
+  const safeAreaPoints: { point: LatLng; score: number }[] = [];
   
-  // Reconstruct path
-  const resultPath: LatLng[] = [];
-  let current: GraphNode | null = endNode;
-  let actualDistance = 0;
-  
-  while (current) {
-    resultPath.unshift(current.point);
-    const prev = previous.get(current);
-    if (prev) {
-      actualDistance += haversineDistance(prev.point, current.point);
+  for (const zone of safetyZones) {
+    if (zone.safety_score >= 60) {
+      const normalizedArea = zone.area.toLowerCase();
+      for (const [key, coords] of Object.entries(areaCoordinates)) {
+        if (key.toLowerCase() === normalizedArea || normalizedArea.includes(key.toLowerCase())) {
+          safeAreaPoints.push({ point: coords, score: zone.safety_score });
+          break;
+        }
+      }
     }
-    current = prev;
   }
-  
-  const { overallScore, riskLevel } = analyzeRouteSafety(
-    resultPath.length > 0 ? resultPath : path, 
-    safetyZones
-  );
-  
-  return {
-    path: resultPath.length > 0 ? resultPath : path,
-    totalDistance: actualDistance || fastestResult.totalDistance,
-    safetyScore: overallScore,
-    riskLevel,
-  };
+
+  // Filter by distance
+  const reachableAreas = safeAreaPoints.filter(area => {
+    const distViaArea = haversineDistance(source, area.point) + haversineDistance(area.point, destination);
+    return distViaArea <= directDistance + maxExtraDistance;
+  });
+
+  if (reachableAreas.length === 0) return [source, destination];
+
+  // Pick ONE middle waypoint with good safety
+  // Sort by balanced score: safety - distance penalty
+  reachableAreas.sort((a, b) => {
+    const aExtraDist = haversineDistance(source, a.point) + haversineDistance(a.point, destination) - directDistance;
+    const bExtraDist = haversineDistance(source, b.point) + haversineDistance(b.point, destination) - directDistance;
+    const aBalanced = a.score - (aExtraDist / 100);
+    const bBalanced = b.score - (bExtraDist / 100);
+    return bBalanced - aBalanced;
+  });
+
+  const bestMid = reachableAreas[0];
+  return [source, bestMid.point, destination];
 };
 
 // Calculate safety statistics for a route
@@ -695,6 +404,11 @@ export const analyzeRouteSafety = (
   };
 };
 
-// Export for backward compatibility
-export const calculateSafetyAdjustedRoute = aStarSafest;
-export const findSafestRoute = aStarSafest;
+// Calculate path distance
+export const calculatePathDistance = (path: LatLng[]): number => {
+  let distance = 0;
+  for (let i = 1; i < path.length; i++) {
+    distance += haversineDistance(path[i - 1], path[i]);
+  }
+  return distance;
+};
