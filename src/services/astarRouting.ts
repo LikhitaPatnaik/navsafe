@@ -1,6 +1,6 @@
 import { LatLng, RiskLevel } from '@/types/route';
 
-interface SafetyZone {
+export interface SafetyZone {
   id: string;
   area: string;
   street: string | null;
