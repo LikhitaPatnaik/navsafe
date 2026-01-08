@@ -22,6 +22,8 @@ interface MapViewProps {
   currentPosition?: LatLng | null;
   isMonitoring?: boolean;
   showSafetyZones?: boolean;
+  sourceName?: string;
+  destinationName?: string;
 }
 
 // Visakhapatnam coordinates
@@ -33,7 +35,7 @@ const defaultCenter: LatLng = {
 // Safety zone coordinates for Visakhapatnam areas (imported from astarRouting for consistency)
 import { areaCoordinates } from '@/services/astarRouting';
 
-const MapView = ({ routes = [], sourceCoords, destinationCoords, selectedRoute, currentPosition, isMonitoring, showSafetyZones = true }: MapViewProps) => {
+const MapView = ({ routes = [], sourceCoords, destinationCoords, selectedRoute, currentPosition, isMonitoring, showSafetyZones = true, sourceName, destinationName }: MapViewProps) => {
   const mapContainer = useRef<HTMLDivElement>(null);
   const mapRef = useRef<L.Map | null>(null);
   const routingControlRef = useRef<L.Routing.Control | null>(null);
@@ -151,13 +153,23 @@ const MapView = ({ routes = [], sourceCoords, destinationCoords, selectedRoute, 
         icon: sourceIcon,
         zIndexOffset: 1000,
       }).addTo(mapRef.current);
-      sourceMarker.bindPopup('<strong style="color: #22c55e;">📍 Source</strong>');
+      sourceMarker.bindPopup(`
+        <div style="padding: 8px; min-width: 150px;">
+          <strong style="color: #22c55e; font-size: 14px;">📍 Source</strong>
+          <div style="margin-top: 6px; font-size: 13px; color: #333; font-weight: 500;">${sourceName || 'Start Location'}</div>
+        </div>
+      `);
       
       const destMarker = L.marker([destinationCoords.lat, destinationCoords.lng], { 
         icon: destIcon,
         zIndexOffset: 1000,
       }).addTo(mapRef.current);
-      destMarker.bindPopup('<strong style="color: #ef4444;">🎯 Destination</strong>');
+      destMarker.bindPopup(`
+        <div style="padding: 8px; min-width: 150px;">
+          <strong style="color: #ef4444; font-size: 14px;">🎯 Destination</strong>
+          <div style="margin-top: 6px; font-size: 13px; color: #333; font-weight: 500;">${destinationName || 'End Location'}</div>
+        </div>
+      `);
       
       markersRef.current.push(sourceMarker, destMarker);
 
@@ -240,18 +252,18 @@ const MapView = ({ routes = [], sourceCoords, destinationCoords, selectedRoute, 
           const isRisky = zone.safety_score < 50;
           const isSafe = zone.safety_score >= 75;
 
-          // Determine marker size based on risk level
+          // Determine marker size based on risk level - smaller circles for red zones
           let markerRadius = 8;
-          let areaRadius = 400;
+          let areaRadius = 300;
           if (isCritical) {
-            markerRadius = 18;
-            areaRadius = 1000;
-          } else if (isRisky) {
-            markerRadius = 14;
-            areaRadius = 700;
-          } else if (!isSafe) {
-            markerRadius = 10;
+            markerRadius = 12;
             areaRadius = 500;
+          } else if (isRisky) {
+            markerRadius = 10;
+            areaRadius = 400;
+          } else if (!isSafe) {
+            markerRadius = 8;
+            areaRadius = 350;
           }
 
           // Create circle marker for the zone
