@@ -123,62 +123,51 @@ const MapView = ({ routes = [], sourceCoords, destinationCoords, selectedRoute, 
     }
 
     if (sourceCoords && destinationCoords) {
-      // Create custom markers
+      // Create custom source marker (GREEN for start)
       const sourceIcon = L.divIcon({
-        className: 'custom-marker',
-        html: `<div style="width: 32px; height: 32px; border-radius: 50%; background: hsl(var(--primary)); display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 12px rgba(0,0,0,0.3); border: 2px solid white;">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="white">
-            <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/>
+        className: 'custom-marker source-marker',
+        html: `<div style="width: 40px; height: 40px; border-radius: 50%; background: #22c55e; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 12px rgba(34,197,94,0.5); border: 3px solid white;">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="white">
+            <circle cx="12" cy="12" r="4"/>
           </svg>
         </div>`,
-        iconSize: [32, 32],
-        iconAnchor: [16, 32],
+        iconSize: [40, 40],
+        iconAnchor: [20, 40],
       });
 
+      // Create custom destination marker (RED for end)
       const destIcon = L.divIcon({
-        className: 'custom-marker',
-        html: `<div style="width: 32px; height: 32px; border-radius: 50%; background: hsl(var(--destructive)); display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 12px rgba(0,0,0,0.3); border: 2px solid white;">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="white">
+        className: 'custom-marker dest-marker',
+        html: `<div style="width: 40px; height: 40px; border-radius: 50%; background: #ef4444; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 12px rgba(239,68,68,0.5); border: 3px solid white;">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="white">
             <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/>
           </svg>
         </div>`,
-        iconSize: [32, 32],
-        iconAnchor: [16, 32],
+        iconSize: [40, 40],
+        iconAnchor: [20, 40],
       });
 
-      const sourceMarker = L.marker([sourceCoords.lat, sourceCoords.lng], { icon: sourceIcon }).addTo(mapRef.current);
-      const destMarker = L.marker([destinationCoords.lat, destinationCoords.lng], { icon: destIcon }).addTo(mapRef.current);
+      const sourceMarker = L.marker([sourceCoords.lat, sourceCoords.lng], { 
+        icon: sourceIcon,
+        zIndexOffset: 1000,
+      }).addTo(mapRef.current);
+      sourceMarker.bindPopup('<strong style="color: #22c55e;">📍 Source</strong>');
+      
+      const destMarker = L.marker([destinationCoords.lat, destinationCoords.lng], { 
+        icon: destIcon,
+        zIndexOffset: 1000,
+      }).addTo(mapRef.current);
+      destMarker.bindPopup('<strong style="color: #ef4444;">🎯 Destination</strong>');
+      
       markersRef.current.push(sourceMarker, destMarker);
 
-      // Add routing control - hide default routes as we draw our own
-      const routingControl = L.Routing.control({
-        waypoints: [
-          L.latLng(sourceCoords.lat, sourceCoords.lng),
-          L.latLng(destinationCoords.lat, destinationCoords.lng),
-        ],
-        routeWhileDragging: false,
-        showAlternatives: false,
-        fitSelectedRoutes: true,
-        show: false, // Hide the directions panel
-        addWaypoints: false,
-        lineOptions: {
-          styles: [
-            { color: 'transparent', weight: 0, opacity: 0 } // Hide default route
-          ],
-          extendToWaypoints: true,
-          missingRouteTolerance: 0
-        },
-      });
-
-      routingControl.addTo(mapRef.current);
-      routingControlRef.current = routingControl;
-
-      // Fit bounds to show both points
+      // Remove routing control - we draw our own routes
+      // Just fit bounds to show both points
       const bounds = L.latLngBounds([
         [sourceCoords.lat, sourceCoords.lng],
         [destinationCoords.lat, destinationCoords.lng],
       ]);
-      mapRef.current.fitBounds(bounds, { padding: [50, 50] });
+      mapRef.current.fitBounds(bounds, { padding: [80, 80] });
     }
   }, [sourceCoords, destinationCoords, mapReady]);
 
@@ -208,9 +197,9 @@ const MapView = ({ routes = [], sourceCoords, destinationCoords, selectedRoute, 
     });
   }, [routes, selectedRoute, mapReady]);
 
-  // Load and display safety zones on map
+  // Load and display safety zones on map - load on init
   useEffect(() => {
-    if (!mapRef.current || !mapReady || !showSafetyZones) return;
+    if (!mapRef.current || !mapReady) return;
 
     // Clear existing safety zone layers
     safetyZoneLayersRef.current.forEach(layer => {
@@ -218,51 +207,94 @@ const MapView = ({ routes = [], sourceCoords, destinationCoords, selectedRoute, 
     });
     safetyZoneLayersRef.current = [];
 
+    if (!showSafetyZones) return;
+
     // Fetch and display safety zones
     const loadSafetyZones = async () => {
       try {
         const zones = await fetchSafetyZones();
+        console.log('Loaded safety zones:', zones.length);
         
         zones.forEach(zone => {
-          const normalizedArea = zone.area.toLowerCase();
+          const normalizedArea = zone.area.toLowerCase().trim();
           let coords: LatLng | null = null;
           
+          // Match area name to coordinates
           for (const [key, value] of Object.entries(areaCoordinates)) {
-            if (key.toLowerCase() === normalizedArea || normalizedArea.includes(key.toLowerCase())) {
+            const normalizedKey = key.toLowerCase().trim();
+            if (normalizedKey === normalizedArea || 
+                normalizedArea.includes(normalizedKey) ||
+                normalizedKey.includes(normalizedArea)) {
               coords = value;
               break;
             }
           }
           
-          if (!coords || !mapRef.current) return;
+          if (!coords || !mapRef.current) {
+            console.log('No coords for:', zone.area);
+            return;
+          }
 
           const color = getSafetyZoneColor(zone.safety_score);
-          const isDangerous = zone.safety_score < 50;
-          const radius = isDangerous ? 800 : 500; // Larger circles for dangerous areas
+          const isCritical = zone.safety_score < 35;
+          const isRisky = zone.safety_score < 50;
+          const isSafe = zone.safety_score >= 75;
+
+          // Determine marker size based on risk level
+          let markerRadius = 8;
+          let areaRadius = 400;
+          if (isCritical) {
+            markerRadius = 18;
+            areaRadius = 1000;
+          } else if (isRisky) {
+            markerRadius = 14;
+            areaRadius = 700;
+          } else if (!isSafe) {
+            markerRadius = 10;
+            areaRadius = 500;
+          }
 
           // Create circle marker for the zone
           const circle = L.circleMarker([coords.lat, coords.lng], {
-            radius: isDangerous ? 15 : 10,
+            radius: markerRadius,
             fillColor: color,
-            color: isDangerous ? '#991b1b' : color,
-            weight: isDangerous ? 3 : 2,
-            opacity: 0.9,
-            fillOpacity: isDangerous ? 0.5 : 0.3,
+            color: isCritical ? '#450a0a' : isRisky ? '#7f1d1d' : color,
+            weight: isCritical ? 4 : isRisky ? 3 : 2,
+            opacity: 1,
+            fillOpacity: isCritical ? 0.7 : isRisky ? 0.5 : 0.4,
           });
+
+          // Risk label
+          let riskLabel = 'SAFE';
+          let riskIcon = '✅';
+          if (isCritical) {
+            riskLabel = 'CRITICAL - BLACK SPOT';
+            riskIcon = '🚨';
+          } else if (isRisky) {
+            riskLabel = 'HIGH RISK';
+            riskIcon = '⚠️';
+          } else if (zone.safety_score < 75) {
+            riskLabel = 'MODERATE';
+            riskIcon = '⚡';
+          }
 
           // Add popup with zone info
           const popupContent = `
-            <div style="padding: 8px; min-width: 150px;">
-              <strong style="font-size: 14px; color: ${color};">${zone.area}</strong>
-              <br/>
-              <span style="font-size: 12px; color: #666;">Safety Score: ${zone.safety_score}/100</span>
-              <br/>
-              <span style="font-size: 12px; color: #666;">Crime Count: ${zone.crime_count}</span>
-              <br/>
-              <span style="font-size: 11px; padding: 2px 6px; border-radius: 4px; background: ${color}20; color: ${color};">
-                ${zone.severity?.toUpperCase() || 'N/A'}
-              </span>
-              ${isDangerous ? '<br/><span style="font-size: 11px; color: #ef4444; font-weight: bold;">⚠️ HIGH RISK AREA</span>' : ''}
+            <div style="padding: 10px; min-width: 180px;">
+              <strong style="font-size: 15px; color: ${color};">${riskIcon} ${zone.area}</strong>
+              <hr style="margin: 8px 0; border-color: ${color}20;"/>
+              <div style="font-size: 12px; color: #333; margin-bottom: 4px;">
+                <strong>Safety Score:</strong> ${zone.safety_score}/100
+              </div>
+              <div style="font-size: 12px; color: #333; margin-bottom: 4px;">
+                <strong>Crime Count:</strong> ${zone.crime_count}
+              </div>
+              <div style="font-size: 12px; color: #333; margin-bottom: 8px;">
+                <strong>Severity:</strong> ${zone.severity?.toUpperCase() || 'N/A'}
+              </div>
+              <div style="font-size: 12px; padding: 4px 8px; border-radius: 4px; background: ${color}; color: white; text-align: center; font-weight: bold;">
+                ${riskLabel}
+              </div>
             </div>
           `;
           circle.bindPopup(popupContent);
@@ -270,18 +302,21 @@ const MapView = ({ routes = [], sourceCoords, destinationCoords, selectedRoute, 
           circle.addTo(mapRef.current);
           safetyZoneLayersRef.current.push(circle);
 
-          // Add a larger semi-transparent area circle for dangerous zones
-          if (isDangerous) {
+          // Add a larger semi-transparent area circle for risky zones
+          if (isRisky) {
             const areaCircle = L.circle([coords.lat, coords.lng], {
-              radius: radius,
+              radius: areaRadius,
               fillColor: color,
-              color: 'transparent',
-              fillOpacity: 0.15,
+              color: isCritical ? '#7f1d1d' : 'transparent',
+              weight: isCritical ? 2 : 0,
+              fillOpacity: isCritical ? 0.25 : 0.15,
             });
             areaCircle.addTo(mapRef.current);
             safetyZoneLayersRef.current.push(areaCircle as unknown as L.CircleMarker);
           }
         });
+        
+        console.log('Safety zones rendered:', safetyZoneLayersRef.current.length);
       } catch (error) {
         console.error('Error loading safety zones:', error);
       }
