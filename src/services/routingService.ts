@@ -85,7 +85,7 @@ const getSafeAreasWithCoords = (safetyZones: SafetyZone[], minScore: number = 70
   return result;
 };
 
-// Calculate bearing between two points
+// Calculate bearing between two points (in degrees, 0-360)
 const calculateBearing = (from: LatLng, to: LatLng): number => {
   const dLng = (to.lng - from.lng) * Math.PI / 180;
   const lat1 = from.lat * Math.PI / 180;
@@ -94,45 +94,79 @@ const calculateBearing = (from: LatLng, to: LatLng): number => {
   const y = Math.sin(dLng) * Math.cos(lat2);
   const x = Math.cos(lat1) * Math.sin(lat2) - Math.sin(lat1) * Math.cos(lat2) * Math.cos(dLng);
   
-  return Math.atan2(y, x) * 180 / Math.PI;
+  let bearing = Math.atan2(y, x) * 180 / Math.PI;
+  return (bearing + 360) % 360; // Normalize to 0-360
 };
 
-// Check if point is roughly along the route direction (not causing U-turns)
+// Get angular difference between two bearings (0-180)
+const bearingDifference = (b1: number, b2: number): number => {
+  let diff = Math.abs(b1 - b2);
+  if (diff > 180) diff = 360 - diff;
+  return diff;
+};
+
+// Check if waypoint is along the route direction (no U-turns or backtracking)
 const isAlongRoute = (source: LatLng, waypoint: LatLng, destination: LatLng): boolean => {
   const mainBearing = calculateBearing(source, destination);
-  const waypointBearing = calculateBearing(source, waypoint);
+  const toWaypointBearing = calculateBearing(source, waypoint);
+  const fromWaypointBearing = calculateBearing(waypoint, destination);
   
-  // Allow deviation of up to 60 degrees from main direction
-  let diff = Math.abs(mainBearing - waypointBearing);
-  if (diff > 180) diff = 360 - diff;
+  // Waypoint should be in forward direction from source (within 45 degrees)
+  const sourceToWpDiff = bearingDifference(mainBearing, toWaypointBearing);
+  if (sourceToWpDiff > 45) return false;
   
-  return diff <= 60;
+  // Waypoint to destination should also be forward (within 90 degrees of main bearing)
+  const wpToDestDiff = bearingDifference(mainBearing, fromWaypointBearing);
+  if (wpToDestDiff > 90) return false;
+  
+  // Ensure waypoint is between source and destination (progress check)
+  const distSourceToDest = haversineDistance(source, destination);
+  const distSourceToWp = haversineDistance(source, waypoint);
+  const distWpToDest = haversineDistance(waypoint, destination);
+  
+  // Waypoint should be at least 15% into the journey and not past 85%
+  const progressRatio = distSourceToWp / distSourceToDest;
+  if (progressRatio < 0.15 || progressRatio > 0.85) return false;
+  
+  return true;
 };
 
-// Generate perpendicular offset point for distinct routes
-const getPerpendicularPoint = (source: LatLng, dest: LatLng, offsetKm: number, direction: 'left' | 'right'): LatLng => {
-  const midLat = (source.lat + dest.lat) / 2;
-  const midLng = (source.lng + dest.lng) / 2;
+// Check if a waypoint creates a smooth path (no sharp turns)
+const isSmooth = (source: LatLng, waypoint: LatLng, destination: LatLng): boolean => {
+  const bearing1 = calculateBearing(source, waypoint);
+  const bearing2 = calculateBearing(waypoint, destination);
+  const turnAngle = bearingDifference(bearing1, bearing2);
+  
+  // Reject if turn angle > 60 degrees (too sharp)
+  return turnAngle <= 60;
+};
+
+// Generate perpendicular offset point for distinct routes (at specified progress along route)
+const getPerpendicularPoint = (source: LatLng, dest: LatLng, offsetKm: number, direction: 'left' | 'right', progress: number = 0.5): LatLng => {
+  // Point along the route at given progress (0.5 = midpoint)
+  const pointLat = source.lat + (dest.lat - source.lat) * progress;
+  const pointLng = source.lng + (dest.lng - source.lng) * progress;
   
   // Calculate perpendicular direction
   const dLat = dest.lat - source.lat;
   const dLng = dest.lng - source.lng;
   const length = Math.sqrt(dLat * dLat + dLng * dLng);
   
-  if (length === 0) return { lat: midLat, lng: midLng };
+  if (length === 0) return { lat: pointLat, lng: pointLng };
   
-  // Perpendicular unit vector
+  // Perpendicular unit vector (90 degrees to route direction)
   const perpLat = -dLng / length;
   const perpLng = dLat / length;
   
-  // Convert km to degrees (rough approximation)
-  const kmToDeg = offsetKm / 111;
+  // Convert km to degrees (approximate for Visakhapatnam latitude ~17.7°)
+  const latKmToDeg = 1 / 110.574;
+  const lngKmToDeg = 1 / (111.320 * Math.cos(pointLat * Math.PI / 180));
   
   const sign = direction === 'left' ? 1 : -1;
   
   return {
-    lat: midLat + perpLat * kmToDeg * sign,
-    lng: midLng + perpLng * kmToDeg * sign,
+    lat: pointLat + perpLat * offsetKm * latKmToDeg * sign,
+    lng: pointLng + perpLng * offsetKm * lngKmToDeg * sign,
   };
 };
 
@@ -176,33 +210,47 @@ export const calculateRoutes = async (
   console.log('Calculating SAFEST route...');
   
   // Get safe areas and find best waypoints
-  const safeAreas = getSafeAreasWithCoords(safetyZones, 75);
+  const safeAreas = getSafeAreasWithCoords(safetyZones, 70);
   console.log('Safe areas found:', safeAreas.length);
   
-  // Filter areas that are along the route and not causing U-turns
+  // Filter areas that are along the route, not causing U-turns, and smooth
   const viableWaypoints = safeAreas.filter(area => {
     const distVia = haversineDistance(source, area.point) + haversineDistance(area.point, destination);
     const extraDist = distVia - directDistance;
     
-    // Must be within distance limit and along route direction
-    return extraDist <= maxExtraMeters && 
-           extraDist > 500 && // Must add at least 500m to be distinct
-           isAlongRoute(source, area.point, destination);
+    // Must be within distance limit
+    if (extraDist > maxExtraMeters || extraDist < 200) return false;
+    
+    // Must be along route direction (no backtracking)
+    if (!isAlongRoute(source, area.point, destination)) return false;
+    
+    // Must create a smooth path (no sharp turns)
+    if (!isSmooth(source, area.point, destination)) return false;
+    
+    return true;
   });
 
-  console.log('Viable safe waypoints:', viableWaypoints.map(w => w.name));
+  // Sort by safety score (highest first), then by extra distance (lowest first)
+  viableWaypoints.sort((a, b) => {
+    if (b.score !== a.score) return b.score - a.score;
+    const aExtra = haversineDistance(source, a.point) + haversineDistance(a.point, destination) - directDistance;
+    const bExtra = haversineDistance(source, b.point) + haversineDistance(b.point, destination) - directDistance;
+    return aExtra - bExtra;
+  });
+
+  console.log('Viable safe waypoints:', viableWaypoints.slice(0, 5).map(w => w.name));
 
   let safestRoute: RouteInfo | null = null;
   let bestSafetyScore = fastestAnalysis.overallScore;
 
   // Try each safe waypoint and pick the one with best safety
-  for (const wp of viableWaypoints.slice(0, 5)) { // Try top 5
+  for (const wp of viableWaypoints.slice(0, 5)) {
     const waypoints = [source, wp.point, destination];
     const osrmRoute = await getOSRMRoute(waypoints);
     
     if (osrmRoute) {
       const extraDist = osrmRoute.distance - fastestOSRM.distance;
-      if (extraDist > maxExtraMeters) continue;
+      if (extraDist > maxExtraMeters || extraDist < 0) continue;
       
       const path = osrmRoute.geometry.coordinates.map(([lng, lat]) => ({ lat, lng }));
       const analysis = analyzeRouteSafety(path, safetyZones);
@@ -219,6 +267,7 @@ export const calculateRoutes = async (
           path,
         };
         console.log(`Safe via ${wp.name}: ${safestRoute.distance}km, safety=${analysis.overallScore}`);
+        break; // Take first good one (already sorted by safety)
       }
     }
   }
