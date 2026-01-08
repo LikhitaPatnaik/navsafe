@@ -225,6 +225,8 @@ const TripApp = () => {
             selectedRoute={trip.selectedRoute}
             currentPosition={trip.currentPosition}
             isMonitoring={trip.isMonitoring}
+            sourceName={trip.source}
+            destinationName={trip.destination}
           />
         </div>
       </div>
