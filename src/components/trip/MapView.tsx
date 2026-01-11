@@ -349,30 +349,47 @@ const MapView = ({ routes = [], sourceCoords, destinationCoords, selectedRoute, 
       userMarkerRef.current = null;
     }
 
-    if (isMonitoring && currentPosition) {
-      // Create pulsing user location marker
+    if (currentPosition) {
+      // Create pulsing user location marker with navigation arrow
       const userIcon = L.divIcon({
         className: 'user-location-marker',
         html: `
-          <div style="position: relative; width: 24px; height: 24px;">
-            <div style="position: absolute; inset: 0; border-radius: 50%; background: hsl(217, 91%, 60%); opacity: 0.3; animation: pulse 2s infinite;"></div>
-            <div style="position: absolute; inset: 4px; border-radius: 50%; background: hsl(217, 91%, 60%); border: 3px solid white; box-shadow: 0 2px 8px rgba(0,0,0,0.3);"></div>
-            <div style="position: absolute; inset: 8px; border-radius: 50%; background: white;"></div>
+          <div style="position: relative; width: 48px; height: 48px;">
+            <div style="position: absolute; inset: 0; border-radius: 50%; background: hsl(217, 91%, 60%); opacity: 0.2; animation: pulse 1.5s infinite;"></div>
+            <div style="position: absolute; inset: 6px; border-radius: 50%; background: hsl(217, 91%, 60%); opacity: 0.3; animation: pulse 1.5s infinite 0.3s;"></div>
+            <div style="position: absolute; inset: 12px; border-radius: 50%; background: linear-gradient(135deg, hsl(217, 91%, 60%), hsl(217, 91%, 45%)); border: 3px solid white; box-shadow: 0 4px 12px rgba(59, 130, 246, 0.5);"></div>
+            <div style="position: absolute; inset: 16px; display: flex; align-items: center; justify-content: center;">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="white">
+                <path d="M12 2L19 21L12 17L5 21L12 2Z"/>
+              </svg>
+            </div>
           </div>
         `,
-        iconSize: [24, 24],
-        iconAnchor: [12, 12],
+        iconSize: [48, 48],
+        iconAnchor: [24, 24],
       });
 
       const marker = L.marker([currentPosition.lat, currentPosition.lng], { 
         icon: userIcon,
-        zIndexOffset: 1000,
+        zIndexOffset: 2000,
       }).addTo(mapRef.current);
+      
+      marker.bindPopup(`
+        <div style="padding: 8px; min-width: 150px; text-align: center;">
+          <strong style="color: #3b82f6; font-size: 14px;">📍 Your Location</strong>
+          <div style="margin-top: 6px; font-size: 11px; color: #666;">
+            ${currentPosition.lat.toFixed(5)}, ${currentPosition.lng.toFixed(5)}
+          </div>
+          ${isMonitoring ? '<div style="margin-top: 6px; font-size: 12px; color: #22c55e; font-weight: 500;">🔴 Live Tracking Active</div>' : ''}
+        </div>
+      `);
       
       userMarkerRef.current = marker;
 
-      // Pan map to follow user
-      mapRef.current.panTo([currentPosition.lat, currentPosition.lng], { animate: true });
+      // Pan map to follow user when monitoring
+      if (isMonitoring) {
+        mapRef.current.setView([currentPosition.lat, currentPosition.lng], 16, { animate: true });
+      }
     }
   }, [currentPosition, isMonitoring, mapReady]);
 

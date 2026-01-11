@@ -59,24 +59,47 @@ const TripApp = () => {
 
   // Track if GPS toast has been shown
   const gpsToastShownRef = useRef(false);
+  const watchIdRef = useRef<number | null>(null);
 
-  // Real GPS tracking during monitoring
+  // Get initial location on page load
+  useEffect(() => {
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          updatePosition({
+            lat: position.coords.latitude,
+            lng: position.coords.longitude,
+          });
+        },
+        (error) => {
+          console.log('Initial location fetch failed:', error.message);
+        },
+        { enableHighAccuracy: true, timeout: 5000 }
+      );
+    }
+  }, []);
+
+  // Real GPS tracking during monitoring with continuous updates
   useEffect(() => {
     if (!trip.isMonitoring) {
       gpsToastShownRef.current = false;
+      if (watchIdRef.current !== null) {
+        navigator.geolocation.clearWatch(watchIdRef.current);
+        watchIdRef.current = null;
+      }
       return;
     }
-
-    let watchId: number | null = null;
 
     // Request location permission and start tracking
     if (navigator.geolocation) {
       if (!gpsToastShownRef.current) {
-        toast.info('Starting GPS tracking...');
+        toast.success('🔴 Live navigation started - Tracking your location', {
+          duration: 3000,
+        });
         gpsToastShownRef.current = true;
       }
       
-      watchId = navigator.geolocation.watchPosition(
+      watchIdRef.current = navigator.geolocation.watchPosition(
         (position) => {
           const newPosition = {
             lat: position.coords.latitude,
@@ -96,8 +119,8 @@ const TripApp = () => {
         },
         {
           enableHighAccuracy: true,
-          timeout: 10000,
-          maximumAge: 1000,
+          timeout: 5000,
+          maximumAge: 0, // Always get fresh position
         }
       );
     } else {
@@ -105,8 +128,9 @@ const TripApp = () => {
     }
 
     return () => {
-      if (watchId !== null) {
-        navigator.geolocation.clearWatch(watchId);
+      if (watchIdRef.current !== null) {
+        navigator.geolocation.clearWatch(watchIdRef.current);
+        watchIdRef.current = null;
       }
     };
   }, [trip.isMonitoring]);
