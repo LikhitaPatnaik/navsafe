@@ -290,21 +290,23 @@ const MapView = ({ routes = [], sourceCoords, destinationCoords, selectedRoute, 
             riskIcon = '⚡';
           }
 
-          // Add popup with zone info
+          // Add popup with zone info - show crime count & safety score for ALL zones (especially risky)
+          const showCrimeDetails = zone.safety_score < 75; // Show details for risky/moderate/critical
           const popupContent = `
-            <div style="padding: 10px; min-width: 180px;">
+            <div style="padding: 10px; min-width: 200px;">
               <strong style="font-size: 15px; color: ${color};">${riskIcon} ${zone.area}</strong>
-              <hr style="margin: 8px 0; border-color: ${color}20;"/>
-              <div style="font-size: 12px; color: #333; margin-bottom: 4px;">
-                <strong>Safety Score:</strong> ${zone.safety_score}/100
+              <hr style="margin: 8px 0; border-color: ${color}40;"/>
+              <div style="font-size: 13px; color: #333; margin-bottom: 6px;">
+                <strong>🛡️ Safety Score:</strong> <span style="color: ${color}; font-weight: bold;">${zone.safety_score}/100</span>
               </div>
-              <div style="font-size: 12px; color: #333; margin-bottom: 4px;">
-                <strong>Crime Count:</strong> ${zone.crime_count}
+              <div style="font-size: 13px; color: #333; margin-bottom: 6px;">
+                <strong>🚔 Crime Count:</strong> <span style="color: ${isRisky ? '#ef4444' : '#666'}; font-weight: ${isRisky ? 'bold' : 'normal'};">${zone.crime_count} incidents</span>
               </div>
-              <div style="font-size: 12px; color: #333; margin-bottom: 8px;">
-                <strong>Severity:</strong> ${zone.severity?.toUpperCase() || 'N/A'}
+              <div style="font-size: 13px; color: #333; margin-bottom: 6px;">
+                <strong>⚠️ Severity:</strong> <span style="text-transform: uppercase; color: ${color};">${zone.severity || 'N/A'}</span>
               </div>
-              <div style="font-size: 12px; padding: 4px 8px; border-radius: 4px; background: ${color}; color: white; text-align: center; font-weight: bold;">
+              ${zone.street ? `<div style="font-size: 12px; color: #666; margin-bottom: 8px;">📍 ${zone.street}</div>` : ''}
+              <div style="font-size: 12px; padding: 6px 10px; border-radius: 6px; background: ${color}; color: white; text-align: center; font-weight: bold;">
                 ${riskLabel}
               </div>
             </div>
