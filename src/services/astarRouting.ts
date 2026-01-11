@@ -36,7 +36,7 @@ export const areaCoordinates: Record<string, LatLng> = {
   'Anandapuram': { lat: 17.8014, lng: 83.4089 },
   
   // High Risk Areas (safety_score 40-50)
-  'Marripalem': { lat: 17.7500, lng: 83.3525 },
+  'Marripalem': { lat: 17.7445, lng: 83.3456 },
   'One Town': { lat: 17.6998, lng: 83.2896 },
   'Steel Plant Township': { lat: 17.6328, lng: 83.1585 },
   'Lawsons Bay Colony': { lat: 17.7275, lng: 83.3456 },
@@ -47,11 +47,11 @@ export const areaCoordinates: Record<string, LatLng> = {
   'Anakapalli': { lat: 17.6914, lng: 83.0042 },
   'Beach Road': { lat: 17.7156, lng: 83.3289 },
   'Pendurthi': { lat: 17.7894, lng: 83.2467 },
-  'Madhurawada': { lat: 17.7923, lng: 83.3512 },
+  'Madhurawada': { lat: 17.7923, lng: 83.3712 },
   'Akkayapalem': { lat: 17.7294, lng: 83.2935 },
   'Kancharapalem': { lat: 17.7150, lng: 83.2778 },
   'Poorna Market': { lat: 17.7078, lng: 83.2956 },
-  'Yendada': { lat: 17.7667, lng: 83.3767 },
+  'Yendada': { lat: 17.7745, lng: 83.3856 },
   'PM Palem': { lat: 17.7612, lng: 83.3612 },
   'NAD Junction': { lat: 17.7283, lng: 83.2533 },
   'Malkapuram': { lat: 17.6978, lng: 83.2156 },
@@ -59,7 +59,7 @@ export const areaCoordinates: Record<string, LatLng> = {
   'Seethammadhara': { lat: 17.7342, lng: 83.3012 },
   'Arilova': { lat: 17.7612, lng: 83.3125 },
   'Sheela Nagar': { lat: 17.6867, lng: 83.2656 },
-  'Marikavalasa': { lat: 17.8045, lng: 83.3678 },
+  'Marikavalasa': { lat: 17.7867, lng: 83.3456 },
   'Bhogapuram': { lat: 17.9289, lng: 83.4912 },
   
   // Safe Areas (safety_score >= 85)
@@ -85,7 +85,7 @@ export const areaCoordinates: Record<string, LatLng> = {
   'Waltair': { lat: 17.7234, lng: 83.3234 },
   'Kirlampudi': { lat: 17.7312, lng: 83.3256 },
   'Isukathota': { lat: 17.7723, lng: 83.3678 },
-  'Kommadi': { lat: 17.8145, lng: 83.3689 },
+  'Kommadi': { lat: 17.8234, lng: 83.3978 },
   'Sagar Nagar': { lat: 17.7645, lng: 83.3534 },
   'Gnanapuram': { lat: 17.7189, lng: 83.3078 },
   'Maharanipeta': { lat: 17.7023, lng: 83.3012 },
@@ -102,12 +102,12 @@ export const areaCoordinates: Record<string, LatLng> = {
   'Murali Nagar': { lat: 17.7412, lng: 83.2812 },
   'Ramnagar': { lat: 17.7145, lng: 83.2878 },
   'HB Colony': { lat: 17.7467, lng: 83.3089 },
-  'Jodugullapalem': { lat: 17.7723, lng: 83.3912 },
+  'Jodugullapalem': { lat: 17.7856, lng: 83.4012 },
   'Hanumanthawaka': { lat: 17.6867, lng: 83.2767 },
   'Nathayyapalem': { lat: 17.6934, lng: 83.2612 },
   'Sriharipuram': { lat: 17.7367, lng: 83.2689 },
   'Timmapuram': { lat: 17.8212, lng: 83.4023 },
-  'Chinagadili': { lat: 17.8134, lng: 83.3945 },
+  'Chinagadili': { lat: 17.8256, lng: 83.4134 },
 };
 
 // Get safety score for a point based on nearby safety zones
