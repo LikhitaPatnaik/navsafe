@@ -141,6 +141,36 @@ const isSmooth = (source: LatLng, waypoint: LatLng, destination: LatLng): boolea
   return turnAngle <= 60;
 };
 
+// Calculate realistic duration considering traffic conditions
+// Average urban traffic speed: 20-30 km/h depending on distance and time
+const calculateTrafficDuration = (distanceKm: number): number => {
+  // Base speed varies with distance:
+  // - Short trips (<5km): Heavy traffic, slower avg 18-22 km/h
+  // - Medium trips (5-15km): Mixed conditions, 22-28 km/h
+  // - Long trips (>15km): Some highway portions possible, 28-35 km/h
+  
+  let avgSpeedKmh: number;
+  
+  if (distanceKm < 5) {
+    // Short urban trips - heavy congestion
+    avgSpeedKmh = 18 + Math.random() * 4; // 18-22 km/h
+  } else if (distanceKm < 15) {
+    // Medium trips - mixed traffic
+    avgSpeedKmh = 22 + Math.random() * 6; // 22-28 km/h
+  } else {
+    // Longer trips - may include faster roads
+    avgSpeedKmh = 28 + Math.random() * 7; // 28-35 km/h
+  }
+  
+  // Time in hours, converted to minutes
+  const timeInMinutes = (distanceKm / avgSpeedKmh) * 60;
+  
+  // Add buffer for signals, stops (1-2 min per 3km)
+  const signalBuffer = Math.floor(distanceKm / 3) * (1 + Math.random());
+  
+  return Math.round(timeInMinutes + signalBuffer);
+};
+
 // Generate perpendicular offset point for distinct routes (at specified progress along route)
 const getPerpendicularPoint = (source: LatLng, dest: LatLng, offsetKm: number, direction: 'left' | 'right', progress: number = 0.5): LatLng => {
   // Point along the route at given progress (0.5 = midpoint)
@@ -194,11 +224,15 @@ export const calculateRoutes = async (
   const fastestPath = fastestOSRM.geometry.coordinates.map(([lng, lat]) => ({ lat, lng }));
   const fastestAnalysis = analyzeRouteSafety(fastestPath, safetyZones);
 
+  // Calculate realistic duration with traffic (average 25 km/h in urban traffic)
+  const fastestDistanceKm = Math.round(fastestOSRM.distance / 100) / 10;
+  const fastestDurationWithTraffic = calculateTrafficDuration(fastestDistanceKm);
+
   const fastestRoute: RouteInfo = {
     id: 'route-fastest',
     type: 'fastest',
-    distance: Math.round(fastestOSRM.distance / 100) / 10,
-    duration: Math.round(fastestOSRM.duration / 60),
+    distance: fastestDistanceKm,
+    duration: fastestDurationWithTraffic,
     safetyScore: fastestAnalysis.overallScore,
     riskLevel: fastestAnalysis.riskLevel,
     path: fastestPath,
@@ -257,11 +291,12 @@ export const calculateRoutes = async (
       
       if (analysis.overallScore > bestSafetyScore) {
         bestSafetyScore = analysis.overallScore;
+        const safeDistKm = Math.round(osrmRoute.distance / 100) / 10;
         safestRoute = {
           id: 'route-safest',
           type: 'safest',
-          distance: Math.round(osrmRoute.distance / 100) / 10,
-          duration: Math.round(osrmRoute.duration / 60),
+          distance: safeDistKm,
+          duration: calculateTrafficDuration(safeDistKm),
           safetyScore: analysis.overallScore,
           riskLevel: analysis.riskLevel,
           path,
@@ -288,11 +323,12 @@ export const calculateRoutes = async (
           const analysis = analyzeRouteSafety(path, safetyZones);
           
           if (!safestRoute || analysis.overallScore > safestRoute.safetyScore) {
+            const safeDistKm = Math.round(osrmRoute.distance / 100) / 10;
             safestRoute = {
               id: 'route-safest',
               type: 'safest',
-              distance: Math.round(osrmRoute.distance / 100) / 10,
-              duration: Math.round(osrmRoute.duration / 60),
+              distance: safeDistKm,
+              duration: calculateTrafficDuration(safeDistKm),
               safetyScore: analysis.overallScore,
               riskLevel: analysis.riskLevel,
               path,
@@ -313,23 +349,25 @@ export const calculateRoutes = async (
     if (osrmRoute) {
       const path = osrmRoute.geometry.coordinates.map(([lng, lat]) => ({ lat, lng }));
       const analysis = analyzeRouteSafety(path, safetyZones);
+      const fallbackDistKm = Math.round(osrmRoute.distance / 100) / 10;
       
       safestRoute = {
         id: 'route-safest',
         type: 'safest',
-        distance: Math.round(osrmRoute.distance / 100) / 10,
-        duration: Math.round(osrmRoute.duration / 60),
+        distance: fallbackDistKm,
+        duration: calculateTrafficDuration(fallbackDistKm),
         safetyScore: Math.max(analysis.overallScore, fastestAnalysis.overallScore + 5),
         riskLevel: analysis.riskLevel,
         path,
       };
     } else {
       // Create with adjusted stats if OSRM fails
+      const fallbackDist = Math.round((fastestRoute.distance + 3) * 10) / 10;
       safestRoute = {
         id: 'route-safest',
         type: 'safest',
-        distance: Math.round((fastestRoute.distance + 3) * 10) / 10,
-        duration: fastestRoute.duration + 8,
+        distance: fallbackDist,
+        duration: calculateTrafficDuration(fallbackDist),
         safetyScore: Math.min(100, fastestRoute.safetyScore + 10),
         riskLevel: 'safe',
         path: fastestPath,
@@ -355,12 +393,13 @@ export const calculateRoutes = async (
   if (optOSRM && optOSRM.distance !== fastestOSRM.distance) {
     const path = optOSRM.geometry.coordinates.map(([lng, lat]) => ({ lat, lng }));
     const analysis = analyzeRouteSafety(path, safetyZones);
+    const optDistKm = Math.round(optOSRM.distance / 100) / 10;
     
     optimizedRoute = {
       id: 'route-optimized',
       type: 'optimized',
-      distance: Math.round(optOSRM.distance / 100) / 10,
-      duration: Math.round(optOSRM.duration / 60),
+      distance: optDistKm,
+      duration: calculateTrafficDuration(optDistKm),
       safetyScore: analysis.overallScore,
       riskLevel: analysis.riskLevel,
       path,
@@ -380,11 +419,12 @@ export const calculateRoutes = async (
     
     if (altOSRM && altOSRM.distance !== fastestOSRM.distance) {
       const path = altOSRM.geometry.coordinates.map(([lng, lat]) => ({ lat, lng }));
+      const altDistKm = Math.round(altOSRM.distance / 100) / 10;
       optimizedRoute = {
         id: 'route-optimized',
         type: 'optimized',
-        distance: Math.round(altOSRM.distance / 100) / 10,
-        duration: Math.round(altOSRM.duration / 60),
+        distance: altDistKm,
+        duration: calculateTrafficDuration(altDistKm),
         safetyScore: targetSafety,
         riskLevel: targetSafety >= 70 ? 'safe' : 'moderate',
         path,
@@ -394,7 +434,7 @@ export const calculateRoutes = async (
         id: 'route-optimized',
         type: 'optimized',
         distance: targetDist,
-        duration: targetDur,
+        duration: calculateTrafficDuration(targetDist),
         safetyScore: targetSafety,
         riskLevel: targetSafety >= 70 ? 'safe' : 'moderate',
         path: fastestPath, // Use fastest path with different stats
@@ -441,14 +481,15 @@ const validateAndAdjustRoutes = (routes: RouteInfo[]) => {
     safest.safetyScore = Math.min(100, fastest.safetyScore + 10 + Math.round(Math.random() * 5));
   }
 
-  // Constraint: Safest duration should be more
+  // Constraint: Safest duration should be proportional to distance with traffic
+  safest.duration = calculateTrafficDuration(safest.distance);
   if (safest.duration <= fastest.duration) {
-    safest.duration = fastest.duration + Math.round((safest.distance - fastest.distance) * 2.5);
+    safest.duration = fastest.duration + Math.round((safest.distance - fastest.distance) * 3);
   }
 
   // Constraint: Optimized must be truly intermediate
   optimized.distance = Math.round(((fastest.distance + safest.distance) / 2) * 10) / 10;
-  optimized.duration = Math.round((fastest.duration + safest.duration) / 2);
+  optimized.duration = calculateTrafficDuration(optimized.distance);
   optimized.safetyScore = Math.round((fastest.safetyScore + safest.safetyScore) / 2);
   optimized.riskLevel = optimized.safetyScore >= 70 ? 'safe' : optimized.safetyScore >= 50 ? 'moderate' : 'risky';
 
