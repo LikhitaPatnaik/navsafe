@@ -12,6 +12,8 @@ import { Button } from '@/components/ui/button';
 import { ArrowLeft, StopCircle, Loader2 } from 'lucide-react';
 import { calculateRoutes } from '@/services/routingService';
 import { toast } from 'sonner';
+import { checkDeviation, DeviationResult } from '@/utils/deviationDetection';
+import { getNearestSafetyZone } from '@/services/astarRouting';
 
 const TripApp = () => {
   const {
@@ -29,6 +31,21 @@ const TripApp = () => {
   
   const [showLanding, setShowLanding] = useState(true);
   const [isCalculatingRoutes, setIsCalculatingRoutes] = useState(false);
+  const [safetyZones, setSafetyZones] = useState<any[]>([]);
+
+  // Fetch safety zones for deviation detection
+  useEffect(() => {
+    const fetchSafetyZones = async () => {
+      try {
+        const { supabase } = await import('@/integrations/supabase/client');
+        const { data } = await supabase.from('safety_zones').select('*');
+        if (data) setSafetyZones(data);
+      } catch (error) {
+        console.error('Error fetching safety zones:', error);
+      }
+    };
+    fetchSafetyZones();
+  }, []);
 
   // Calculate routes using OSRM and safety data
   const handleFindRoutes = async () => {
@@ -60,6 +77,8 @@ const TripApp = () => {
   // Track if GPS toast has been shown
   const gpsToastShownRef = useRef(false);
   const watchIdRef = useRef<number | null>(null);
+  const lastDeviationAlertRef = useRef<number>(0);
+  const deviationCooldown = 30000; // 30 seconds between deviation alerts
 
   // Get initial location on page load
   useEffect(() => {
@@ -106,6 +125,32 @@ const TripApp = () => {
             lng: position.coords.longitude,
           };
           updatePosition(newPosition);
+          
+          // Check for route deviation
+          if (trip.selectedRoute && trip.selectedRoute.path.length > 0) {
+            const areaInfo = getNearestSafetyZone(newPosition, safetyZones);
+            const deviation = checkDeviation(newPosition, trip.selectedRoute.path, areaInfo);
+            
+            if (deviation && deviation.isDeviated) {
+              const now = Date.now();
+              // Only alert if cooldown has passed
+              if (now - lastDeviationAlertRef.current > deviationCooldown) {
+                lastDeviationAlertRef.current = now;
+                
+                if (deviation.severity === 'danger') {
+                  addAlert({
+                    type: 'high-risk',
+                    message: deviation.message,
+                  });
+                } else if (deviation.severity === 'warning') {
+                  addAlert({
+                    type: 'deviation',
+                    message: deviation.message,
+                  });
+                }
+              }
+            }
+          }
         },
         (error) => {
           console.error('Geolocation error:', error);
