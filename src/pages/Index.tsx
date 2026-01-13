@@ -186,6 +186,37 @@ const TripApp = () => {
     }
   };
 
+  // Reroute from current position to destination
+  const handleReroute = async () => {
+    if (!trip.currentPosition || !trip.destinationCoords) {
+      toast.error('Unable to reroute - missing location data');
+      return;
+    }
+
+    toast.loading('Calculating new route from your current location...', { id: 'reroute' });
+    
+    try {
+      const routes = await calculateRoutes(trip.currentPosition, trip.destinationCoords);
+      
+      if (routes.length === 0) {
+        toast.error('No routes found from current location', { id: 'reroute' });
+        return;
+      }
+      
+      // Find the safest route
+      const safestRoute = routes.find(r => r.type === 'safest') || routes[0];
+      
+      // Update routes and auto-select the safest one
+      setRoutes(routes);
+      selectRoute(safestRoute);
+      
+      toast.success(`Rerouted! New ${safestRoute.type} route: ${safestRoute.distance.toFixed(1)} km`, { id: 'reroute' });
+    } catch (error) {
+      console.error('Error rerouting:', error);
+      toast.error('Failed to calculate new route', { id: 'reroute' });
+    }
+  };
+
   const activeAlert = trip.alerts.find(a => !a.dismissed);
 
   // Show landing page
@@ -310,7 +341,7 @@ const TripApp = () => {
           onDismiss={() => dismissAlert(activeAlert.id)}
           onReroute={() => {
             dismissAlert(activeAlert.id);
-            // Implement reroute logic
+            handleReroute();
           }}
         />
       )}
