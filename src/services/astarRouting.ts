@@ -110,14 +110,14 @@ export const areaCoordinates: Record<string, LatLng> = {
   'Chinagadili': { lat: 17.8156, lng: 83.4234 },
 };
 
-// Get safety score for a point based on nearby safety zones
-export const getSafetyScoreForPoint = (
+// Get nearest safety zone info for a given point
+export const getNearestSafetyZone = (
   point: LatLng,
   safetyZones: SafetyZone[]
-): number => {
-  if (safetyZones.length === 0) return 70;
+): { safetyScore: number; areaName: string } | null => {
+  if (safetyZones.length === 0) return null;
 
-  let nearestScore = 70;
+  let nearestZone: SafetyZone | null = null;
   let nearestDistance = Infinity;
 
   for (const zone of safetyZones) {
@@ -135,14 +135,30 @@ export const getSafetyScoreForPoint = (
 
     const distance = haversineDistance(point, zoneCenter);
     
-    // If within ~2km of a zone, use its safety score
+    // If within ~2km of a zone
     if (distance < 2000 && distance < nearestDistance) {
       nearestDistance = distance;
-      nearestScore = zone.safety_score;
+      nearestZone = zone;
     }
   }
 
-  return nearestScore;
+  if (nearestZone) {
+    return {
+      safetyScore: nearestZone.safety_score,
+      areaName: nearestZone.area
+    };
+  }
+
+  return null;
+};
+
+// Get safety score for a point based on nearby safety zones
+export const getSafetyScoreForPoint = (
+  point: LatLng,
+  safetyZones: SafetyZone[]
+): number => {
+  const nearest = getNearestSafetyZone(point, safetyZones);
+  return nearest ? nearest.safetyScore : 70;
 };
 
 /**
