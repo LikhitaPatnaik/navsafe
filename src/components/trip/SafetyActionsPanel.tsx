@@ -38,38 +38,39 @@ const SafetyActionsPanel = () => {
 
   return (
     <>
-      <div className="fixed bottom-6 right-6 z-40 flex flex-col gap-3 animate-slide-up">
+      {/* Mobile: Horizontal bottom bar | Desktop: Vertical side panel */}
+      <div className="fixed bottom-4 left-4 right-4 sm:left-auto sm:bottom-6 sm:right-6 z-40 flex flex-row sm:flex-col gap-2 sm:gap-3 animate-slide-up safe-area-bottom">
         {/* Reroute Button */}
         <Button
           variant="glass"
-          size="lg"
-          className="shadow-lg"
+          size="default"
+          className="flex-1 sm:flex-none shadow-lg text-xs sm:text-sm py-3 sm:py-2"
           onClick={handleReroute}
         >
-          <RefreshCw className="w-5 h-5 mr-2" />
-          Reroute
+          <RefreshCw className="w-4 h-4 sm:w-5 sm:h-5 sm:mr-2" />
+          <span className="hidden sm:inline">Reroute</span>
         </Button>
 
         {/* Report Button */}
         <Button
           variant="glass"
-          size="lg"
-          className="shadow-lg"
+          size="default"
+          className="flex-1 sm:flex-none shadow-lg text-xs sm:text-sm py-3 sm:py-2"
           onClick={() => setShowReportModal(true)}
         >
-          <Flag className="w-5 h-5 mr-2" />
-          Report Area
+          <Flag className="w-4 h-4 sm:w-5 sm:h-5 sm:mr-2" />
+          <span className="hidden sm:inline">Report Area</span>
         </Button>
 
         {/* SOS Button */}
         <Button
           variant="sos"
-          size="lg"
-          className="shadow-lg"
+          size="default"
+          className="flex-1 sm:flex-none shadow-lg text-xs sm:text-sm py-3 sm:py-2"
           onClick={() => setShowSosModal(true)}
         >
-          <AlertOctagon className="w-5 h-5 mr-2" />
-          SOS
+          <AlertOctagon className="w-4 h-4 sm:w-5 sm:h-5 sm:mr-2" />
+          <span className="hidden sm:inline">SOS</span>
         </Button>
       </div>
 

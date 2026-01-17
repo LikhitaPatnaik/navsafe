@@ -239,11 +239,12 @@ const TripApp = () => {
       <LiveStatusBanner />
       
       {/* Header */}
-      <header className="fixed top-0 left-0 right-0 z-30 p-4">
-        <div className="flex items-center justify-between">
+      <header className="fixed top-0 left-0 right-0 z-30 p-3 sm:p-4 safe-area-top">
+        <div className="flex items-center justify-between gap-2">
           <Button
             variant="glass"
             size="sm"
+            className="text-xs sm:text-sm"
             onClick={() => {
               if (trip.isMonitoring) {
                 completeTip();
@@ -257,21 +258,22 @@ const TripApp = () => {
           >
             {trip.isMonitoring ? (
               <>
-                <StopCircle className="w-4 h-4 mr-2" />
-                End Trip
+                <StopCircle className="w-4 h-4 sm:mr-2" />
+                <span className="hidden sm:inline">End Trip</span>
               </>
             ) : (
               <>
-                <ArrowLeft className="w-4 h-4 mr-2" />
-                Back
+                <ArrowLeft className="w-4 h-4 sm:mr-2" />
+                <span className="hidden sm:inline">Back</span>
               </>
             )}
           </Button>
           
           {trip.isMonitoring && (
-            <div className="glass rounded-full px-4 py-2">
-              <span className="text-sm text-muted-foreground">
-                Monitoring: <span className="text-primary font-medium capitalize">{trip.selectedRoute?.type}</span>
+            <div className="glass rounded-full px-3 py-1.5 sm:px-4 sm:py-2">
+              <span className="text-xs sm:text-sm text-muted-foreground">
+                <span className="hidden sm:inline">Monitoring: </span>
+                <span className="text-primary font-medium capitalize">{trip.selectedRoute?.type}</span>
               </span>
             </div>
           )}
@@ -279,17 +281,17 @@ const TripApp = () => {
       </header>
 
       {/* Main Content */}
-      <div className="flex flex-col lg:flex-row min-h-screen pt-20 pb-6 px-4 gap-6">
-        {/* Left Panel */}
-        <div className="lg:w-96 flex-shrink-0 space-y-4">
+      <div className="flex flex-col lg:flex-row min-h-screen pt-16 sm:pt-20 pb-24 sm:pb-6 px-3 sm:px-4 gap-4 sm:gap-6">
+        {/* Left Panel - Full width on mobile, fixed width on desktop */}
+        <div className="w-full lg:w-96 flex-shrink-0 space-y-3 sm:space-y-4 order-2 lg:order-1">
           {(trip.status === 'idle' || (trip.status === 'planning' && trip.routes.length === 0)) && (
             <TripInputPanel onFindRoutes={handleFindRoutes} isLoading={isCalculatingRoutes} />
           )}
 
           {/* Route Cards */}
           {trip.routes.length > 0 && !trip.isMonitoring && (
-            <div className="space-y-3 animate-slide-up">
-              <h2 className="text-lg font-semibold text-foreground px-1">Available Routes</h2>
+            <div className="space-y-2 sm:space-y-3 animate-slide-up">
+              <h2 className="text-base sm:text-lg font-semibold text-foreground px-1">Available Routes</h2>
               {trip.routes.map((route) => (
                 <RouteCard
                   key={route.id}
@@ -302,10 +304,10 @@ const TripApp = () => {
             </div>
           )}
 
-          {/* Selected Route Info During Monitoring */}
+          {/* Selected Route Info During Monitoring - Hidden on mobile during monitoring to save space */}
           {trip.isMonitoring && trip.selectedRoute && (
-            <div className="glass-strong rounded-2xl p-6 animate-slide-up">
-              <h3 className="font-semibold text-foreground mb-4">Active Route</h3>
+            <div className="hidden sm:block glass-strong rounded-2xl p-4 sm:p-6 animate-slide-up">
+              <h3 className="font-semibold text-foreground mb-3 sm:mb-4">Active Route</h3>
               <RouteCard
                 route={trip.selectedRoute}
                 isSelected={true}
@@ -316,8 +318,8 @@ const TripApp = () => {
           )}
         </div>
 
-        {/* Map Area */}
-        <div className="flex-1 min-h-[400px] lg:min-h-0 lg:h-[calc(100vh-8rem)]">
+        {/* Map Area - Shows first on mobile, takes remaining space on desktop */}
+        <div className="flex-1 min-h-[50vh] sm:min-h-[400px] lg:min-h-0 lg:h-[calc(100vh-8rem)] order-1 lg:order-2">
           <MapView 
             routes={trip.routes} 
             sourceCoords={trip.sourceCoords}
