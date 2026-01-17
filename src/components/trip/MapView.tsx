@@ -413,22 +413,22 @@ const MapView = ({ routes = [], sourceCoords, destinationCoords, selectedRoute, 
         </div>
       )}
 
-      {/* Legend */}
-      <div className="absolute bottom-6 left-6 right-6">
-        <div className="glass rounded-xl p-4">
+      {/* Legend - Collapsible on mobile */}
+      <div className="absolute bottom-3 sm:bottom-6 left-3 sm:left-6 right-3 sm:right-6">
+        <div className="glass rounded-lg sm:rounded-xl p-2.5 sm:p-4">
           {/* Route Legend */}
           {routes.length > 0 && (
             <>
-              <p className="text-sm font-medium text-foreground mb-2">Routes</p>
-              <div className="flex flex-wrap gap-4 mb-3">
+              <p className="text-xs sm:text-sm font-medium text-foreground mb-1.5 sm:mb-2">Routes</p>
+              <div className="flex flex-wrap gap-2 sm:gap-4 mb-2 sm:mb-3">
                 {routes.map((route) => (
-                  <div key={route.id} className="flex items-center gap-2">
+                  <div key={route.id} className="flex items-center gap-1 sm:gap-2">
                     <div
-                      className="w-6 h-1.5 rounded-full"
+                      className="w-4 sm:w-6 h-1 sm:h-1.5 rounded-full"
                       style={{ backgroundColor: getRouteColor(route.type, selectedRoute?.id === route.id) }}
                     />
-                    <span className="text-xs text-muted-foreground capitalize">
-                      {route.type === 'fastest' ? '🔵 Fastest' : route.type === 'safest' ? '🟢 Safest' : '🟠 Optimized'}
+                    <span className="text-[10px] sm:text-xs text-muted-foreground capitalize">
+                      {route.type === 'fastest' ? '🔵 Fast' : route.type === 'safest' ? '🟢 Safe' : '🟠 Opt'}
                     </span>
                   </div>
                 ))}
@@ -437,23 +437,23 @@ const MapView = ({ routes = [], sourceCoords, destinationCoords, selectedRoute, 
           )}
           
           {/* Safety Zone Legend */}
-          <p className="text-sm font-medium text-foreground mb-2">Safety Zones</p>
-          <div className="flex flex-wrap gap-3">
-            <div className="flex items-center gap-1.5">
-              <div className="w-3 h-3 rounded-full bg-green-500" />
-              <span className="text-xs text-muted-foreground">Safe (75+)</span>
+          <p className="text-xs sm:text-sm font-medium text-foreground mb-1.5 sm:mb-2">Safety Zones</p>
+          <div className="flex flex-wrap gap-2 sm:gap-3">
+            <div className="flex items-center gap-1 sm:gap-1.5">
+              <div className="w-2 h-2 sm:w-3 sm:h-3 rounded-full bg-green-500" />
+              <span className="text-[10px] sm:text-xs text-muted-foreground">Safe</span>
             </div>
-            <div className="flex items-center gap-1.5">
-              <div className="w-3 h-3 rounded-full bg-amber-500" />
-              <span className="text-xs text-muted-foreground">Moderate (50-74)</span>
+            <div className="flex items-center gap-1 sm:gap-1.5">
+              <div className="w-2 h-2 sm:w-3 sm:h-3 rounded-full bg-amber-500" />
+              <span className="text-[10px] sm:text-xs text-muted-foreground">Moderate</span>
             </div>
-            <div className="flex items-center gap-1.5">
-              <div className="w-3 h-3 rounded-full bg-red-500" />
-              <span className="text-xs text-muted-foreground">Risky (35-49)</span>
+            <div className="flex items-center gap-1 sm:gap-1.5">
+              <div className="w-2 h-2 sm:w-3 sm:h-3 rounded-full bg-red-500" />
+              <span className="text-[10px] sm:text-xs text-muted-foreground">Risky</span>
             </div>
-            <div className="flex items-center gap-1.5">
-              <div className="w-3.5 h-3.5 rounded-full bg-red-900 border-2 border-red-700" />
-              <span className="text-xs text-muted-foreground font-medium">⚠️ Black Spot (&lt;35)</span>
+            <div className="flex items-center gap-1 sm:gap-1.5">
+              <div className="w-2.5 h-2.5 sm:w-3.5 sm:h-3.5 rounded-full bg-red-900 border sm:border-2 border-red-700" />
+              <span className="text-[10px] sm:text-xs text-muted-foreground font-medium">⚠️ Black</span>
             </div>
           </div>
         </div>

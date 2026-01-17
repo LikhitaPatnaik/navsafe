@@ -44,40 +44,40 @@ const RouteCard = ({ route, isSelected, onSelect, onStartMonitoring }: RouteCard
   return (
     <div
       className={cn(
-        'glass rounded-xl p-5 cursor-pointer transition-all duration-300 border-2',
+        'glass rounded-xl p-3 sm:p-5 cursor-pointer transition-all duration-300 border-2',
         isSelected ? getRouteColor() : 'border-transparent hover:border-border',
         isSelected && 'ring-2 ring-primary/20'
       )}
       onClick={onSelect}
     >
-      <div className="flex items-start justify-between mb-4">
-        <div>
-          <h3 className="font-semibold text-foreground">{getRouteLabel()}</h3>
-          <p className="text-sm text-muted-foreground capitalize">{route.type} option</p>
+      <div className="flex items-start justify-between mb-3 sm:mb-4 gap-2">
+        <div className="min-w-0 flex-1">
+          <h3 className="font-semibold text-foreground text-sm sm:text-base truncate">{getRouteLabel()}</h3>
+          <p className="text-xs sm:text-sm text-muted-foreground capitalize">{route.type} option</p>
         </div>
         {getRiskBadge(route.riskLevel)}
       </div>
 
-      <div className="grid grid-cols-3 gap-4 mb-4">
-        <div className="flex items-center gap-2">
-          <MapPin className="w-4 h-4 text-muted-foreground" />
+      <div className="grid grid-cols-3 gap-2 sm:gap-4 mb-3 sm:mb-4">
+        <div className="flex flex-col sm:flex-row items-center sm:items-start gap-1 sm:gap-2 text-center sm:text-left">
+          <MapPin className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-muted-foreground shrink-0" />
           <div>
-            <p className="text-sm font-medium text-foreground">{route.distance} km</p>
-            <p className="text-xs text-muted-foreground">Distance</p>
+            <p className="text-xs sm:text-sm font-medium text-foreground">{route.distance} km</p>
+            <p className="text-[10px] sm:text-xs text-muted-foreground">Distance</p>
           </div>
         </div>
-        <div className="flex items-center gap-2">
-          <Clock className="w-4 h-4 text-muted-foreground" />
+        <div className="flex flex-col sm:flex-row items-center sm:items-start gap-1 sm:gap-2 text-center sm:text-left">
+          <Clock className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-muted-foreground shrink-0" />
           <div>
-            <p className="text-sm font-medium text-foreground">{route.duration} min</p>
-            <p className="text-xs text-muted-foreground">Duration</p>
+            <p className="text-xs sm:text-sm font-medium text-foreground">{route.duration} min</p>
+            <p className="text-[10px] sm:text-xs text-muted-foreground">Duration</p>
           </div>
         </div>
-        <div className="flex items-center gap-2">
-          <Shield className="w-4 h-4 text-muted-foreground" />
+        <div className="flex flex-col sm:flex-row items-center sm:items-start gap-1 sm:gap-2 text-center sm:text-left">
+          <Shield className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-muted-foreground shrink-0" />
           <div>
-            <p className="text-sm font-medium text-foreground">{route.safetyScore}/100</p>
-            <p className="text-xs text-muted-foreground">Safety</p>
+            <p className="text-xs sm:text-sm font-medium text-foreground">{route.safetyScore}/100</p>
+            <p className="text-[10px] sm:text-xs text-muted-foreground">Safety</p>
           </div>
         </div>
       </div>
@@ -86,14 +86,15 @@ const RouteCard = ({ route, isSelected, onSelect, onStartMonitoring }: RouteCard
         <Button
           variant="hero"
           size="sm"
-          className="w-full"
+          className="w-full text-xs sm:text-sm py-2 sm:py-2.5"
           onClick={(e) => {
             e.stopPropagation();
             onStartMonitoring();
           }}
         >
-          <Navigation className="w-4 h-4 mr-2" />
-          Start Monitoring This Route
+          <Navigation className="w-3.5 h-3.5 sm:w-4 sm:h-4 mr-1.5 sm:mr-2" />
+          <span className="hidden sm:inline">Start Monitoring This Route</span>
+          <span className="sm:hidden">Start Monitoring</span>
         </Button>
       )}
     </div>

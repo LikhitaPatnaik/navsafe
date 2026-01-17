@@ -46,18 +46,18 @@ const LiveStatusBanner = () => {
   return (
     <div
       className={cn(
-        'fixed top-4 left-1/2 transform -translate-x-1/2 z-50',
-        'flex items-center gap-3 px-6 py-3 rounded-full border backdrop-blur-xl',
-        'animate-slide-up shadow-lg',
+        'fixed top-3 sm:top-4 left-2 right-2 sm:left-1/2 sm:right-auto sm:transform sm:-translate-x-1/2 z-50',
+        'flex items-center justify-center gap-2 sm:gap-3 px-3 sm:px-6 py-2 sm:py-3 rounded-full border backdrop-blur-xl',
+        'animate-slide-up shadow-lg safe-area-top',
         config.className
       )}
     >
-      <Icon className={cn('w-5 h-5', config.iconClassName)} />
-      <span className="font-medium text-sm">{config.message}</span>
+      <Icon className={cn('w-4 h-4 sm:w-5 sm:h-5 shrink-0', config.iconClassName)} />
+      <span className="font-medium text-xs sm:text-sm truncate">{config.message}</span>
       {status === 'safe' && (
-        <span className="flex items-center gap-1">
-          <span className="w-2 h-2 bg-safe rounded-full animate-pulse" />
-          <span className="text-xs opacity-70">Live</span>
+        <span className="flex items-center gap-1 shrink-0">
+          <span className="w-1.5 h-1.5 sm:w-2 sm:h-2 bg-safe rounded-full animate-pulse" />
+          <span className="text-[10px] sm:text-xs opacity-70">Live</span>
         </span>
       )}
     </div>
