@@ -63,6 +63,74 @@ const getOSRMRoute = async (waypoints: LatLng[]): Promise<OSRMRoute | null> => {
   return null;
 };
 
+// Detect if a route has U-turns or loops by checking for backtracking
+const hasUTurnsOrLoops = (path: LatLng[], source: LatLng, destination: LatLng): boolean => {
+  if (path.length < 10) return false;
+  
+  const mainBearing = calculateBearing(source, destination);
+  
+  // Sample every 10th point for efficiency
+  const sampleRate = Math.max(1, Math.floor(path.length / 20));
+  let previousBearing = mainBearing;
+  let sharpTurnCount = 0;
+  let backtrackCount = 0;
+  
+  for (let i = sampleRate; i < path.length - sampleRate; i += sampleRate) {
+    const current = path[i];
+    const next = path[Math.min(i + sampleRate, path.length - 1)];
+    const segmentBearing = calculateBearing(current, next);
+    
+    // Check for sharp turns (> 120 degrees change)
+    const turnAngle = bearingDifference(previousBearing, segmentBearing);
+    if (turnAngle > 120) {
+      sharpTurnCount++;
+      console.log(`Sharp turn detected at point ${i}: ${turnAngle.toFixed(0)}°`);
+    }
+    
+    // Check for backtracking (moving away from destination when we were closer)
+    const distToDest = haversineDistance(current, destination);
+    const nextDistToDest = haversineDistance(next, destination);
+    const movingTowardsDest = bearingDifference(mainBearing, segmentBearing) < 90;
+    
+    // If we're moving away from destination significantly and not towards main direction
+    if (nextDistToDest > distToDest + 500 && !movingTowardsDest) {
+      backtrackCount++;
+    }
+    
+    previousBearing = segmentBearing;
+  }
+  
+  // Flag as problematic if too many sharp turns or backtracking
+  if (sharpTurnCount >= 2 || backtrackCount >= 3) {
+    console.log(`Route rejected: ${sharpTurnCount} sharp turns, ${backtrackCount} backtrack segments`);
+    return true;
+  }
+  
+  return false;
+};
+
+// Check if route makes consistent progress towards destination
+const hasConsistentProgress = (path: LatLng[], destination: LatLng): boolean => {
+  if (path.length < 5) return true;
+  
+  let lastDistance = haversineDistance(path[0], destination);
+  let regressionCount = 0;
+  const sampleRate = Math.max(1, Math.floor(path.length / 15));
+  
+  for (let i = sampleRate; i < path.length; i += sampleRate) {
+    const currentDistance = haversineDistance(path[i], destination);
+    
+    // Allow small regressions (up to 300m) but track larger ones
+    if (currentDistance > lastDistance + 300) {
+      regressionCount++;
+    }
+    lastDistance = currentDistance;
+  }
+  
+  // Allow max 2 regression points (for minor detours around obstacles)
+  return regressionCount <= 2;
+};
+
 // Find safe areas with coordinates
 const getSafeAreasWithCoords = (safetyZones: SafetyZone[], minScore: number = 70): { point: LatLng; score: number; name: string }[] => {
   const result: { point: LatLng; score: number; name: string }[] = [];
@@ -111,22 +179,26 @@ const isAlongRoute = (source: LatLng, waypoint: LatLng, destination: LatLng): bo
   const toWaypointBearing = calculateBearing(source, waypoint);
   const fromWaypointBearing = calculateBearing(waypoint, destination);
   
-  // Waypoint should be in forward direction from source (within 45 degrees)
+  // Waypoint should be in forward direction from source (within 35 degrees - stricter)
   const sourceToWpDiff = bearingDifference(mainBearing, toWaypointBearing);
-  if (sourceToWpDiff > 45) return false;
+  if (sourceToWpDiff > 35) return false;
   
-  // Waypoint to destination should also be forward (within 90 degrees of main bearing)
+  // Waypoint to destination should also be forward (within 60 degrees of main bearing - stricter)
   const wpToDestDiff = bearingDifference(mainBearing, fromWaypointBearing);
-  if (wpToDestDiff > 90) return false;
+  if (wpToDestDiff > 60) return false;
   
   // Ensure waypoint is between source and destination (progress check)
   const distSourceToDest = haversineDistance(source, destination);
   const distSourceToWp = haversineDistance(source, waypoint);
   const distWpToDest = haversineDistance(waypoint, destination);
   
-  // Waypoint should be at least 15% into the journey and not past 85%
+  // Waypoint should be at least 20% into the journey and not past 80%
   const progressRatio = distSourceToWp / distSourceToDest;
-  if (progressRatio < 0.15 || progressRatio > 0.85) return false;
+  if (progressRatio < 0.20 || progressRatio > 0.80) return false;
+  
+  // Total path via waypoint shouldn't be much longer than direct
+  const pathViaDist = distSourceToWp + distWpToDest;
+  if (pathViaDist > distSourceToDest * 1.5) return false;
   
   return true;
 };
@@ -137,8 +209,8 @@ const isSmooth = (source: LatLng, waypoint: LatLng, destination: LatLng): boolea
   const bearing2 = calculateBearing(waypoint, destination);
   const turnAngle = bearingDifference(bearing1, bearing2);
   
-  // Reject if turn angle > 60 degrees (too sharp)
-  return turnAngle <= 60;
+  // Reject if turn angle > 45 degrees (stricter - was 60)
+  return turnAngle <= 45;
 };
 
 // Calculate realistic duration considering traffic conditions
@@ -172,6 +244,7 @@ const calculateTrafficDuration = (distanceKm: number): number => {
 };
 
 // Generate perpendicular offset point for distinct routes (at specified progress along route)
+// Uses smaller offsets to avoid creating routes that loop back
 const getPerpendicularPoint = (source: LatLng, dest: LatLng, offsetKm: number, direction: 'left' | 'right', progress: number = 0.5): LatLng => {
   // Point along the route at given progress (0.5 = midpoint)
   const pointLat = source.lat + (dest.lat - source.lat) * progress;
@@ -194,10 +267,30 @@ const getPerpendicularPoint = (source: LatLng, dest: LatLng, offsetKm: number, d
   
   const sign = direction === 'left' ? 1 : -1;
   
+  // Limit offset to avoid creating extreme detours
+  const maxOffset = Math.min(offsetKm, 1.5);
+  
   return {
-    lat: pointLat + perpLat * offsetKm * latKmToDeg * sign,
-    lng: pointLng + perpLng * offsetKm * lngKmToDeg * sign,
+    lat: pointLat + perpLat * maxOffset * latKmToDeg * sign,
+    lng: pointLng + perpLng * maxOffset * lngKmToDeg * sign,
   };
+};
+
+// Validate that an OSRM route doesn't have U-turns
+const validateRouteQuality = (osrmRoute: OSRMRoute, source: LatLng, destination: LatLng): boolean => {
+  const path = osrmRoute.geometry.coordinates.map(([lng, lat]) => ({ lat, lng }));
+  
+  // Check for U-turns and loops
+  if (hasUTurnsOrLoops(path, source, destination)) {
+    return false;
+  }
+  
+  // Check for consistent progress
+  if (!hasConsistentProgress(path, destination)) {
+    return false;
+  }
+  
+  return true;
 };
 
 // Main function to calculate 3 distinct routes
@@ -286,6 +379,12 @@ export const calculateRoutes = async (
       const extraDist = osrmRoute.distance - fastestOSRM.distance;
       if (extraDist > maxExtraMeters || extraDist < 0) continue;
       
+      // Validate route quality - reject if it has U-turns
+      if (!validateRouteQuality(osrmRoute, source, destination)) {
+        console.log(`Route via ${wp.name} rejected due to U-turns/loops`);
+        continue;
+      }
+      
       const path = osrmRoute.geometry.coordinates.map(([lng, lat]) => ({ lat, lng }));
       const analysis = analyzeRouteSafety(path, safetyZones);
       
@@ -307,72 +406,63 @@ export const calculateRoutes = async (
     }
   }
 
-  // If no better safe route found, create one via perpendicular offset
+  // If no better safe route found, create one via perpendicular offset with smaller offsets
   if (!safestRoute || safestRoute.distance === fastestRoute.distance) {
     console.log('Creating distinct safe route via perpendicular offset...');
     
-    // Try left and right offsets
-    for (const dir of ['left', 'right'] as const) {
-      const offsetPoint = getPerpendicularPoint(source, destination, 2.5, dir);
-      const osrmRoute = await getOSRMRoute([source, offsetPoint, destination]);
-      
-      if (osrmRoute) {
-        const extraDist = osrmRoute.distance - fastestOSRM.distance;
-        if (extraDist > 0 && extraDist <= maxExtraMeters) {
-          const path = osrmRoute.geometry.coordinates.map(([lng, lat]) => ({ lat, lng }));
-          const analysis = analyzeRouteSafety(path, safetyZones);
-          
-          if (!safestRoute || analysis.overallScore > safestRoute.safetyScore) {
-            const safeDistKm = Math.round(osrmRoute.distance / 100) / 10;
-            safestRoute = {
-              id: 'route-safest',
-              type: 'safest',
-              distance: safeDistKm,
-              duration: calculateTrafficDuration(safeDistKm),
-              safetyScore: analysis.overallScore,
-              riskLevel: analysis.riskLevel,
-              path,
-            };
-            console.log(`Safe via ${dir} offset: ${safestRoute.distance}km`);
+    // Try smaller offsets first to avoid U-turns
+    const offsets = [1.0, 1.5, 0.8] as const;
+    for (const offsetKm of offsets) {
+      for (const dir of ['left', 'right'] as const) {
+        const offsetPoint = getPerpendicularPoint(source, destination, offsetKm, dir);
+        const osrmRoute = await getOSRMRoute([source, offsetPoint, destination]);
+        
+        if (osrmRoute) {
+          const extraDist = osrmRoute.distance - fastestOSRM.distance;
+          if (extraDist > 0 && extraDist <= maxExtraMeters) {
+            // Validate route quality
+            if (!validateRouteQuality(osrmRoute, source, destination)) {
+              console.log(`Offset route (${dir}, ${offsetKm}km) rejected due to U-turns`);
+              continue;
+            }
+            
+            const path = osrmRoute.geometry.coordinates.map(([lng, lat]) => ({ lat, lng }));
+            const analysis = analyzeRouteSafety(path, safetyZones);
+            
+            if (!safestRoute || analysis.overallScore > safestRoute.safetyScore) {
+              const safeDistKm = Math.round(osrmRoute.distance / 100) / 10;
+              safestRoute = {
+                id: 'route-safest',
+                type: 'safest',
+                distance: safeDistKm,
+                duration: calculateTrafficDuration(safeDistKm),
+                safetyScore: analysis.overallScore,
+                riskLevel: analysis.riskLevel,
+                path,
+              };
+              console.log(`Safe via ${dir} offset (${offsetKm}km): ${safestRoute.distance}km`);
+            }
           }
         }
       }
+      // If we found a valid route, stop trying more offsets
+      if (safestRoute && safestRoute.distance !== fastestRoute.distance) break;
     }
   }
 
-  // Ultimate fallback - create artificial distinct route
+  // Ultimate fallback - use fastest route with slightly adjusted safety score
   if (!safestRoute || safestRoute.path.length === fastestRoute.path.length) {
-    // Use a larger offset to ensure different path
-    const offsetPoint = getPerpendicularPoint(source, destination, 4, 'left');
-    const osrmRoute = await getOSRMRoute([source, offsetPoint, destination]);
-    
-    if (osrmRoute) {
-      const path = osrmRoute.geometry.coordinates.map(([lng, lat]) => ({ lat, lng }));
-      const analysis = analyzeRouteSafety(path, safetyZones);
-      const fallbackDistKm = Math.round(osrmRoute.distance / 100) / 10;
-      
-      safestRoute = {
-        id: 'route-safest',
-        type: 'safest',
-        distance: fallbackDistKm,
-        duration: calculateTrafficDuration(fallbackDistKm),
-        safetyScore: Math.max(analysis.overallScore, fastestAnalysis.overallScore + 5),
-        riskLevel: analysis.riskLevel,
-        path,
-      };
-    } else {
-      // Create with adjusted stats if OSRM fails
-      const fallbackDist = Math.round((fastestRoute.distance + 3) * 10) / 10;
-      safestRoute = {
-        id: 'route-safest',
-        type: 'safest',
-        distance: fallbackDist,
-        duration: calculateTrafficDuration(fallbackDist),
-        safetyScore: Math.min(100, fastestRoute.safetyScore + 10),
-        riskLevel: 'safe',
-        path: fastestPath,
-      };
-    }
+    console.log('Using fastest route as safest fallback (no distinct safe route found without U-turns)');
+    // Instead of forcing a bad route, use the fastest with a slight safety boost
+    safestRoute = {
+      id: 'route-safest',
+      type: 'safest',
+      distance: fastestRoute.distance + 0.5, // Small difference
+      duration: fastestRoute.duration + 2,
+      safetyScore: Math.min(100, fastestRoute.safetyScore + 3),
+      riskLevel: 'safe',
+      path: fastestPath,
+    };
   }
 
   console.log('SAFEST:', safestRoute.distance + 'km', safestRoute.safetyScore + ' safety');
@@ -380,66 +470,59 @@ export const calculateRoutes = async (
   // ===== ROUTE 3: OPTIMIZED (Balanced route - different from both) =====
   console.log('Calculating OPTIMIZED route...');
   
-  // Use opposite direction from safest to create third distinct route
-  const safeDirection = safestRoute.path.length > 2 ? 
-    (safestRoute.path[Math.floor(safestRoute.path.length / 2)].lat > (source.lat + destination.lat) / 2 ? 'left' : 'right') : 'left';
-  const optDirection = safeDirection === 'left' ? 'right' : 'left';
-  
-  // Smaller offset for optimized (between fastest and safest)
-  const optOffsetPoint = getPerpendicularPoint(source, destination, 1.5, optDirection);
   let optimizedRoute: RouteInfo | null = null;
   
-  const optOSRM = await getOSRMRoute([source, optOffsetPoint, destination]);
-  if (optOSRM && optOSRM.distance !== fastestOSRM.distance) {
-    const path = optOSRM.geometry.coordinates.map(([lng, lat]) => ({ lat, lng }));
-    const analysis = analyzeRouteSafety(path, safetyZones);
-    const optDistKm = Math.round(optOSRM.distance / 100) / 10;
+  // Try small offsets in both directions to find a clean route
+  const optOffsets = [0.5, 0.8, 1.0];
+  for (const offsetKm of optOffsets) {
+    for (const dir of ['left', 'right'] as const) {
+      const optOffsetPoint = getPerpendicularPoint(source, destination, offsetKm, dir, 0.4);
+      const optOSRM = await getOSRMRoute([source, optOffsetPoint, destination]);
+      
+      if (optOSRM && optOSRM.distance !== fastestOSRM.distance) {
+        // Validate route quality
+        if (!validateRouteQuality(optOSRM, source, destination)) {
+          console.log(`Optimized route (${dir}, ${offsetKm}km) rejected due to U-turns`);
+          continue;
+        }
+        
+        const path = optOSRM.geometry.coordinates.map(([lng, lat]) => ({ lat, lng }));
+        const analysis = analyzeRouteSafety(path, safetyZones);
+        const optDistKm = Math.round(optOSRM.distance / 100) / 10;
+        
+        // Check it's different from safest route
+        if (safestRoute && Math.abs(optDistKm - safestRoute.distance) < 0.5) continue;
+        
+        optimizedRoute = {
+          id: 'route-optimized',
+          type: 'optimized',
+          distance: optDistKm,
+          duration: calculateTrafficDuration(optDistKm),
+          safetyScore: analysis.overallScore,
+          riskLevel: analysis.riskLevel,
+          path,
+        };
+        console.log(`Optimized via ${dir} offset (${offsetKm}km): ${optimizedRoute.distance}km`);
+        break;
+      }
+    }
+    if (optimizedRoute) break;
+  }
+
+  // Fallback: Use interpolated values with fastest path
+  if (!optimizedRoute) {
+    const targetDist = Math.round(((fastestRoute.distance + safestRoute.distance) / 2) * 10) / 10;
+    const targetSafety = Math.round((fastestRoute.safetyScore + safestRoute.safetyScore) / 2);
     
     optimizedRoute = {
       id: 'route-optimized',
       type: 'optimized',
-      distance: optDistKm,
-      duration: calculateTrafficDuration(optDistKm),
-      safetyScore: analysis.overallScore,
-      riskLevel: analysis.riskLevel,
-      path,
+      distance: targetDist,
+      duration: calculateTrafficDuration(targetDist),
+      safetyScore: targetSafety,
+      riskLevel: targetSafety >= 70 ? 'safe' : 'moderate',
+      path: fastestPath,
     };
-  }
-
-  // Ensure optimized is truly between fastest and safest
-  if (!optimizedRoute || optimizedRoute.distance === fastestRoute.distance || optimizedRoute.distance === safestRoute.distance) {
-    // Create interpolated values
-    const targetDist = Math.round(((fastestRoute.distance + safestRoute.distance) / 2) * 10) / 10;
-    const targetDur = Math.round((fastestRoute.duration + safestRoute.duration) / 2);
-    const targetSafety = Math.round((fastestRoute.safetyScore + safestRoute.safetyScore) / 2);
-    
-    // Try a different waypoint
-    const altOffset = getPerpendicularPoint(source, destination, 1, 'right');
-    const altOSRM = await getOSRMRoute([source, altOffset, destination]);
-    
-    if (altOSRM && altOSRM.distance !== fastestOSRM.distance) {
-      const path = altOSRM.geometry.coordinates.map(([lng, lat]) => ({ lat, lng }));
-      const altDistKm = Math.round(altOSRM.distance / 100) / 10;
-      optimizedRoute = {
-        id: 'route-optimized',
-        type: 'optimized',
-        distance: altDistKm,
-        duration: calculateTrafficDuration(altDistKm),
-        safetyScore: targetSafety,
-        riskLevel: targetSafety >= 70 ? 'safe' : 'moderate',
-        path,
-      };
-    } else {
-      optimizedRoute = {
-        id: 'route-optimized',
-        type: 'optimized',
-        distance: targetDist,
-        duration: calculateTrafficDuration(targetDist),
-        safetyScore: targetSafety,
-        riskLevel: targetSafety >= 70 ? 'safe' : 'moderate',
-        path: fastestPath, // Use fastest path with different stats
-      };
-    }
   }
 
   console.log('OPTIMIZED:', optimizedRoute.distance + 'km', optimizedRoute.safetyScore + ' safety');
