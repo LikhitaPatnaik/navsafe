@@ -1,1 +1,4 @@
 project_id = "dkkgnyakaygahndoipte"
+
+[functions.send-sos]
+verify_jwt = false

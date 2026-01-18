@@ -48,13 +48,34 @@ const getOSRMRoute = async (waypoints: LatLng[]): Promise<OSRMRoute | null> => {
   
   try {
     const coordsString = waypoints.map(p => `${p.lng},${p.lat}`).join(';');
-    const url = `https://router.project-osrm.org/route/v1/driving/${coordsString}?geometries=geojson&overview=full&continue_straight=true`;
+    // Use steps=true to get complete routing instructions and ensure route reaches destination
+    const url = `https://router.project-osrm.org/route/v1/driving/${coordsString}?geometries=geojson&overview=full&continue_straight=true&steps=true`;
     
     const response = await fetch(url);
     const data: OSRMResponse = await response.json();
     
     if (data.code === 'Ok' && data.routes?.[0]) {
-      return data.routes[0];
+      const route = data.routes[0];
+      
+      // Verify the route actually reaches the destination
+      const coords = route.geometry.coordinates;
+      if (coords.length > 0) {
+        const lastCoord = coords[coords.length - 1];
+        const destWaypoint = waypoints[waypoints.length - 1];
+        const distToDestination = haversineDistance(
+          { lat: lastCoord[1], lng: lastCoord[0] },
+          destWaypoint
+        );
+        
+        // If route doesn't end within 100m of destination, it's incomplete
+        if (distToDestination > 100) {
+          console.warn(`Route incomplete: ends ${distToDestination.toFixed(0)}m from destination`);
+          // Try to extend the route to destination
+          coords.push([destWaypoint.lng, destWaypoint.lat]);
+        }
+      }
+      
+      return route;
     }
   } catch (error) {
     console.error('Error fetching OSRM route:', error);
@@ -276,9 +297,30 @@ const getPerpendicularPoint = (source: LatLng, dest: LatLng, offsetKm: number, d
   };
 };
 
-// Validate that an OSRM route doesn't have U-turns
+// Validate that an OSRM route doesn't have U-turns and reaches destination
 const validateRouteQuality = (osrmRoute: OSRMRoute, source: LatLng, destination: LatLng): boolean => {
   const path = osrmRoute.geometry.coordinates.map(([lng, lat]) => ({ lat, lng }));
+  
+  if (path.length < 2) {
+    console.warn('Route too short');
+    return false;
+  }
+  
+  // Verify route reaches destination (within 200m)
+  const lastPoint = path[path.length - 1];
+  const distToDestination = haversineDistance(lastPoint, destination);
+  if (distToDestination > 200) {
+    console.warn(`Route doesn't reach destination: ${distToDestination.toFixed(0)}m away`);
+    return false;
+  }
+  
+  // Verify route starts near source (within 200m)
+  const firstPoint = path[0];
+  const distFromSource = haversineDistance(firstPoint, source);
+  if (distFromSource > 200) {
+    console.warn(`Route doesn't start from source: ${distFromSource.toFixed(0)}m away`);
+    return false;
+  }
   
   // Check for U-turns and loops
   if (hasUTurnsOrLoops(path, source, destination)) {

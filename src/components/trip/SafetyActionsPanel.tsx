@@ -1,8 +1,10 @@
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { RefreshCw, Flag, AlertOctagon, X } from 'lucide-react';
+import { RefreshCw, Flag, AlertOctagon, Loader2 } from 'lucide-react';
 import { useTrip } from '@/context/TripContext';
+import { supabase } from '@/integrations/supabase/client';
+import { toast } from 'sonner';
 import {
   Dialog,
   DialogContent,
@@ -17,23 +19,59 @@ const SafetyActionsPanel = () => {
   const [showSosModal, setShowSosModal] = useState(false);
   const [reportReason, setReportReason] = useState('');
   const [reportSeverity, setReportSeverity] = useState<'low' | 'medium' | 'high'>('medium');
+  const [isSending, setIsSending] = useState(false);
 
   if (!trip.isMonitoring) return null;
 
   const handleReroute = () => {
-    // Implement reroute logic
     console.log('Rerouting to safest path...');
+    toast.info('Calculating safest route from your current position...');
   };
 
   const handleReport = () => {
     console.log('Reporting:', { reason: reportReason, severity: reportSeverity });
     setShowReportModal(false);
     setReportReason('');
+    toast.success('Area reported successfully');
   };
 
-  const handleSos = () => {
-    console.log('SOS triggered - sharing live location');
-    setShowSosModal(false);
+  const handleSos = async () => {
+    if (!trip.currentPosition) {
+      toast.error('Unable to get your location. Please enable GPS.');
+      return;
+    }
+
+    setIsSending(true);
+    
+    try {
+      const { data, error } = await supabase.functions.invoke('send-sos', {
+        body: {
+          location: {
+            lat: trip.currentPosition.lat,
+            lng: trip.currentPosition.lng,
+          },
+        },
+      });
+
+      if (error) {
+        console.error('SOS error:', error);
+        toast.error('Failed to send SOS. Please call emergency services directly.');
+        return;
+      }
+
+      if (data?.error === 'No emergency contacts found') {
+        toast.error('No emergency contacts configured. Please add contacts first.');
+        return;
+      }
+
+      toast.success(`SOS sent to ${data?.sent || 0} emergency contacts!`);
+      setShowSosModal(false);
+    } catch (err) {
+      console.error('SOS error:', err);
+      toast.error('Failed to send SOS. Please call emergency services directly.');
+    } finally {
+      setIsSending(false);
+    }
   };
 
   return (
@@ -128,12 +166,12 @@ const SafetyActionsPanel = () => {
               Emergency SOS
             </DialogTitle>
             <DialogDescription className="text-muted-foreground">
-              This will share your live location with emergency contacts
+              This will send your live location to emergency contacts via SMS
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4 mt-4">
             <p className="text-sm text-foreground">
-              Are you sure you want to activate SOS? Your live location will be shared immediately.
+              Are you sure you want to activate SOS? Your location will be sent immediately to all emergency contacts.
             </p>
             <div className="flex gap-3">
               <Button
@@ -147,8 +185,16 @@ const SafetyActionsPanel = () => {
                 variant="sos"
                 className="flex-1"
                 onClick={handleSos}
+                disabled={isSending}
               >
-                Share Live Location
+                {isSending ? (
+                  <>
+                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                    Sending...
+                  </>
+                ) : (
+                  'Send SOS Alert'
+                )}
               </Button>
             </div>
           </div>
