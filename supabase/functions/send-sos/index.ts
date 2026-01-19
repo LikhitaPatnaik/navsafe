@@ -19,18 +19,24 @@ const formatLocationUrl = (lat: number, lng: number): string => {
   return `https://www.google.com/maps?q=${lat},${lng}`;
 };
 
-const sendTwilioSMS = async (to: string, body: string): Promise<boolean> => {
+const sendTwilioSMS = async (to: string, body: string): Promise<{ success: boolean; error?: string }> => {
   const accountSid = Deno.env.get('TWILIO_ACCOUNT_SID');
   const authToken = Deno.env.get('TWILIO_AUTH_TOKEN');
   const fromNumber = Deno.env.get('TWILIO_PHONE_NUMBER');
 
+  console.log(`[SOS] Attempting to send SMS to: ${to}`);
+  console.log(`[SOS] From number configured: ${fromNumber ? 'Yes' : 'No'}`);
+  console.log(`[SOS] Account SID configured: ${accountSid ? 'Yes (' + accountSid.substring(0, 8) + '...)' : 'No'}`);
+
   if (!accountSid || !authToken || !fromNumber) {
-    console.error('Missing Twilio credentials');
-    return false;
+    console.error('[SOS] Missing Twilio credentials - accountSid:', !!accountSid, 'authToken:', !!authToken, 'fromNumber:', !!fromNumber);
+    return { success: false, error: 'Missing Twilio credentials' };
   }
 
   try {
     const url = `https://api.twilio.com/2010-04-01/Accounts/${accountSid}/Messages.json`;
+    
+    console.log(`[SOS] Sending to Twilio API for number: ${to}`);
     
     const response = await fetch(url, {
       method: 'POST',
@@ -48,15 +54,15 @@ const sendTwilioSMS = async (to: string, body: string): Promise<boolean> => {
     const result = await response.json();
     
     if (response.ok) {
-      console.log(`SMS sent to ${to}: ${result.sid}`);
-      return true;
+      console.log(`[SOS] ✅ SMS sent successfully to ${to} - SID: ${result.sid}`);
+      return { success: true };
     } else {
-      console.error(`Failed to send SMS to ${to}:`, result);
-      return false;
+      console.error(`[SOS] ❌ Twilio API error for ${to}:`, JSON.stringify(result));
+      return { success: false, error: result.message || 'Twilio API error' };
     }
   } catch (error) {
-    console.error(`Error sending SMS to ${to}:`, error);
-    return false;
+    console.error(`[SOS] ❌ Exception sending SMS to ${to}:`, error);
+    return { success: false, error: error instanceof Error ? error.message : 'Unknown error' };
   }
 };
 
@@ -120,16 +126,21 @@ const handler = async (req: Request): Promise<Response> => {
     );
 
     const results = await Promise.all(sendPromises);
-    const successCount = results.filter(Boolean).length;
+    const successCount = results.filter(r => r.success).length;
+    const errors = results.filter(r => !r.success).map(r => r.error);
 
-    console.log(`SOS sent successfully to ${successCount}/${contacts.length} contacts`);
+    console.log(`[SOS] Results: ${successCount}/${contacts.length} contacts received alert`);
+    if (errors.length > 0) {
+      console.log(`[SOS] Errors encountered:`, errors);
+    }
 
     return new Response(
       JSON.stringify({
-        success: true,
+        success: successCount > 0,
         sent: successCount,
         total: contacts.length,
         message: `SOS alert sent to ${successCount} out of ${contacts.length} contacts`,
+        errors: errors.length > 0 ? errors : undefined,
       }),
       { status: 200, headers: { 'Content-Type': 'application/json', ...corsHeaders } }
     );
