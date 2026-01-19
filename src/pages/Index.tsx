@@ -8,12 +8,13 @@ import LiveStatusBanner from '@/components/trip/LiveStatusBanner';
 import AlertPopup from '@/components/trip/AlertPopup';
 import SafetyActionsPanel from '@/components/trip/SafetyActionsPanel';
 import TripSummaryComponent from '@/components/trip/TripSummary';
+import EmergencyContactsManager from '@/components/trip/EmergencyContactsManager';
 import { Button } from '@/components/ui/button';
 import { ArrowLeft, StopCircle, Loader2 } from 'lucide-react';
 import { calculateRoutes } from '@/services/routingService';
 import { toast } from 'sonner';
 import { checkDeviation, DeviationResult } from '@/utils/deviationDetection';
-import { getNearestSafetyZone } from '@/services/astarRouting';
+import { getNearestSafetyZone, haversineDistance } from '@/services/astarRouting';
 
 const TripApp = () => {
   const {
@@ -78,7 +79,9 @@ const TripApp = () => {
   const gpsToastShownRef = useRef(false);
   const watchIdRef = useRef<number | null>(null);
   const lastDeviationAlertRef = useRef<number>(0);
+  const monitoringStartTimeRef = useRef<number>(0);
   const deviationCooldown = 30000; // 30 seconds between deviation alerts
+  const monitoringGracePeriod = 10000; // 10 second grace period after monitoring starts
 
   // Get initial location on page load
   useEffect(() => {
@@ -116,6 +119,7 @@ const TripApp = () => {
           duration: 3000,
         });
         gpsToastShownRef.current = true;
+        monitoringStartTimeRef.current = Date.now();
       }
       
       watchIdRef.current = navigator.geolocation.watchPosition(
@@ -126,8 +130,23 @@ const TripApp = () => {
           };
           updatePosition(newPosition);
           
-          // Check for route deviation
+          // Check for route deviation - but only after grace period
+          const timeSinceStart = Date.now() - monitoringStartTimeRef.current;
+          if (timeSinceStart < monitoringGracePeriod) {
+            // Skip deviation checks during grace period
+            return;
+          }
+          
           if (trip.selectedRoute && trip.selectedRoute.path.length > 0) {
+            // Check if user is near the route start point (within 500m)
+            const routeStart = trip.selectedRoute.path[0];
+            const distanceFromStart = haversineDistance(newPosition, routeStart);
+            
+            // Skip alerts if user hasn't started moving from the start point yet
+            if (distanceFromStart < 500) {
+              return;
+            }
+            
             const areaInfo = getNearestSafetyZone(newPosition, safetyZones);
             const deviation = checkDeviation(newPosition, trip.selectedRoute.path, areaInfo);
             
@@ -285,7 +304,10 @@ const TripApp = () => {
         {/* Left Panel - Full width on mobile, fixed width on desktop */}
         <div className="w-full lg:w-96 flex-shrink-0 space-y-3 sm:space-y-4 order-2 lg:order-1">
           {(trip.status === 'idle' || (trip.status === 'planning' && trip.routes.length === 0)) && (
-            <TripInputPanel onFindRoutes={handleFindRoutes} isLoading={isCalculatingRoutes} />
+            <>
+              <TripInputPanel onFindRoutes={handleFindRoutes} isLoading={isCalculatingRoutes} />
+              <EmergencyContactsManager />
+            </>
           )}
 
           {/* Route Cards */}
