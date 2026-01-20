@@ -88,7 +88,8 @@ export const checkDeviation = (
   const distance = getDistanceFromRoute(currentPosition, routePath);
   const roundedDistance = Math.round(distance);
 
-  if (distance <= 100) {
+  // Within 200m - completely safe, no deviation
+  if (distance <= 200) {
     return {
       isDeviated: false,
       distance: roundedDistance,
@@ -97,7 +98,8 @@ export const checkDeviation = (
     };
   }
 
-  if (distance <= 200) {
+  // 200-300m - warning zone
+  if (distance <= 300) {
     const safetyWarning = areaInfo && areaInfo.safetyScore < 50 
       ? ` You are entering a low-safety area (${areaInfo.areaName}).`
       : '';
@@ -109,7 +111,7 @@ export const checkDeviation = (
     };
   }
 
-  // Beyond 200m - danger
+  // Beyond 300m - danger
   const safetyWarning = areaInfo && areaInfo.safetyScore < 50 
     ? ` Driver is taking a low-safety road in ${areaInfo.areaName} (Safety: ${areaInfo.safetyScore}%).`
     : ' Driver may be taking an unverified route.';

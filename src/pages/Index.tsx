@@ -80,8 +80,10 @@ const TripApp = () => {
   const watchIdRef = useRef<number | null>(null);
   const lastDeviationAlertRef = useRef<number>(0);
   const monitoringStartTimeRef = useRef<number>(0);
+  const monitoringStartPositionRef = useRef<{ lat: number; lng: number } | null>(null);
   const deviationCooldown = 30000; // 30 seconds between deviation alerts
   const monitoringGracePeriod = 10000; // 10 second grace period after monitoring starts
+  const minMovementFromStart = 500; // Must move 500m from start before deviation alerts
 
   // Get initial location on page load
   useEffect(() => {
@@ -105,6 +107,7 @@ const TripApp = () => {
   useEffect(() => {
     if (!trip.isMonitoring) {
       gpsToastShownRef.current = false;
+      monitoringStartPositionRef.current = null;
       if (watchIdRef.current !== null) {
         navigator.geolocation.clearWatch(watchIdRef.current);
         watchIdRef.current = null;
@@ -130,6 +133,13 @@ const TripApp = () => {
           };
           updatePosition(newPosition);
           
+          // Store the first position as the monitoring start position
+          if (!monitoringStartPositionRef.current) {
+            monitoringStartPositionRef.current = newPosition;
+            console.log('[Deviation] Monitoring started at position:', newPosition);
+            return; // Skip first check
+          }
+          
           // Check for route deviation - but only after grace period
           const timeSinceStart = Date.now() - monitoringStartTimeRef.current;
           if (timeSinceStart < monitoringGracePeriod) {
@@ -138,12 +148,12 @@ const TripApp = () => {
           }
           
           if (trip.selectedRoute && trip.selectedRoute.path.length > 0) {
-            // Check if user is near the route start point (within 500m)
-            const routeStart = trip.selectedRoute.path[0];
-            const distanceFromStart = haversineDistance(newPosition, routeStart);
+            // Check if user has moved enough from where they started monitoring
+            const distanceFromMonitoringStart = haversineDistance(newPosition, monitoringStartPositionRef.current);
             
-            // Skip alerts if user hasn't started moving from the start point yet
-            if (distanceFromStart < 500) {
+            // Skip alerts if user hasn't moved 500m from where they started
+            if (distanceFromMonitoringStart < minMovementFromStart) {
+              console.log('[Deviation] User has only moved', Math.round(distanceFromMonitoringStart), 'm from start, need 500m');
               return;
             }
             
