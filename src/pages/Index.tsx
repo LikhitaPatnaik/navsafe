@@ -1,5 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { TripProvider, useTrip } from '@/context/TripContext';
+import { useAuth } from '@/contexts/AuthContext';
 import HeroSection from '@/components/landing/HeroSection';
 import TripInputPanel from '@/components/trip/TripInputPanel';
 import MapView from '@/components/trip/MapView';
@@ -8,9 +10,9 @@ import LiveStatusBanner from '@/components/trip/LiveStatusBanner';
 import AlertPopup from '@/components/trip/AlertPopup';
 import SafetyActionsPanel from '@/components/trip/SafetyActionsPanel';
 import TripSummaryComponent from '@/components/trip/TripSummary';
-import EmergencyContactsManager from '@/components/trip/EmergencyContactsManager';
+import ProfileDropdown from '@/components/ProfileDropdown';
 import { Button } from '@/components/ui/button';
-import { ArrowLeft, StopCircle, Loader2 } from 'lucide-react';
+import { ArrowLeft, StopCircle, Loader2, LogIn } from 'lucide-react';
 import { calculateRoutes } from '@/services/routingService';
 import { toast } from 'sonner';
 import { checkDeviation, DeviationResult } from '@/utils/deviationDetection';
@@ -29,6 +31,9 @@ const TripApp = () => {
     tripSummary,
     completeTip,
   } = useTrip();
+  
+  const { user, loading: authLoading } = useAuth();
+  const navigate = useNavigate();
   
   const [showLanding, setShowLanding] = useState(true);
   const [isCalculatingRoutes, setIsCalculatingRoutes] = useState(false);
@@ -248,6 +253,15 @@ const TripApp = () => {
 
   const activeAlert = trip.alerts.find(a => !a.dismissed);
 
+  // Show loading while auth is loading
+  if (authLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <Loader2 className="w-8 h-8 animate-spin text-primary" />
+      </div>
+    );
+  }
+
   // Show landing page
   if (showLanding && trip.status === 'idle') {
     return <HeroSection onStartTrip={() => setShowLanding(false)} />;
@@ -306,6 +320,23 @@ const TripApp = () => {
               </span>
             </div>
           )}
+
+          {/* Profile Dropdown or Login Button */}
+          <div className="ml-auto">
+            {user ? (
+              <ProfileDropdown />
+            ) : (
+              <Button
+                variant="glass"
+                size="sm"
+                onClick={() => navigate('/auth')}
+                className="text-xs sm:text-sm"
+              >
+                <LogIn className="w-4 h-4 sm:mr-2" />
+                <span className="hidden sm:inline">Sign In</span>
+              </Button>
+            )}
+          </div>
         </div>
       </header>
 
@@ -314,10 +345,7 @@ const TripApp = () => {
         {/* Left Panel - Full width on mobile, fixed width on desktop */}
         <div className="w-full lg:w-96 flex-shrink-0 space-y-3 sm:space-y-4 order-2 lg:order-1">
           {(trip.status === 'idle' || (trip.status === 'planning' && trip.routes.length === 0)) && (
-            <>
-              <TripInputPanel onFindRoutes={handleFindRoutes} isLoading={isCalculatingRoutes} />
-              <EmergencyContactsManager />
-            </>
+            <TripInputPanel onFindRoutes={handleFindRoutes} isLoading={isCalculatingRoutes} />
           )}
 
           {/* Route Cards */}

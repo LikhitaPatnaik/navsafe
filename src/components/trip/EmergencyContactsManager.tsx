@@ -23,6 +23,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 
 interface EmergencyContact {
   id: string;
@@ -30,6 +31,7 @@ interface EmergencyContact {
   phone: string;
   relationship: string | null;
   is_primary: boolean | null;
+  user_id: string | null;
 }
 
 const EmergencyContactsManager = () => {
@@ -39,6 +41,7 @@ const EmergencyContactsManager = () => {
   const [editingContact, setEditingContact] = useState<EmergencyContact | null>(null);
   const [deleteContactId, setDeleteContactId] = useState<string | null>(null);
   const [isSaving, setIsSaving] = useState(false);
+  const [userId, setUserId] = useState<string | null>(null);
   
   // Form state
   const [formName, setFormName] = useState('');
@@ -46,13 +49,28 @@ const EmergencyContactsManager = () => {
   const [formRelationship, setFormRelationship] = useState('');
   const [formIsPrimary, setFormIsPrimary] = useState(false);
 
+  // Get current user
+  useEffect(() => {
+    const getUser = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      setUserId(user?.id || null);
+    };
+    getUser();
+  }, []);
+
   // Fetch contacts
   const fetchContacts = async () => {
+    if (!userId) {
+      setIsLoading(false);
+      return;
+    }
+    
     setIsLoading(true);
     try {
       const { data, error } = await supabase
         .from('emergency_contacts')
         .select('*')
+        .eq('user_id', userId)
         .order('is_primary', { ascending: false })
         .order('created_at', { ascending: true });
       
@@ -67,8 +85,10 @@ const EmergencyContactsManager = () => {
   };
 
   useEffect(() => {
-    fetchContacts();
-  }, []);
+    if (userId) {
+      fetchContacts();
+    }
+  }, [userId]);
 
   // Reset form
   const resetForm = () => {
@@ -104,6 +124,11 @@ const EmergencyContactsManager = () => {
 
   // Save contact (add or update)
   const handleSave = async () => {
+    if (!userId) {
+      toast.error('Please sign in to manage contacts');
+      return;
+    }
+    
     // Validate inputs
     if (!formName.trim()) {
       toast.error('Please enter a name');
@@ -132,6 +157,7 @@ const EmergencyContactsManager = () => {
         phone: formattedPhone,
         relationship: formRelationship.trim() || null,
         is_primary: formIsPrimary,
+        user_id: userId,
       };
 
       if (editingContact) {
@@ -186,88 +212,75 @@ const EmergencyContactsManager = () => {
   };
 
   return (
-    <div className="glass-strong rounded-2xl p-4 sm:p-6">
-      <div className="flex items-center justify-between mb-4">
-        <div className="flex items-center gap-2">
-          <Users className="w-5 h-5 text-primary" />
-          <h3 className="font-semibold text-foreground">Emergency Contacts</h3>
-        </div>
-        <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-          <DialogTrigger asChild>
-            <Button variant="outline" size="sm" onClick={handleAddNew}>
-              <Plus className="w-4 h-4 mr-1" />
-              Add
-            </Button>
-          </DialogTrigger>
-          <DialogContent className="glass-strong border-border sm:max-w-md">
-            <DialogHeader>
-              <DialogTitle>{editingContact ? 'Edit Contact' : 'Add Emergency Contact'}</DialogTitle>
-              <DialogDescription>
-                {editingContact 
-                  ? 'Update the contact details below.'
-                  : 'Add someone who will receive SOS alerts with your location.'}
-              </DialogDescription>
-            </DialogHeader>
-            <div className="space-y-4 mt-4">
-              <div className="space-y-2">
-                <Label htmlFor="name">Name *</Label>
-                <div className="relative">
-                  <User className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+    <Card>
+      <CardHeader className="pb-3">
+        <div className="flex items-center justify-between">
+          <CardTitle className="flex items-center gap-2 text-lg">
+            <Users className="w-5 h-5 text-primary" />
+            Emergency Contacts
+          </CardTitle>
+          <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+            <DialogTrigger asChild>
+              <Button variant="outline" size="sm" onClick={handleAddNew}>
+                <Plus className="w-4 h-4 mr-1" />
+                Add
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="sm:max-w-md">
+              <DialogHeader>
+                <DialogTitle>
+                  {editingContact ? 'Edit Contact' : 'Add Emergency Contact'}
+                </DialogTitle>
+                <DialogDescription>
+                  {editingContact 
+                    ? 'Update the contact details below'
+                    : 'Add someone who can be contacted in case of emergency'}
+                </DialogDescription>
+              </DialogHeader>
+              <div className="space-y-4 py-4">
+                <div className="space-y-2">
+                  <Label htmlFor="name">Name *</Label>
                   <Input
                     id="name"
-                    placeholder="Contact name"
+                    placeholder="Enter name"
                     value={formName}
                     onChange={(e) => setFormName(e.target.value)}
-                    className="pl-10"
-                    maxLength={100}
                   />
                 </div>
-              </div>
-              
-              <div className="space-y-2">
-                <Label htmlFor="phone">Phone Number *</Label>
-                <div className="relative">
-                  <Phone className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                <div className="space-y-2">
+                  <Label htmlFor="phone">Phone Number *</Label>
                   <Input
                     id="phone"
-                    placeholder="+91 9876543210"
+                    placeholder="+91 XXXXX XXXXX"
                     value={formPhone}
                     onChange={(e) => setFormPhone(e.target.value)}
-                    className="pl-10"
-                    maxLength={20}
                   />
                 </div>
-                <p className="text-xs text-muted-foreground">Include country code for international numbers</p>
+                <div className="space-y-2">
+                  <Label htmlFor="relationship">Relationship</Label>
+                  <Input
+                    id="relationship"
+                    placeholder="e.g., Parent, Spouse, Friend"
+                    value={formRelationship}
+                    onChange={(e) => setFormRelationship(e.target.value)}
+                  />
+                </div>
+                <div className="flex items-center space-x-2">
+                  <input
+                    type="checkbox"
+                    id="isPrimary"
+                    checked={formIsPrimary}
+                    onChange={(e) => setFormIsPrimary(e.target.checked)}
+                    className="h-4 w-4 rounded border-gray-300"
+                  />
+                  <Label htmlFor="isPrimary" className="text-sm">
+                    Set as primary contact
+                  </Label>
+                </div>
               </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="relationship">Relationship (optional)</Label>
-                <Input
-                  id="relationship"
-                  placeholder="e.g., Parent, Spouse, Friend"
-                  value={formRelationship}
-                  onChange={(e) => setFormRelationship(e.target.value)}
-                  maxLength={50}
-                />
-              </div>
-
-              <div className="flex items-center gap-2">
-                <input
-                  type="checkbox"
-                  id="primary"
-                  checked={formIsPrimary}
-                  onChange={(e) => setFormIsPrimary(e.target.checked)}
-                  className="rounded border-border"
-                />
-                <Label htmlFor="primary" className="text-sm cursor-pointer">
-                  Primary contact (will be called first)
-                </Label>
-              </div>
-
-              <div className="flex gap-3 pt-2">
+              <div className="flex justify-end gap-2">
                 <Button
                   variant="outline"
-                  className="flex-1"
                   onClick={() => {
                     setIsDialogOpen(false);
                     resetForm();
@@ -275,12 +288,7 @@ const EmergencyContactsManager = () => {
                 >
                   Cancel
                 </Button>
-                <Button
-                  variant="hero"
-                  className="flex-1"
-                  onClick={handleSave}
-                  disabled={isSaving}
-                >
+                <Button onClick={handleSave} disabled={isSaving}>
                   {isSaving ? (
                     <>
                       <Loader2 className="w-4 h-4 mr-2 animate-spin" />
@@ -294,99 +302,92 @@ const EmergencyContactsManager = () => {
                   )}
                 </Button>
               </div>
-            </div>
-          </DialogContent>
-        </Dialog>
-      </div>
-
-      {/* Contacts List */}
-      <div className="space-y-2">
+            </DialogContent>
+          </Dialog>
+        </div>
+      </CardHeader>
+      <CardContent>
         {isLoading ? (
-          <div className="flex items-center justify-center py-8">
+          <div className="flex items-center justify-center py-6">
             <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" />
           </div>
         ) : contacts.length === 0 ? (
-          <div className="text-center py-8 text-muted-foreground">
-            <Phone className="w-10 h-10 mx-auto mb-3 opacity-50" />
-            <p className="text-sm">No emergency contacts yet</p>
-            <p className="text-xs mt-1">Add contacts to receive SOS alerts</p>
+          <div className="text-center py-6 text-muted-foreground">
+            <User className="w-10 h-10 mx-auto mb-2 opacity-50" />
+            <p className="text-sm">No emergency contacts added</p>
+            <p className="text-xs mt-1">Add contacts to notify in emergencies</p>
           </div>
         ) : (
-          contacts.map((contact) => (
-            <div
-              key={contact.id}
-              className="flex items-center justify-between p-3 rounded-xl bg-background/50 border border-border/50 hover:border-primary/30 transition-colors"
-            >
-              <div className="flex items-center gap-3 flex-1 min-w-0">
-                <div className={`w-10 h-10 rounded-full flex items-center justify-center ${
-                  contact.is_primary ? 'bg-primary/20 text-primary' : 'bg-muted text-muted-foreground'
-                }`}>
-                  <User className="w-5 h-5" />
-                </div>
-                <div className="min-w-0 flex-1">
-                  <div className="flex items-center gap-2">
-                    <span className="font-medium text-foreground truncate">{contact.name}</span>
-                    {contact.is_primary && (
-                      <span className="text-[10px] bg-primary/20 text-primary px-1.5 py-0.5 rounded-full">
-                        Primary
-                      </span>
-                    )}
+          <div className="space-y-3">
+            {contacts.map((contact) => (
+              <div
+                key={contact.id}
+                className="flex items-center justify-between p-3 rounded-lg bg-muted/50 hover:bg-muted transition-colors"
+              >
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
+                    <User className="w-5 h-5 text-primary" />
                   </div>
-                  <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                    <span className="truncate">{contact.phone}</span>
-                    {contact.relationship && (
-                      <>
-                        <span className="text-border">•</span>
-                        <span className="truncate">{contact.relationship}</span>
-                      </>
-                    )}
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <span className="font-medium text-sm">{contact.name}</span>
+                      {contact.is_primary && (
+                        <span className="text-[10px] px-1.5 py-0.5 rounded bg-primary/10 text-primary">
+                          Primary
+                        </span>
+                      )}
+                    </div>
+                    <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                      <Phone className="w-3 h-3" />
+                      {contact.phone}
+                      {contact.relationship && (
+                        <span className="text-muted-foreground/70">• {contact.relationship}</span>
+                      )}
+                    </div>
                   </div>
                 </div>
+                <div className="flex items-center gap-1">
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-8 w-8"
+                    onClick={() => handleEdit(contact)}
+                  >
+                    <Pencil className="w-4 h-4" />
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-8 w-8 text-destructive hover:text-destructive"
+                    onClick={() => setDeleteContactId(contact.id)}
+                  >
+                    <Trash2 className="w-4 h-4" />
+                  </Button>
+                </div>
               </div>
-              <div className="flex items-center gap-1 ml-2">
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="h-8 w-8"
-                  onClick={() => handleEdit(contact)}
-                >
-                  <Pencil className="w-4 h-4" />
-                </Button>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="h-8 w-8 text-destructive hover:text-destructive"
-                  onClick={() => setDeleteContactId(contact.id)}
-                >
-                  <Trash2 className="w-4 h-4" />
-                </Button>
-              </div>
-            </div>
-          ))
+            ))}
+          </div>
         )}
-      </div>
+      </CardContent>
 
       {/* Delete Confirmation Dialog */}
       <AlertDialog open={!!deleteContactId} onOpenChange={() => setDeleteContactId(null)}>
-        <AlertDialogContent className="glass-strong border-border">
+        <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Delete Contact</AlertDialogTitle>
             <AlertDialogDescription>
-              Are you sure you want to delete this emergency contact? They will no longer receive SOS alerts.
+              Are you sure you want to delete this emergency contact? This action cannot be undone.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction
-              onClick={handleDelete}
-              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-            >
+            <AlertDialogAction onClick={handleDelete} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
               Delete
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
-    </div>
+    </Card>
   );
 };
 
