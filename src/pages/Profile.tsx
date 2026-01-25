@@ -78,15 +78,32 @@ const Profile = () => {
   const handleSaveProfile = async () => {
     if (!user) return;
 
+    // Validate mandatory fields
+    if (!fullName.trim()) {
+      toast.error('Full name is required');
+      return;
+    }
+    if (!phone.trim()) {
+      toast.error('Contact number is required');
+      return;
+    }
+    
+    // Validate phone format
+    const cleanedPhone = phone.replace(/[\s\-\(\)]/g, '');
+    if (!/^\+?\d{10,15}$/.test(cleanedPhone)) {
+      toast.error('Please enter a valid phone number (10-15 digits)');
+      return;
+    }
+
     setIsSaving(true);
     try {
       const { error } = await supabase
         .from('profiles')
         .update({
-          full_name: fullName || null,
+          full_name: fullName.trim(),
           gender: gender || null,
           age: age ? parseInt(age) : null,
-          phone: phone || null,
+          phone: phone.trim(),
         })
         .eq('user_id', user.id);
 
@@ -171,12 +188,15 @@ const Profile = () => {
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="fullName">Full Name</Label>
+              <Label htmlFor="fullName">
+                Full Name <span className="text-destructive">*</span>
+              </Label>
               <Input
                 id="fullName"
                 value={fullName}
                 onChange={(e) => setFullName(e.target.value)}
                 placeholder="Enter your full name"
+                required
               />
             </div>
 
@@ -211,13 +231,16 @@ const Profile = () => {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="phone">Contact Number</Label>
+              <Label htmlFor="phone">
+                Contact Number <span className="text-destructive">*</span>
+              </Label>
               <Input
                 id="phone"
                 type="tel"
                 value={phone}
                 onChange={(e) => setPhone(e.target.value)}
                 placeholder="+91 XXXXX XXXXX"
+                required
               />
             </div>
 
