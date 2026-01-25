@@ -142,6 +142,10 @@ const EmergencyContactsManager = () => {
       toast.error('Please enter a valid phone number (10-15 digits)');
       return;
     }
+    if (!formRelationship.trim()) {
+      toast.error('Please enter the relationship');
+      return;
+    }
 
     setIsSaving(true);
     
@@ -155,7 +159,7 @@ const EmergencyContactsManager = () => {
       const contactData = {
         name: formName.trim(),
         phone: formattedPhone,
-        relationship: formRelationship.trim() || null,
+        relationship: formRelationship.trim(),
         is_primary: formIsPrimary,
         user_id: userId,
       };
@@ -257,12 +261,15 @@ const EmergencyContactsManager = () => {
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="relationship">Relationship</Label>
+                  <Label htmlFor="relationship">
+                    Relationship <span className="text-destructive">*</span>
+                  </Label>
                   <Input
                     id="relationship"
                     placeholder="e.g., Parent, Spouse, Friend"
                     value={formRelationship}
                     onChange={(e) => setFormRelationship(e.target.value)}
+                    required
                   />
                 </div>
                 <div className="flex items-center space-x-2">
