@@ -1,16 +1,36 @@
+import { useMemo } from 'react';
 import { Button } from '@/components/ui/button';
 import { RouteInfo, RiskLevel } from '@/types/route';
 import { Clock, MapPin, Shield, Navigation } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import CrimeZoneDetails from './CrimeZoneDetails';
+import { findCrimeZonesAlongRoute } from '@/utils/crimeTypeMapping';
+
+interface SafetyZone {
+  area: string;
+  street: string | null;
+  crime_count: number;
+  severity: string | null;
+  safety_score: number;
+}
 
 interface RouteCardProps {
   route: RouteInfo;
   isSelected: boolean;
   onSelect: () => void;
   onStartMonitoring: () => void;
+  safetyZones?: SafetyZone[];
 }
 
-const RouteCard = ({ route, isSelected, onSelect, onStartMonitoring }: RouteCardProps) => {
+const RouteCard = ({ route, isSelected, onSelect, onStartMonitoring, safetyZones = [] }: RouteCardProps) => {
+  // Calculate crime zones along this route when selected
+  const crimeZones = useMemo(() => {
+    if (!isSelected || safetyZones.length === 0 || route.path.length === 0) {
+      return [];
+    }
+    return findCrimeZonesAlongRoute(route.path, safetyZones);
+  }, [isSelected, route.path, safetyZones]);
+
   const getRouteColor = () => {
     switch (route.type) {
       case 'fastest': return 'text-blue-400 border-blue-400/30 bg-blue-400/5';
@@ -83,19 +103,28 @@ const RouteCard = ({ route, isSelected, onSelect, onStartMonitoring }: RouteCard
       </div>
 
       {isSelected && (
-        <Button
-          variant="hero"
-          size="sm"
-          className="w-full text-xs sm:text-sm py-2 sm:py-2.5"
-          onClick={(e) => {
-            e.stopPropagation();
-            onStartMonitoring();
-          }}
-        >
-          <Navigation className="w-3.5 h-3.5 sm:w-4 sm:h-4 mr-1.5 sm:mr-2" />
-          <span className="hidden sm:inline">Start Monitoring This Route</span>
-          <span className="sm:hidden">Start Monitoring</span>
-        </Button>
+        <>
+          {/* Crime Zone Details - Show when route is selected */}
+          {safetyZones.length > 0 && (
+            <div className="mb-3 sm:mb-4">
+              <CrimeZoneDetails zones={crimeZones} />
+            </div>
+          )}
+          
+          <Button
+            variant="hero"
+            size="sm"
+            className="w-full text-xs sm:text-sm py-2 sm:py-2.5"
+            onClick={(e) => {
+              e.stopPropagation();
+              onStartMonitoring();
+            }}
+          >
+            <Navigation className="w-3.5 h-3.5 sm:w-4 sm:h-4 mr-1.5 sm:mr-2" />
+            <span className="hidden sm:inline">Start Monitoring This Route</span>
+            <span className="sm:hidden">Start Monitoring</span>
+          </Button>
+        </>
       )}
     </div>
   );

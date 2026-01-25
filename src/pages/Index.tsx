@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { TripProvider, useTrip } from '@/context/TripContext';
 import { useAuth } from '@/contexts/AuthContext';
@@ -11,13 +11,14 @@ import AlertPopup from '@/components/trip/AlertPopup';
 import SafetyActionsPanel from '@/components/trip/SafetyActionsPanel';
 import TripSummaryComponent from '@/components/trip/TripSummary';
 import ProfileDropdown from '@/components/ProfileDropdown';
+import CrimeZoneDetails from '@/components/trip/CrimeZoneDetails';
 import { Button } from '@/components/ui/button';
 import { ArrowLeft, StopCircle, Loader2, LogIn } from 'lucide-react';
 import { calculateRoutes } from '@/services/routingService';
 import { toast } from 'sonner';
 import { checkDeviation, DeviationResult } from '@/utils/deviationDetection';
 import { getNearestSafetyZone, haversineDistance } from '@/services/astarRouting';
-
+import { findCrimeZonesAlongRoute, CrimeZone } from '@/utils/crimeTypeMapping';
 const TripApp = () => {
   const {
     trip,
@@ -359,6 +360,7 @@ const TripApp = () => {
                   isSelected={trip.selectedRoute?.id === route.id}
                   onSelect={() => selectRoute(route)}
                   onStartMonitoring={handleStartMonitoring}
+                  safetyZones={safetyZones}
                 />
               ))}
             </div>
