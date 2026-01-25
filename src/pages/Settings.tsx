@@ -1,14 +1,16 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
+import { useTheme } from '@/contexts/ThemeContext';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
-import { ArrowLeft, Bell, MapPin, Shield, Volume2 } from 'lucide-react';
+import { ArrowLeft, Bell, MapPin, Shield, Volume2, Palette, Sun, Moon } from 'lucide-react';
 
 const Settings = () => {
   const { user, loading } = useAuth();
+  const { theme, setTheme } = useTheme();
   const navigate = useNavigate();
 
   React.useEffect(() => {
@@ -37,6 +39,46 @@ const Settings = () => {
       </header>
 
       <main className="container mx-auto px-4 py-6 space-y-6 max-w-2xl">
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Palette className="w-5 h-5" />
+              Appearance
+            </CardTitle>
+            <CardDescription>
+              Customize how NavSafe looks on your device
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <Sun className="w-4 h-4 text-muted-foreground" />
+                <Label htmlFor="light-mode" className="flex-1 cursor-pointer">
+                  Light Mode
+                </Label>
+              </div>
+              <Switch 
+                id="light-mode" 
+                checked={theme === 'light'}
+                onCheckedChange={(checked) => setTheme(checked ? 'light' : 'dark')}
+              />
+            </div>
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <Moon className="w-4 h-4 text-muted-foreground" />
+                <Label htmlFor="dark-mode" className="flex-1 cursor-pointer">
+                  Dark Mode
+                </Label>
+              </div>
+              <Switch 
+                id="dark-mode" 
+                checked={theme === 'dark'}
+                onCheckedChange={(checked) => setTheme(checked ? 'dark' : 'light')}
+              />
+            </div>
+          </CardContent>
+        </Card>
+
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
