@@ -14,8 +14,10 @@ export interface CrimeZone {
 
 // Crime type mapping based on Visakhapatnam dataset patterns
 // Areas are mapped to primary crime types based on historical crime patterns
+// Crime type mapping based on Visakhapatnam dataset patterns
+// All areas from safety_zones with safety_score < 85 are mapped to crime types
 const areaCrimeTypeMap: Record<string, CrimeType> = {
-  // Critical Areas - Mixed serious crimes
+  // Critical Areas (safety_score 32-38) - Mixed serious crimes
   'Gajuwaka': 'robbery',
   'Dwaraka Nagar': 'theft',
   'Jagadamba Junction': 'robbery',
@@ -24,7 +26,7 @@ const areaCrimeTypeMap: Record<string, CrimeType> = {
   'Maddilapalem': 'harassment',
   'Anandapuram': 'kidnap',
   
-  // High Risk Areas
+  // High Risk Areas (safety_score 44-48)
   'Marripalem': 'theft',
   'One Town': 'robbery',
   'Steel Plant Township': 'assault',
@@ -32,7 +34,7 @@ const areaCrimeTypeMap: Record<string, CrimeType> = {
   'Vizianagaram': 'murder',
   'Rushikonda': 'accident',
   
-  // Moderate Risk Areas
+  // Moderate Risk Areas (safety_score 65-82)
   'Anakapalli': 'theft',
   'Beach Road': 'accident',
   'Pendurthi': 'robbery',
@@ -75,26 +77,31 @@ export const getCrimeTypeForArea = (area: string): CrimeType | null => {
 };
 
 // Find all crime zones along a route path
-// Uses tighter distance threshold and path proximity to ensure distinct results per route
+// Uses wider detection radius to catch all relevant crime zones
 export const findCrimeZonesAlongRoute = (
   path: LatLng[],
   safetyZones: { area: string; street: string | null; crime_count: number; severity: string | null; safety_score: number }[],
-  options?: { maxDistanceMeters?: number; minSafetyScore?: number }
+  options?: { maxDistanceMeters?: number; maxSafetyScore?: number }
 ): CrimeZone[] => {
   const foundZones = new Map<string, { zone: CrimeZone; minDistance: number }>();
   
-  const maxDistance = options?.maxDistanceMeters ?? 800; // Tighter 800m radius
-  const minScoreThreshold = options?.minSafetyScore ?? 70; // Only show zones with lower safety
+  // Use wider detection radius (1.5km) to catch zones near the route
+  const maxDistance = options?.maxDistanceMeters ?? 1500;
+  // Include zones with safety_score below 85 (anything not "very safe")
+  const maxScoreThreshold = options?.maxSafetyScore ?? 85;
   
-  // Sample more points along the path for better accuracy
-  const sampleRate = Math.max(1, Math.floor(path.length / 50));
+  // Sample more points along the path for better coverage
+  const sampleRate = Math.max(1, Math.floor(path.length / 80));
   
   for (let i = 0; i < path.length; i += sampleRate) {
     const point = path[i];
     
     for (const zone of safetyZones) {
-      // Only include risky zones (safety_score below threshold)
-      if (zone.safety_score >= minScoreThreshold) continue;
+      // Only include zones that are not fully safe
+      if (zone.safety_score >= maxScoreThreshold) continue;
+      
+      // Skip zones with 0 crime count
+      if (zone.crime_count === 0) continue;
       
       // Find coordinates for this zone
       const normalizedArea = zone.area.toLowerCase();

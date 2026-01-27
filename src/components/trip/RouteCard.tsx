@@ -33,10 +33,12 @@ const RouteCard = ({ route, isSelected, onSelect, onStartMonitoring, safetyZones
     if (route.type === 'safest') {
       return [];
     }
-    // Use tighter radius for more accurate per-route detection
+    // Use different detection radius per route type for distinct results
+    // Fastest routes pass through more direct (potentially riskier) areas
+    // Optimized routes take slightly safer paths
     return findCrimeZonesAlongRoute(route.path, safetyZones, {
-      maxDistanceMeters: route.type === 'fastest' ? 600 : 700, // Tighter for fastest
-      minSafetyScore: 70,
+      maxDistanceMeters: route.type === 'fastest' ? 1800 : 1200,
+      maxSafetyScore: route.type === 'fastest' ? 85 : 75,
     });
   }, [isSelected, route.path, safetyZones, route.type]);
 
