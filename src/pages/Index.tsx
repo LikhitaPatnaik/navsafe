@@ -50,6 +50,11 @@ const TripApp = () => {
     );
   }, []);
 
+  // Clear all crime type filters
+  const handleClearAllFilters = useCallback(() => {
+    setAvoidCrimeTypes([]);
+  }, []);
+
   // Filter routes based on avoided crime types
   const filteredRoutes = useMemo(() => {
     if (avoidCrimeTypes.length === 0) return trip.routes;
@@ -384,6 +389,7 @@ const TripApp = () => {
             <CrimeTypeFilter 
               avoidCrimeTypes={avoidCrimeTypes}
               onToggle={handleToggleCrimeType}
+              onClearAll={handleClearAllFilters}
             />
           )}
 
