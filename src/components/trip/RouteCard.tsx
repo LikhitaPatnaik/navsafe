@@ -24,12 +24,21 @@ interface RouteCardProps {
 
 const RouteCard = ({ route, isSelected, onSelect, onStartMonitoring, safetyZones = [] }: RouteCardProps) => {
   // Calculate crime zones along this route when selected
+  // Don't show crime zones for safest routes (they prioritize avoiding risky areas)
   const crimeZones = useMemo(() => {
     if (!isSelected || safetyZones.length === 0 || route.path.length === 0) {
       return [];
     }
-    return findCrimeZonesAlongRoute(route.path, safetyZones);
-  }, [isSelected, route.path, safetyZones]);
+    // Safe routes have higher safety scores and avoid risky areas - don't show crime details
+    if (route.type === 'safest') {
+      return [];
+    }
+    // Use tighter radius for more accurate per-route detection
+    return findCrimeZonesAlongRoute(route.path, safetyZones, {
+      maxDistanceMeters: route.type === 'fastest' ? 600 : 700, // Tighter for fastest
+      minSafetyScore: 70,
+    });
+  }, [isSelected, route.path, safetyZones, route.type]);
 
   const getRouteColor = () => {
     switch (route.type) {

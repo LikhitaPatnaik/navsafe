@@ -75,21 +75,26 @@ export const getCrimeTypeForArea = (area: string): CrimeType | null => {
 };
 
 // Find all crime zones along a route path
+// Uses tighter distance threshold and path proximity to ensure distinct results per route
 export const findCrimeZonesAlongRoute = (
   path: LatLng[],
-  safetyZones: { area: string; street: string | null; crime_count: number; severity: string | null; safety_score: number }[]
+  safetyZones: { area: string; street: string | null; crime_count: number; severity: string | null; safety_score: number }[],
+  options?: { maxDistanceMeters?: number; minSafetyScore?: number }
 ): CrimeZone[] => {
-  const foundZones = new Map<string, CrimeZone>();
+  const foundZones = new Map<string, { zone: CrimeZone; minDistance: number }>();
   
-  // Sample points along the path for performance
-  const sampleRate = Math.max(1, Math.floor(path.length / 30));
+  const maxDistance = options?.maxDistanceMeters ?? 800; // Tighter 800m radius
+  const minScoreThreshold = options?.minSafetyScore ?? 70; // Only show zones with lower safety
+  
+  // Sample more points along the path for better accuracy
+  const sampleRate = Math.max(1, Math.floor(path.length / 50));
   
   for (let i = 0; i < path.length; i += sampleRate) {
     const point = path[i];
     
     for (const zone of safetyZones) {
-      // Only include risky zones (safety_score < 75)
-      if (zone.safety_score >= 75) continue;
+      // Only include risky zones (safety_score below threshold)
+      if (zone.safety_score >= minScoreThreshold) continue;
       
       // Find coordinates for this zone
       const normalizedArea = zone.area.toLowerCase();
@@ -104,29 +109,53 @@ export const findCrimeZonesAlongRoute = (
       
       if (!zoneCenter) continue;
       
-      // Check if route passes within 1.5km of this zone
+      // Check if route passes within maxDistance of this zone
       const distance = haversineDistance(point, zoneCenter);
-      if (distance < 1500 && !foundZones.has(zone.area)) {
+      
+      if (distance < maxDistance) {
         const crimeType = getCrimeTypeForArea(zone.area);
         if (crimeType) {
-          foundZones.set(zone.area, {
-            area: zone.area,
-            street: zone.street,
-            crimeType,
-            crimeCount: zone.crime_count,
-            severity: zone.severity || 'unknown',
-            safetyScore: zone.safety_score,
-          });
+          const existing = foundZones.get(zone.area);
+          // Only update if this point is closer (route passes closer to zone center)
+          if (!existing || distance < existing.minDistance) {
+            foundZones.set(zone.area, {
+              zone: {
+                area: zone.area,
+                street: zone.street,
+                crimeType,
+                crimeCount: zone.crime_count,
+                severity: zone.severity || 'unknown',
+                safetyScore: zone.safety_score,
+              },
+              minDistance: distance,
+            });
+          }
         }
       }
     }
   }
   
-  // Sort by severity (most dangerous first)
-  const zones = Array.from(foundZones.values());
-  zones.sort((a, b) => a.safetyScore - b.safetyScore);
+  // Sort by severity (most dangerous first) then by proximity
+  const zones = Array.from(foundZones.values())
+    .sort((a, b) => {
+      const scoreDiff = a.zone.safetyScore - b.zone.safetyScore;
+      if (Math.abs(scoreDiff) > 5) return scoreDiff;
+      return a.minDistance - b.minDistance;
+    })
+    .map(({ zone }) => zone);
   
   return zones;
+};
+
+// Get crime zone coordinates for map display
+export const getCrimeZoneCoordinates = (zone: CrimeZone): LatLng | null => {
+  const normalizedArea = zone.area.toLowerCase();
+  for (const [key, coords] of Object.entries(areaCoordinates)) {
+    if (key.toLowerCase() === normalizedArea || normalizedArea.includes(key.toLowerCase())) {
+      return coords;
+    }
+  }
+  return null;
 };
 
 // Group crime zones by type
