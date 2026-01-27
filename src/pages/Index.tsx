@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useMemo } from 'react';
+import { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { TripProvider, useTrip } from '@/context/TripContext';
 import { useAuth } from '@/contexts/AuthContext';
@@ -11,14 +11,14 @@ import AlertPopup from '@/components/trip/AlertPopup';
 import SafetyActionsPanel from '@/components/trip/SafetyActionsPanel';
 import TripSummaryComponent from '@/components/trip/TripSummary';
 import ProfileDropdown from '@/components/ProfileDropdown';
-import CrimeZoneDetails from '@/components/trip/CrimeZoneDetails';
+import CrimeTypeFilter from '@/components/trip/CrimeTypeFilter';
 import { Button } from '@/components/ui/button';
 import { ArrowLeft, StopCircle, Loader2, LogIn } from 'lucide-react';
 import { calculateRoutes } from '@/services/routingService';
 import { toast } from 'sonner';
 import { checkDeviation, DeviationResult } from '@/utils/deviationDetection';
 import { getNearestSafetyZone, haversineDistance } from '@/services/astarRouting';
-import { findCrimeZonesAlongRoute, CrimeZone } from '@/utils/crimeTypeMapping';
+import { findCrimeZonesAlongRoute, CrimeZone, CrimeType, getCrimeTypeForArea } from '@/utils/crimeTypeMapping';
 const TripApp = () => {
   const {
     trip,
@@ -39,6 +39,36 @@ const TripApp = () => {
   const [showLanding, setShowLanding] = useState(true);
   const [isCalculatingRoutes, setIsCalculatingRoutes] = useState(false);
   const [safetyZones, setSafetyZones] = useState<any[]>([]);
+  const [avoidCrimeTypes, setAvoidCrimeTypes] = useState<CrimeType[]>([]);
+
+  // Toggle crime type filter
+  const handleToggleCrimeType = useCallback((crimeType: CrimeType) => {
+    setAvoidCrimeTypes(prev => 
+      prev.includes(crimeType) 
+        ? prev.filter(t => t !== crimeType)
+        : [...prev, crimeType]
+    );
+  }, []);
+
+  // Filter routes based on avoided crime types
+  const filteredRoutes = useMemo(() => {
+    if (avoidCrimeTypes.length === 0) return trip.routes;
+    
+    return trip.routes.filter(route => {
+      // Find crime zones along this route
+      const crimeZones = findCrimeZonesAlongRoute(route.path, safetyZones, {
+        maxDistanceMeters: 1500,
+        maxSafetyScore: 85,
+      });
+      
+      // Check if route passes through any avoided crime types
+      const hasAvoidedCrime = crimeZones.some(zone => 
+        avoidCrimeTypes.includes(zone.crimeType)
+      );
+      
+      return !hasAvoidedCrime;
+    });
+  }, [trip.routes, avoidCrimeTypes, safetyZones]);
 
   // Fetch safety zones for deviation detection
   useEffect(() => {
@@ -349,20 +379,43 @@ const TripApp = () => {
             <TripInputPanel onFindRoutes={handleFindRoutes} isLoading={isCalculatingRoutes} />
           )}
 
+          {/* Crime Type Filter - Show when routes are available */}
+          {trip.routes.length > 0 && !trip.isMonitoring && (
+            <CrimeTypeFilter 
+              avoidCrimeTypes={avoidCrimeTypes}
+              onToggle={handleToggleCrimeType}
+            />
+          )}
+
           {/* Route Cards */}
           {trip.routes.length > 0 && !trip.isMonitoring && (
             <div className="space-y-2 sm:space-y-3 animate-slide-up">
-              <h2 className="text-base sm:text-lg font-semibold text-foreground px-1">Available Routes</h2>
-              {trip.routes.map((route) => (
-                <RouteCard
-                  key={route.id}
-                  route={route}
-                  isSelected={trip.selectedRoute?.id === route.id}
-                  onSelect={() => selectRoute(route)}
-                  onStartMonitoring={handleStartMonitoring}
-                  safetyZones={safetyZones}
-                />
-              ))}
+              <div className="flex items-center justify-between px-1">
+                <h2 className="text-base sm:text-lg font-semibold text-foreground">Available Routes</h2>
+                {avoidCrimeTypes.length > 0 && filteredRoutes.length !== trip.routes.length && (
+                  <span className="text-xs text-muted-foreground">
+                    {filteredRoutes.length} of {trip.routes.length} routes
+                  </span>
+                )}
+              </div>
+              {filteredRoutes.length === 0 ? (
+                <div className="glass rounded-xl p-4 text-center">
+                  <p className="text-sm text-muted-foreground">
+                    No routes available with current filters. Try removing some crime type filters.
+                  </p>
+                </div>
+              ) : (
+                filteredRoutes.map((route) => (
+                  <RouteCard
+                    key={route.id}
+                    route={route}
+                    isSelected={trip.selectedRoute?.id === route.id}
+                    onSelect={() => selectRoute(route)}
+                    onStartMonitoring={handleStartMonitoring}
+                    safetyZones={safetyZones}
+                  />
+                ))
+              )}
             </div>
           )}
 
@@ -383,7 +436,7 @@ const TripApp = () => {
         {/* Map Area - Shows first on mobile, takes remaining space on desktop */}
         <div className="flex-1 min-h-[50vh] sm:min-h-[400px] lg:min-h-0 lg:h-[calc(100vh-8rem)] order-1 lg:order-2">
           <MapView 
-            routes={trip.routes} 
+            routes={filteredRoutes.length > 0 ? filteredRoutes : trip.routes} 
             sourceCoords={trip.sourceCoords}
             destinationCoords={trip.destinationCoords}
             selectedRoute={trip.selectedRoute}
