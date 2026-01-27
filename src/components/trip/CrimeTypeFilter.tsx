@@ -1,22 +1,38 @@
 import { CrimeType, crimeTypeConfig } from '@/utils/crimeTypeMapping';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Label } from '@/components/ui/label';
-import { Shield, Filter } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Shield, Filter, X } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 interface CrimeTypeFilterProps {
   avoidCrimeTypes: CrimeType[];
   onToggle: (crimeType: CrimeType) => void;
+  onClearAll: () => void;
 }
 
-const crimeTypes: CrimeType[] = ['kidnap', 'murder', 'robbery', 'assault', 'accident', 'theft', 'harassment'];
+// Only show these 5 crime types as per dataset
+const crimeTypes: CrimeType[] = ['kidnap', 'assault', 'accident', 'robbery', 'murder'];
 
-const CrimeTypeFilter = ({ avoidCrimeTypes, onToggle }: CrimeTypeFilterProps) => {
+const CrimeTypeFilter = ({ avoidCrimeTypes, onToggle, onClearAll }: CrimeTypeFilterProps) => {
   return (
     <div className="glass rounded-xl p-4 space-y-3">
-      <div className="flex items-center gap-2 text-foreground">
-        <Filter className="w-4 h-4" />
-        <h3 className="font-semibold text-sm">Avoid Crime Zones</h3>
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-2 text-foreground">
+          <Filter className="w-4 h-4" />
+          <h3 className="font-semibold text-sm">Avoid Crime Zones</h3>
+        </div>
+        {avoidCrimeTypes.length > 0 && (
+          <Button
+            variant="ghost"
+            size="sm"
+            className="h-7 px-2 text-xs text-muted-foreground hover:text-foreground"
+            onClick={onClearAll}
+          >
+            <X className="w-3 h-3 mr-1" />
+            Clear
+          </Button>
+        )}
       </div>
       
       <p className="text-xs text-muted-foreground">
