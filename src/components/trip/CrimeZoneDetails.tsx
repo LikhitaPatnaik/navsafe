@@ -1,5 +1,5 @@
 import { CrimeZone, crimeTypeConfig, groupCrimeZonesByType, CrimeType } from '@/utils/crimeTypeMapping';
-import { AlertTriangle, MapPin, ChevronDown, ChevronUp } from 'lucide-react';
+import { AlertTriangle, MapPin, ChevronDown, ChevronUp, Shield } from 'lucide-react';
 import { useState } from 'react';
 import { cn } from '@/lib/utils';
 
@@ -14,7 +14,7 @@ const CrimeZoneDetails = ({ zones }: CrimeZoneDetailsProps) => {
     return (
       <div className="glass rounded-xl p-4 border border-safe/30 bg-safe/5">
         <div className="flex items-center gap-2 text-safe">
-          <span className="text-lg">✅</span>
+          <Shield className="w-5 h-5" />
           <span className="font-medium">No high-risk zones detected on this route</span>
         </div>
       </div>
@@ -39,7 +39,7 @@ const CrimeZoneDetails = ({ zones }: CrimeZoneDetailsProps) => {
           <AlertTriangle className="w-5 h-5 text-destructive" />
           <div className="text-left">
             <h3 className="font-semibold text-foreground">
-              ⚠️ {zones.length} Risk Zone{zones.length > 1 ? 's' : ''} on Route
+              {zones.length} Risk Zone{zones.length > 1 ? 's' : ''} on Route
             </h3>
             <p className="text-sm text-muted-foreground">
               {totalCrimes} reported incidents across {activeTypes.length} crime type{activeTypes.length > 1 ? 's' : ''}
@@ -64,10 +64,7 @@ const CrimeZoneDetails = ({ zones }: CrimeZoneDetailsProps) => {
             return (
               <div key={type} className={cn('rounded-lg border p-3', config.color)}>
                 <div className="flex items-center justify-between mb-2">
-                  <div className="flex items-center gap-2">
-                    <span className="text-lg">{config.icon}</span>
-                    <span className="font-semibold">{config.label}</span>
-                  </div>
+                  <span className="font-semibold">{config.label}</span>
                   <span className="text-sm font-medium px-2 py-0.5 rounded bg-background/50">
                     {typeTotalCrimes} crime{typeTotalCrimes > 1 ? 's' : ''}
                   </span>
@@ -99,7 +96,7 @@ const CrimeZoneDetails = ({ zones }: CrimeZoneDetailsProps) => {
           
           {/* Safety Tips */}
           <div className="bg-muted/50 rounded-lg p-3 text-sm">
-            <p className="font-medium text-foreground mb-1">🛡️ Safety Tips:</p>
+            <p className="font-medium text-foreground mb-1">Safety Tips:</p>
             <ul className="text-muted-foreground space-y-1 text-xs">
               <li>• Keep emergency contacts readily accessible</li>
               <li>• Stay alert in marked zones, especially after dark</li>
