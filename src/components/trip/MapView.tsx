@@ -5,6 +5,7 @@ import 'leaflet-routing-machine';
 import 'leaflet-routing-machine/dist/leaflet-routing-machine.css';
 import { RouteInfo, LatLng } from '@/types/route';
 import { fetchSafetyZones } from '@/services/routingService';
+import { findCrimeZonesAlongRoute, getCrimeZoneCoordinates, crimeTypeConfig, CrimeZone } from '@/utils/crimeTypeMapping';
 
 // Fix default marker icons
 delete (L.Icon.Default.prototype as any)._getIconUrl;
@@ -42,8 +43,10 @@ const MapView = ({ routes = [], sourceCoords, destinationCoords, selectedRoute, 
   const markersRef = useRef<L.Marker[]>([]);
   const routeLayersRef = useRef<L.Polyline[]>([]);
   const safetyZoneLayersRef = useRef<L.CircleMarker[]>([]);
+  const crimeZoneMarkersRef = useRef<L.Marker[]>([]);
   const userMarkerRef = useRef<L.Marker | null>(null);
   const [mapReady, setMapReady] = useState(false);
+  const [safetyZonesData, setSafetyZonesData] = useState<any[]>([]);
 
   // Get distinct colors for routes - BLUE for fastest, GREEN for safest
   const getRouteColor = (type: RouteInfo['type'], isSelected: boolean) => {
@@ -226,6 +229,7 @@ const MapView = ({ routes = [], sourceCoords, destinationCoords, selectedRoute, 
       try {
         const zones = await fetchSafetyZones();
         console.log('Loaded safety zones:', zones.length);
+        setSafetyZonesData(zones); // Store for crime zone markers
         
         zones.forEach(zone => {
           const normalizedArea = zone.area.toLowerCase().trim();
@@ -338,6 +342,151 @@ const MapView = ({ routes = [], sourceCoords, destinationCoords, selectedRoute, 
 
     loadSafetyZones();
   }, [mapReady, showSafetyZones]);
+
+  // Display crime zone markers for selected route (except safest routes)
+  useEffect(() => {
+    if (!mapRef.current || !mapReady) return;
+
+    // Clear existing crime zone markers
+    crimeZoneMarkersRef.current.forEach(marker => {
+      mapRef.current?.removeLayer(marker);
+    });
+    crimeZoneMarkersRef.current = [];
+
+    // Don't show crime zones for safest routes (they prioritize avoiding risky areas)
+    if (!selectedRoute || selectedRoute.type === 'safest' || safetyZonesData.length === 0) {
+      return;
+    }
+
+    // Find crime zones along the selected route
+    const crimeZones = findCrimeZonesAlongRoute(selectedRoute.path, safetyZonesData, {
+      maxDistanceMeters: selectedRoute.type === 'fastest' ? 600 : 700,
+      minSafetyScore: 70,
+    });
+
+    console.log(`Crime zones for ${selectedRoute.type} route:`, crimeZones.length);
+
+    // Add crime zone markers with distinctive styling
+    crimeZones.forEach((zone, index) => {
+      const coords = getCrimeZoneCoordinates(zone);
+      if (!coords || !mapRef.current) return;
+
+      const config = crimeTypeConfig[zone.crimeType];
+      
+      // Get color based on crime type
+      const getMarkerColor = () => {
+        switch (zone.crimeType) {
+          case 'kidnap': return '#ef4444';
+          case 'murder': return '#dc2626';
+          case 'robbery': return '#f97316';
+          case 'assault': return '#f59e0b';
+          case 'accident': return '#eab308';
+          case 'theft': return '#a855f7';
+          case 'harassment': return '#ec4899';
+          default: return '#ef4444';
+        }
+      };
+
+      const markerColor = getMarkerColor();
+
+      // Create distinctive crime zone marker (diamond shape)
+      const crimeIcon = L.divIcon({
+        className: 'crime-zone-marker',
+        html: `
+          <div style="position: relative; width: 36px; height: 36px; filter: drop-shadow(0 2px 4px rgba(0,0,0,0.3));">
+            <div style="
+              width: 28px; 
+              height: 28px; 
+              background: ${markerColor}; 
+              border: 2px solid white;
+              border-radius: 4px;
+              transform: rotate(45deg);
+              position: absolute;
+              top: 4px;
+              left: 4px;
+              display: flex;
+              align-items: center;
+              justify-content: center;
+              box-shadow: 0 2px 8px ${markerColor}60;
+            ">
+              <span style="transform: rotate(-45deg); font-size: 14px;">${config.icon}</span>
+            </div>
+            <div style="
+              position: absolute;
+              bottom: -2px;
+              left: 50%;
+              transform: translateX(-50%);
+              width: 0;
+              height: 0;
+              border-left: 5px solid transparent;
+              border-right: 5px solid transparent;
+              border-top: 6px solid ${markerColor};
+            "></div>
+          </div>
+        `,
+        iconSize: [36, 42],
+        iconAnchor: [18, 42],
+      });
+
+      const marker = L.marker([coords.lat, coords.lng], {
+        icon: crimeIcon,
+        zIndexOffset: 1500 + index,
+      });
+
+      // Create detailed tooltip popup
+      const popupContent = `
+        <div style="padding: 12px; min-width: 220px;">
+          <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 10px;">
+            <span style="font-size: 24px;">${config.icon}</span>
+            <div>
+              <strong style="font-size: 14px; color: ${markerColor};">${config.label}</strong>
+              <p style="font-size: 12px; color: #666; margin: 2px 0 0 0;">${zone.area}</p>
+            </div>
+          </div>
+          <hr style="margin: 8px 0; border-color: ${markerColor}30;"/>
+          ${zone.street ? `<p style="font-size: 12px; color: #666; margin-bottom: 8px;">📍 ${zone.street}</p>` : ''}
+          <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
+            <div style="text-align: center; flex: 1;">
+              <p style="font-size: 18px; font-weight: bold; color: ${markerColor}; margin: 0;">${zone.crimeCount}</p>
+              <p style="font-size: 10px; color: #888; margin: 2px 0 0 0;">Incidents</p>
+            </div>
+            <div style="text-align: center; flex: 1;">
+              <p style="font-size: 18px; font-weight: bold; color: ${zone.safetyScore < 50 ? '#ef4444' : '#f59e0b'}; margin: 0;">${zone.safetyScore}</p>
+              <p style="font-size: 10px; color: #888; margin: 2px 0 0 0;">Safety Score</p>
+            </div>
+          </div>
+          <div style="
+            font-size: 11px; 
+            padding: 6px 10px; 
+            border-radius: 6px; 
+            background: ${markerColor}; 
+            color: white; 
+            text-align: center; 
+            font-weight: 600;
+            text-transform: uppercase;
+          ">
+            ${zone.severity} Risk
+          </div>
+        </div>
+      `;
+
+      marker.bindPopup(popupContent, { maxWidth: 280 });
+      
+      // Add tooltip for quick view on hover
+      marker.bindTooltip(`
+        <div style="padding: 4px 8px; font-size: 12px;">
+          <strong>${config.icon} ${zone.crimeType.charAt(0).toUpperCase() + zone.crimeType.slice(1)}</strong>
+          <br/>
+          <span style="color: #666;">${zone.area} • ${zone.crimeCount} incidents</span>
+        </div>
+      `, { direction: 'top', offset: [0, -35] });
+
+      marker.addTo(mapRef.current!);
+      crimeZoneMarkersRef.current.push(marker);
+    });
+
+    console.log('Crime zone markers added:', crimeZoneMarkersRef.current.length);
+  }, [selectedRoute, mapReady, safetyZonesData]);
 
   // Handle current position marker during monitoring
   useEffect(() => {
