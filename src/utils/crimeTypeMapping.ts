@@ -54,26 +54,26 @@ const areaCrimeTypeMap: Record<string, CrimeType> = {
   'Bhogapuram': 'accident',
 };
 
-// Crime type display configuration (no emojis)
-export const crimeTypeConfig: Record<CrimeType, { label: string; color: string }> = {
-  kidnap: { label: 'Kidnapping Zone', color: 'text-red-500 bg-red-500/10 border-red-500/30' },
-  robbery: { label: 'Robbery Zone', color: 'text-orange-500 bg-orange-500/10 border-orange-500/30' },
-  murder: { label: 'High Crime Zone', color: 'text-red-600 bg-red-600/10 border-red-600/30' },
-  assault: { label: 'Assault Zone', color: 'text-amber-500 bg-amber-500/10 border-amber-500/30' },
-  accident: { label: 'Accident Prone', color: 'text-yellow-500 bg-yellow-500/10 border-yellow-500/30' },
-  theft: { label: 'Theft Zone', color: 'text-purple-500 bg-purple-500/10 border-purple-500/30' },
-  harassment: { label: 'Harassment Zone', color: 'text-pink-500 bg-pink-500/10 border-pink-500/30' },
+// Crime type display configuration with hex colors for map markers
+export const crimeTypeConfig: Record<CrimeType, { label: string; color: string; mapColor: string; icon: string }> = {
+  kidnap: { label: 'Kidnapping', color: 'text-red-600 bg-red-600/10 border-red-600/30', mapColor: '#dc2626', icon: '🚨' },
+  robbery: { label: 'Robbery', color: 'text-orange-500 bg-orange-500/10 border-orange-500/30', mapColor: '#f97316', icon: '💰' },
+  murder: { label: 'Murder', color: 'text-rose-700 bg-rose-700/10 border-rose-700/30', mapColor: '#be123c', icon: '⚠️' },
+  assault: { label: 'Assault', color: 'text-amber-500 bg-amber-500/10 border-amber-500/30', mapColor: '#f59e0b', icon: '👊' },
+  accident: { label: 'Accident', color: 'text-yellow-500 bg-yellow-500/10 border-yellow-500/30', mapColor: '#eab308', icon: '🚗' },
+  theft: { label: 'Theft', color: 'text-purple-500 bg-purple-500/10 border-purple-500/30', mapColor: '#a855f7', icon: '🔓' },
+  harassment: { label: 'Harassment', color: 'text-pink-500 bg-pink-500/10 border-pink-500/30', mapColor: '#ec4899', icon: '⚡' },
 };
 
-// Get crime type for an area
-export const getCrimeTypeForArea = (area: string): CrimeType | null => {
+// Get crime type for an area - returns 'theft' as default for unmapped risky areas
+export const getCrimeTypeForArea = (area: string): CrimeType => {
   const normalizedArea = area.toLowerCase();
   for (const [key, crimeType] of Object.entries(areaCrimeTypeMap)) {
     if (key.toLowerCase() === normalizedArea || normalizedArea.includes(key.toLowerCase())) {
       return crimeType;
     }
   }
-  return null;
+  return 'theft'; // Default crime type for unmapped areas
 };
 
 // Find all crime zones along a route path
