@@ -5,6 +5,7 @@ import 'leaflet-routing-machine';
 import 'leaflet-routing-machine/dist/leaflet-routing-machine.css';
 import { RouteInfo, LatLng } from '@/types/route';
 import { fetchSafetyZones } from '@/services/routingService';
+import { CrimeType, getCrimeTypeForArea } from '@/utils/crimeTypeMapping';
 
 // Fix default marker icons
 delete (L.Icon.Default.prototype as any)._getIconUrl;
@@ -24,6 +25,7 @@ interface MapViewProps {
   showSafetyZones?: boolean;
   sourceName?: string;
   destinationName?: string;
+  highlightedCrimeTypes?: CrimeType[];
 }
 
 // Visakhapatnam coordinates
@@ -35,7 +37,7 @@ const defaultCenter: LatLng = {
 // Safety zone coordinates for Visakhapatnam areas (imported from astarRouting for consistency)
 import { areaCoordinates } from '@/services/astarRouting';
 
-const MapView = ({ routes = [], sourceCoords, destinationCoords, selectedRoute, currentPosition, isMonitoring, showSafetyZones = true, sourceName, destinationName }: MapViewProps) => {
+const MapView = ({ routes = [], sourceCoords, destinationCoords, selectedRoute, currentPosition, isMonitoring, showSafetyZones = true, sourceName, destinationName, highlightedCrimeTypes = [] }: MapViewProps) => {
   const mapContainer = useRef<HTMLDivElement>(null);
   const mapRef = useRef<L.Map | null>(null);
   const routingControlRef = useRef<L.Routing.Control | null>(null);
@@ -209,7 +211,7 @@ const MapView = ({ routes = [], sourceCoords, destinationCoords, selectedRoute, 
     });
   }, [routes, selectedRoute, mapReady]);
 
-  // Load and display safety zones on map - load on init
+  // Load and display safety zones on map - filter by highlighted crime types
   useEffect(() => {
     if (!mapRef.current || !mapReady) return;
 
@@ -226,7 +228,6 @@ const MapView = ({ routes = [], sourceCoords, destinationCoords, selectedRoute, 
       try {
         const zones = await fetchSafetyZones();
         console.log('Loaded safety zones:', zones.length);
-        
         
         zones.forEach(zone => {
           const normalizedArea = zone.area.toLowerCase().trim();
@@ -248,23 +249,40 @@ const MapView = ({ routes = [], sourceCoords, destinationCoords, selectedRoute, 
             return;
           }
 
+          // Get the crime type for this zone
+          const zoneCrimeType = getCrimeTypeForArea(zone.area);
+          
+          // If crime type filters are active, only show zones matching selected types
+          if (highlightedCrimeTypes.length > 0) {
+            if (!highlightedCrimeTypes.includes(zoneCrimeType)) {
+              return; // Skip zones that don't match selected crime types
+            }
+          }
+
           const color = getSafetyZoneColor(zone.safety_score);
           const isCritical = zone.safety_score < 35;
           const isRisky = zone.safety_score < 50;
           const isSafe = zone.safety_score >= 75;
 
-          // Determine marker size based on risk level - smaller circles for red zones
+          // Determine marker size based on risk level - larger for highlighted zones
           let markerRadius = 8;
           let areaRadius = 300;
+          
+          // Make highlighted zones more prominent
+          const isHighlighted = highlightedCrimeTypes.length > 0;
+          
           if (isCritical) {
-            markerRadius = 12;
-            areaRadius = 500;
+            markerRadius = isHighlighted ? 16 : 12;
+            areaRadius = isHighlighted ? 700 : 500;
           } else if (isRisky) {
-            markerRadius = 10;
-            areaRadius = 400;
+            markerRadius = isHighlighted ? 14 : 10;
+            areaRadius = isHighlighted ? 600 : 400;
           } else if (!isSafe) {
-            markerRadius = 8;
-            areaRadius = 350;
+            markerRadius = isHighlighted ? 12 : 8;
+            areaRadius = isHighlighted ? 500 : 350;
+          } else {
+            markerRadius = isHighlighted ? 10 : 8;
+            areaRadius = isHighlighted ? 400 : 300;
           }
 
           // Create circle marker for the zone
@@ -272,9 +290,9 @@ const MapView = ({ routes = [], sourceCoords, destinationCoords, selectedRoute, 
             radius: markerRadius,
             fillColor: color,
             color: isCritical ? '#450a0a' : isRisky ? '#7f1d1d' : color,
-            weight: isCritical ? 4 : isRisky ? 3 : 2,
+            weight: isHighlighted ? 4 : (isCritical ? 4 : isRisky ? 3 : 2),
             opacity: 1,
-            fillOpacity: isCritical ? 0.7 : isRisky ? 0.5 : 0.4,
+            fillOpacity: isHighlighted ? 0.8 : (isCritical ? 0.7 : isRisky ? 0.5 : 0.4),
           });
 
           // Risk label
@@ -291,12 +309,17 @@ const MapView = ({ routes = [], sourceCoords, destinationCoords, selectedRoute, 
             riskIcon = '⚡';
           }
 
-          // Add popup with zone info - show crime count & safety score for ALL zones (especially risky)
-          const showCrimeDetails = zone.safety_score < 75; // Show details for risky/moderate/critical
+          // Get crime type label for popup
+          const crimeTypeLabel = zoneCrimeType.charAt(0).toUpperCase() + zoneCrimeType.slice(1);
+
+          // Add popup with zone info - show crime type prominently
           const popupContent = `
             <div style="padding: 10px; min-width: 200px;">
               <strong style="font-size: 15px; color: ${color};">${riskIcon} ${zone.area}</strong>
               <hr style="margin: 8px 0; border-color: ${color}40;"/>
+              <div style="font-size: 13px; color: #333; margin-bottom: 6px;">
+                <strong>🔍 Crime Type:</strong> <span style="color: ${color}; font-weight: bold; text-transform: uppercase;">${crimeTypeLabel}</span>
+              </div>
               <div style="font-size: 13px; color: #333; margin-bottom: 6px;">
                 <strong>🛡️ Safety Score:</strong> <span style="color: ${color}; font-weight: bold;">${zone.safety_score}/100</span>
               </div>
@@ -317,14 +340,14 @@ const MapView = ({ routes = [], sourceCoords, destinationCoords, selectedRoute, 
           circle.addTo(mapRef.current);
           safetyZoneLayersRef.current.push(circle);
 
-          // Add a larger semi-transparent area circle for risky zones
-          if (isRisky) {
+          // Add a larger semi-transparent area circle for risky/highlighted zones
+          if (isRisky || isHighlighted) {
             const areaCircle = L.circle([coords.lat, coords.lng], {
               radius: areaRadius,
               fillColor: color,
-              color: isCritical ? '#7f1d1d' : 'transparent',
-              weight: isCritical ? 2 : 0,
-              fillOpacity: isCritical ? 0.25 : 0.15,
+              color: isCritical ? '#7f1d1d' : (isHighlighted ? color : 'transparent'),
+              weight: isCritical ? 2 : (isHighlighted ? 2 : 0),
+              fillOpacity: isHighlighted ? 0.3 : (isCritical ? 0.25 : 0.15),
             });
             areaCircle.addTo(mapRef.current);
             safetyZoneLayersRef.current.push(areaCircle as unknown as L.CircleMarker);
@@ -338,7 +361,7 @@ const MapView = ({ routes = [], sourceCoords, destinationCoords, selectedRoute, 
     };
 
     loadSafetyZones();
-  }, [mapReady, showSafetyZones]);
+  }, [mapReady, showSafetyZones, highlightedCrimeTypes]);
 
 
   // Handle current position marker during monitoring
