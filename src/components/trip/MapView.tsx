@@ -320,6 +320,7 @@ const MapView = ({ routes = [], sourceCoords, destinationCoords, selectedRoute, 
         }
         
         // Default behavior: show all safety zones when no crime filter is active
+        // This shows GENERAL safety info (area, total crime count, score, severity) - NO crime type
         allZones.forEach(zone => {
           const normalizedArea = zone.area.toLowerCase().trim();
           let coords: LatLng | null = null;
@@ -339,9 +340,6 @@ const MapView = ({ routes = [], sourceCoords, destinationCoords, selectedRoute, 
             return;
           }
 
-          // Get the crime type for this zone
-          const zoneCrimeType = getCrimeTypeForArea(zone.area);
-          const crimeConfig = crimeTypeConfig[zoneCrimeType];
           const color = getSafetyZoneColor(zone.safety_score);
           const isCritical = zone.safety_score < 35;
           const isRisky = zone.safety_score < 50;
@@ -378,6 +376,8 @@ const MapView = ({ routes = [], sourceCoords, destinationCoords, selectedRoute, 
           else if (isRisky) riskLabel = 'HIGH RISK';
           else if (zone.safety_score < 75) riskLabel = 'MODERATE';
 
+          // BEFORE LOCATIONS: Show general safety info (area, total crime count, score, severity)
+          // NO crime type shown in this view
           const popupContent = `
             <div style="padding: 12px; min-width: 220px;">
               <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px;">
@@ -385,11 +385,8 @@ const MapView = ({ routes = [], sourceCoords, destinationCoords, selectedRoute, 
                 <strong style="font-size: 15px; color: #333;">${zone.area}</strong>
               </div>
               <hr style="margin: 8px 0; border-color: ${color}40;"/>
-              <div style="font-size: 14px; color: #333; margin-bottom: 8px; padding: 8px; background: ${color}15; border-radius: 6px; border-left: 3px solid ${color};">
-                <strong>${crimeConfig.icon} ${crimeConfig.label}</strong>
-              </div>
               <div style="font-size: 13px; color: #333; margin-bottom: 6px;">
-                <strong>🚔 Crime Incidents:</strong> <span style="color: ${zone.crime_count > 10 ? '#ef4444' : zone.crime_count > 5 ? '#f59e0b' : '#666'}; font-weight: bold; font-size: 14px;">${zone.crime_count}</span>
+                <strong>🚔 Total Crime Count:</strong> <span style="color: ${zone.crime_count > 10 ? '#ef4444' : zone.crime_count > 5 ? '#f59e0b' : '#666'}; font-weight: bold; font-size: 14px;">${zone.crime_count}</span>
               </div>
               <div style="font-size: 13px; color: #333; margin-bottom: 6px;">
                 <strong>🛡️ Safety Score:</strong> <span style="color: ${color}; font-weight: bold;">${zone.safety_score}/100</span>
