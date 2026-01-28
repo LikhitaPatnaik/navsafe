@@ -5,7 +5,7 @@ import 'leaflet-routing-machine';
 import 'leaflet-routing-machine/dist/leaflet-routing-machine.css';
 import { RouteInfo, LatLng } from '@/types/route';
 import { fetchSafetyZones } from '@/services/routingService';
-import { CrimeType, getCrimeTypeForArea } from '@/utils/crimeTypeMapping';
+import { CrimeType, getCrimeTypeForArea, crimeTypeConfig } from '@/utils/crimeTypeMapping';
 
 // Fix default marker icons
 delete (L.Icon.Default.prototype as any)._getIconUrl;
@@ -259,7 +259,9 @@ const MapView = ({ routes = [], sourceCoords, destinationCoords, selectedRoute, 
             }
           }
 
-          const color = getSafetyZoneColor(zone.safety_score);
+          // Use crime-type-specific color when filters are active
+          const crimeConfig = crimeTypeConfig[zoneCrimeType];
+          const color = highlightedCrimeTypes.length > 0 ? crimeConfig.mapColor : getSafetyZoneColor(zone.safety_score);
           const isCritical = zone.safety_score < 35;
           const isRisky = zone.safety_score < 50;
           const isSafe = zone.safety_score >= 75;
@@ -285,14 +287,14 @@ const MapView = ({ routes = [], sourceCoords, destinationCoords, selectedRoute, 
             areaRadius = isHighlighted ? 400 : 300;
           }
 
-          // Create circle marker for the zone
+          // Create circle marker for the zone with crime-type color
           const circle = L.circleMarker([coords.lat, coords.lng], {
             radius: markerRadius,
             fillColor: color,
-            color: isCritical ? '#450a0a' : isRisky ? '#7f1d1d' : color,
+            color: isHighlighted ? color : (isCritical ? '#450a0a' : isRisky ? '#7f1d1d' : color),
             weight: isHighlighted ? 4 : (isCritical ? 4 : isRisky ? 3 : 2),
             opacity: 1,
-            fillOpacity: isHighlighted ? 0.8 : (isCritical ? 0.7 : isRisky ? 0.5 : 0.4),
+            fillOpacity: isHighlighted ? 0.85 : (isCritical ? 0.7 : isRisky ? 0.5 : 0.4),
           });
 
           // Risk label
@@ -309,25 +311,29 @@ const MapView = ({ routes = [], sourceCoords, destinationCoords, selectedRoute, 
             riskIcon = '⚡';
           }
 
-          // Get crime type label for popup
-          const crimeTypeLabel = zoneCrimeType.charAt(0).toUpperCase() + zoneCrimeType.slice(1);
+          // Get crime type label for popup with icon
+          const crimeTypeLabel = crimeConfig.label;
+          const crimeIcon = crimeConfig.icon;
 
-          // Add popup with zone info - show crime type prominently
+          // Add popup with zone info - show area, crime type and crime count prominently
           const popupContent = `
-            <div style="padding: 10px; min-width: 200px;">
-              <strong style="font-size: 15px; color: ${color};">${riskIcon} ${zone.area}</strong>
+            <div style="padding: 12px; min-width: 220px;">
+              <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px;">
+                <div style="width: 12px; height: 12px; border-radius: 50%; background: ${color};"></div>
+                <strong style="font-size: 15px; color: #333;">${zone.area}</strong>
+              </div>
               <hr style="margin: 8px 0; border-color: ${color}40;"/>
+              <div style="font-size: 14px; color: #333; margin-bottom: 8px; padding: 8px; background: ${color}15; border-radius: 6px; border-left: 3px solid ${color};">
+                <strong>${crimeIcon} ${crimeTypeLabel}</strong>
+              </div>
               <div style="font-size: 13px; color: #333; margin-bottom: 6px;">
-                <strong>🔍 Crime Type:</strong> <span style="color: ${color}; font-weight: bold; text-transform: uppercase;">${crimeTypeLabel}</span>
+                <strong>🚔 Crime Incidents:</strong> <span style="color: ${zone.crime_count > 10 ? '#ef4444' : zone.crime_count > 5 ? '#f59e0b' : '#666'}; font-weight: bold; font-size: 14px;">${zone.crime_count}</span>
               </div>
               <div style="font-size: 13px; color: #333; margin-bottom: 6px;">
                 <strong>🛡️ Safety Score:</strong> <span style="color: ${color}; font-weight: bold;">${zone.safety_score}/100</span>
               </div>
               <div style="font-size: 13px; color: #333; margin-bottom: 6px;">
-                <strong>🚔 Crime Count:</strong> <span style="color: ${isRisky ? '#ef4444' : '#666'}; font-weight: ${isRisky ? 'bold' : 'normal'};">${zone.crime_count} incidents</span>
-              </div>
-              <div style="font-size: 13px; color: #333; margin-bottom: 6px;">
-                <strong>⚠️ Severity:</strong> <span style="text-transform: uppercase; color: ${color};">${zone.severity || 'N/A'}</span>
+                <strong>⚠️ Severity:</strong> <span style="text-transform: uppercase; color: ${color}; font-weight: 500;">${zone.severity || 'N/A'}</span>
               </div>
               ${zone.street ? `<div style="font-size: 12px; color: #666; margin-bottom: 8px;">📍 ${zone.street}</div>` : ''}
               <div style="font-size: 12px; padding: 6px 10px; border-radius: 6px; background: ${color}; color: white; text-align: center; font-weight: bold;">
@@ -345,9 +351,9 @@ const MapView = ({ routes = [], sourceCoords, destinationCoords, selectedRoute, 
             const areaCircle = L.circle([coords.lat, coords.lng], {
               radius: areaRadius,
               fillColor: color,
-              color: isCritical ? '#7f1d1d' : (isHighlighted ? color : 'transparent'),
-              weight: isCritical ? 2 : (isHighlighted ? 2 : 0),
-              fillOpacity: isHighlighted ? 0.3 : (isCritical ? 0.25 : 0.15),
+              color: isHighlighted ? color : (isCritical ? '#7f1d1d' : 'transparent'),
+              weight: isHighlighted ? 2 : (isCritical ? 2 : 0),
+              fillOpacity: isHighlighted ? 0.25 : (isCritical ? 0.25 : 0.15),
             });
             areaCircle.addTo(mapRef.current);
             safetyZoneLayersRef.current.push(areaCircle as unknown as L.CircleMarker);
@@ -461,26 +467,51 @@ const MapView = ({ routes = [], sourceCoords, destinationCoords, selectedRoute, 
             </>
           )}
           
-          {/* Safety Zone Legend */}
-          <p className="text-xs sm:text-sm font-medium text-foreground mb-1.5 sm:mb-2">Safety Zones</p>
-          <div className="flex flex-wrap gap-2 sm:gap-3">
-            <div className="flex items-center gap-1 sm:gap-1.5">
-              <div className="w-2 h-2 sm:w-3 sm:h-3 rounded-full bg-green-500" />
-              <span className="text-[10px] sm:text-xs text-muted-foreground">Safe</span>
-            </div>
-            <div className="flex items-center gap-1 sm:gap-1.5">
-              <div className="w-2 h-2 sm:w-3 sm:h-3 rounded-full bg-amber-500" />
-              <span className="text-[10px] sm:text-xs text-muted-foreground">Moderate</span>
-            </div>
-            <div className="flex items-center gap-1 sm:gap-1.5">
-              <div className="w-2 h-2 sm:w-3 sm:h-3 rounded-full bg-red-500" />
-              <span className="text-[10px] sm:text-xs text-muted-foreground">Risky</span>
-            </div>
-            <div className="flex items-center gap-1 sm:gap-1.5">
-              <div className="w-2.5 h-2.5 sm:w-3.5 sm:h-3.5 rounded-full bg-red-900 border sm:border-2 border-red-700" />
-              <span className="text-[10px] sm:text-xs text-muted-foreground font-medium">⚠️ Black</span>
-            </div>
-          </div>
+          {/* Crime Type Legend - Show when filters are active */}
+          {highlightedCrimeTypes.length > 0 ? (
+            <>
+              <p className="text-xs sm:text-sm font-medium text-foreground mb-1.5 sm:mb-2">Crime Types</p>
+              <div className="flex flex-wrap gap-2 sm:gap-3">
+                {highlightedCrimeTypes.map((crimeType) => {
+                  const config = crimeTypeConfig[crimeType];
+                  return (
+                    <div key={crimeType} className="flex items-center gap-1 sm:gap-1.5">
+                      <div 
+                        className="w-3 h-3 sm:w-4 sm:h-4 rounded-full border-2"
+                        style={{ backgroundColor: config.mapColor, borderColor: config.mapColor }}
+                      />
+                      <span className="text-[10px] sm:text-xs text-muted-foreground">
+                        {config.icon} {config.label}
+                      </span>
+                    </div>
+                  );
+                })}
+              </div>
+            </>
+          ) : (
+            <>
+              {/* Safety Zone Legend - Default view */}
+              <p className="text-xs sm:text-sm font-medium text-foreground mb-1.5 sm:mb-2">Safety Zones</p>
+              <div className="flex flex-wrap gap-2 sm:gap-3">
+                <div className="flex items-center gap-1 sm:gap-1.5">
+                  <div className="w-2 h-2 sm:w-3 sm:h-3 rounded-full bg-green-500" />
+                  <span className="text-[10px] sm:text-xs text-muted-foreground">Safe</span>
+                </div>
+                <div className="flex items-center gap-1 sm:gap-1.5">
+                  <div className="w-2 h-2 sm:w-3 sm:h-3 rounded-full bg-amber-500" />
+                  <span className="text-[10px] sm:text-xs text-muted-foreground">Moderate</span>
+                </div>
+                <div className="flex items-center gap-1 sm:gap-1.5">
+                  <div className="w-2 h-2 sm:w-3 sm:h-3 rounded-full bg-red-500" />
+                  <span className="text-[10px] sm:text-xs text-muted-foreground">Risky</span>
+                </div>
+                <div className="flex items-center gap-1 sm:gap-1.5">
+                  <div className="w-2.5 h-2.5 sm:w-3.5 sm:h-3.5 rounded-full bg-red-900 border sm:border-2 border-red-700" />
+                  <span className="text-[10px] sm:text-xs text-muted-foreground font-medium">⚠️ Black</span>
+                </div>
+              </div>
+            </>
+          )}
         </div>
       </div>
     </div>
