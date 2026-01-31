@@ -54,15 +54,16 @@ const areaCrimeTypeMap: Record<string, CrimeType> = {
   'Bhogapuram': 'accident',
 };
 
-// Crime type display configuration with hex colors for map markers
+// Crime type display configuration with 5 DISTINCT hex colors for map markers
+// Colors chosen for maximum visual distinction on maps
 export const crimeTypeConfig: Record<CrimeType, { label: string; color: string; mapColor: string; icon: string }> = {
-  kidnap: { label: 'Kidnapping', color: 'text-red-600 bg-red-600/10 border-red-600/30', mapColor: '#dc2626', icon: '🚨' },
-  robbery: { label: 'Robbery', color: 'text-orange-500 bg-orange-500/10 border-orange-500/30', mapColor: '#f97316', icon: '💰' },
-  murder: { label: 'Murder', color: 'text-rose-700 bg-rose-700/10 border-rose-700/30', mapColor: '#be123c', icon: '⚠️' },
-  assault: { label: 'Assault', color: 'text-amber-500 bg-amber-500/10 border-amber-500/30', mapColor: '#f59e0b', icon: '👊' },
-  accident: { label: 'Accident', color: 'text-yellow-500 bg-yellow-500/10 border-yellow-500/30', mapColor: '#eab308', icon: '🚗' },
-  theft: { label: 'Theft', color: 'text-purple-500 bg-purple-500/10 border-purple-500/30', mapColor: '#a855f7', icon: '🔓' },
-  harassment: { label: 'Harassment', color: 'text-pink-500 bg-pink-500/10 border-pink-500/30', mapColor: '#ec4899', icon: '⚡' },
+  kidnap: { label: 'Kidnapping', color: 'text-red-600 bg-red-600/10 border-red-600/30', mapColor: '#dc2626', icon: '🚨' },      // RED
+  robbery: { label: 'Robbery', color: 'text-orange-500 bg-orange-500/10 border-orange-500/30', mapColor: '#f97316', icon: '💰' }, // ORANGE
+  murder: { label: 'Murder', color: 'text-violet-600 bg-violet-600/10 border-violet-600/30', mapColor: '#7c3aed', icon: '⚠️' },  // VIOLET/PURPLE
+  assault: { label: 'Assault', color: 'text-blue-500 bg-blue-500/10 border-blue-500/30', mapColor: '#3b82f6', icon: '👊' },      // BLUE
+  accident: { label: 'Accident', color: 'text-yellow-500 bg-yellow-500/10 border-yellow-500/30', mapColor: '#eab308', icon: '🚗' }, // YELLOW
+  theft: { label: 'Theft', color: 'text-emerald-500 bg-emerald-500/10 border-emerald-500/30', mapColor: '#10b981', icon: '🔓' }, // GREEN (for internal use)
+  harassment: { label: 'Harassment', color: 'text-pink-500 bg-pink-500/10 border-pink-500/30', mapColor: '#ec4899', icon: '⚡' }, // PINK (for internal use)
 };
 
 // Get crime type for an area - returns 'theft' as default for unmapped risky areas

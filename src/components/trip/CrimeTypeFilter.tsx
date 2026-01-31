@@ -61,6 +61,11 @@ const CrimeTypeFilter = ({ selectedCrimeTypes, onToggle, onClearAll }: CrimeType
                 onCheckedChange={() => onToggle(type)}
                 className="pointer-events-none"
               />
+              {/* Color indicator dot */}
+              <div 
+                className="w-3 h-3 rounded-full flex-shrink-0"
+                style={{ backgroundColor: config.mapColor }}
+              />
               <Label
                 htmlFor={`filter-${type}`}
                 className="flex-1 text-sm cursor-pointer"
