@@ -14,6 +14,33 @@ export type Database = {
   }
   public: {
     Tables: {
+      crime_type_counts: {
+        Row: {
+          area: string
+          count: number
+          created_at: string
+          crime_type: string
+          id: string
+          updated_at: string
+        }
+        Insert: {
+          area: string
+          count?: number
+          created_at?: string
+          crime_type: string
+          id?: string
+          updated_at?: string
+        }
+        Update: {
+          area?: string
+          count?: number
+          created_at?: string
+          crime_type?: string
+          id?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       emergency_contacts: {
         Row: {
           created_at: string
