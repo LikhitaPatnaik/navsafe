@@ -3,6 +3,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { RefreshCw, Flag, AlertOctagon, Loader2, Mic, MicOff } from 'lucide-react';
 import { useTrip } from '@/context/TripContext';
+import { useSettings } from '@/contexts/SettingsContext';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { areaCoordinates, haversineDistance } from '@/services/astarRouting';
@@ -61,6 +62,7 @@ const getFreshLocation = (): Promise<{ lat: number; lng: number }> => {
 
 const SafetyActionsPanel = () => {
   const { trip } = useTrip();
+  const { voiceSosEnabled } = useSettings();
   const [showReportModal, setShowReportModal] = useState(false);
   const [showSosModal, setShowSosModal] = useState(false);
   const [reportReason, setReportReason] = useState('');
@@ -158,8 +160,8 @@ const SafetyActionsPanel = () => {
     <>
       {/* Mobile: Horizontal bottom bar | Desktop: Vertical side panel */}
       <div className="fixed bottom-4 left-4 right-4 sm:left-auto sm:bottom-6 sm:right-6 z-40 flex flex-row sm:flex-col gap-2 sm:gap-3 animate-slide-up safe-area-bottom">
-        {/* Voice SOS Button */}
-        {isSupported && (
+        {/* Voice SOS Button - Only shown when enabled in settings */}
+        {voiceSosEnabled && isSupported && (
           <Button
             variant={isListening ? 'sos' : 'glass'}
             size="default"

@@ -2,15 +2,17 @@ import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { useTheme } from '@/contexts/ThemeContext';
+import { useSettings } from '@/contexts/SettingsContext';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
-import { ArrowLeft, Bell, MapPin, Shield, Volume2, Palette, Sun, Moon } from 'lucide-react';
+import { ArrowLeft, Bell, MapPin, Shield, Volume2, Palette, Sun, Moon, Mic } from 'lucide-react';
 
 const Settings = () => {
   const { user, loading } = useAuth();
   const { theme, setTheme } = useTheme();
+  const { voiceSosEnabled, setVoiceSosEnabled } = useSettings();
   const navigate = useNavigate();
 
   React.useEffect(() => {
@@ -74,6 +76,35 @@ const Settings = () => {
                 id="dark-mode" 
                 checked={theme === 'dark'}
                 onCheckedChange={(checked) => setTheme(checked ? 'dark' : 'light')}
+              />
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Mic className="w-5 h-5" />
+              Voice SOS
+            </CardTitle>
+            <CardDescription>
+              Enable voice-activated emergency alerts
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="flex items-center justify-between">
+              <div className="flex-1">
+                <Label htmlFor="voice-sos" className="cursor-pointer">
+                  Enable Voice SOS
+                </Label>
+                <p className="text-sm text-muted-foreground mt-1">
+                  Say "Help", "SOS", "Bachao", or "Save" to auto-send alerts
+                </p>
+              </div>
+              <Switch 
+                id="voice-sos" 
+                checked={voiceSosEnabled}
+                onCheckedChange={setVoiceSosEnabled}
               />
             </div>
           </CardContent>
