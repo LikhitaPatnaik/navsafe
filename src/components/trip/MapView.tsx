@@ -35,7 +35,7 @@ const defaultCenter: LatLng = {
 };
 
 // Safety zone coordinates for Visakhapatnam areas (imported from astarRouting for consistency)
-import { areaCoordinates } from '@/services/astarRouting';
+import { areaCoordinates, haversineDistance } from '@/services/astarRouting';
 
 const MapView = ({ routes = [], sourceCoords, destinationCoords, selectedRoute, currentPosition, isMonitoring, showSafetyZones = true, sourceName, destinationName, highlightedCrimeTypes = [] }: MapViewProps) => {
   const mapContainer = useRef<HTMLDivElement>(null);
@@ -230,7 +230,14 @@ const MapView = ({ routes = [], sourceCoords, destinationCoords, selectedRoute, 
         console.log('Loaded safety zones:', allZones.length);
         
         // If crime type filters are active, fetch actual crime counts from database
+        // ONLY show zones along the selected route path
         if (highlightedCrimeTypes.length > 0) {
+          // Require a selected route with a valid path to show filtered crime zones
+          if (!selectedRoute || !selectedRoute.path || selectedRoute.path.length === 0) {
+            console.log('Crime filter active but no route selected - skipping crime zone display');
+            return;
+          }
+          
           // Fetch crime type counts from database
           const { data: crimeTypeCounts, error } = await supabase
             .from('crime_type_counts')
@@ -254,7 +261,22 @@ const MapView = ({ routes = [], sourceCoords, destinationCoords, selectedRoute, 
             crimeDataByArea.get(normalizedArea)!.set(record.crime_type as CrimeType, record.count);
           });
           
-          // Render markers for each area with matching crime types
+          // Helper: Check if area is along the route path (within 1.5km)
+          const isAreaAlongRoute = (areaCoords: LatLng): boolean => {
+            const maxDistance = 1500; // 1.5km detection radius
+            const sampleRate = Math.max(1, Math.floor(selectedRoute.path.length / 50));
+            
+            for (let i = 0; i < selectedRoute.path.length; i += sampleRate) {
+              const point = selectedRoute.path[i];
+              const distance = haversineDistance(point, areaCoords);
+              if (distance < maxDistance) {
+                return true;
+              }
+            }
+            return false;
+          };
+          
+          // Render markers ONLY for areas along the selected route
           crimeDataByArea.forEach((crimeTypes, normalizedArea) => {
             // Find coordinates for this area
             let coords: LatLng | null = null;
@@ -272,6 +294,11 @@ const MapView = ({ routes = [], sourceCoords, destinationCoords, selectedRoute, 
             }
             
             if (!coords || !mapRef.current) return;
+            
+            // Skip areas NOT along the selected route
+            if (!isAreaAlongRoute(coords)) {
+              return;
+            }
             
             // Get safety zone info for this area
             const safetyZone = allZones.find(z => 
@@ -361,7 +388,7 @@ const MapView = ({ routes = [], sourceCoords, destinationCoords, selectedRoute, 
             });
           });
           
-          console.log('Crime zones rendered from database:', safetyZoneLayersRef.current.length);
+          console.log('Crime zones along route rendered:', safetyZoneLayersRef.current.length);
           return; // Exit early - we've rendered filtered zones
         }
         
