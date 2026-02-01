@@ -118,7 +118,7 @@ const handler = async (req: Request): Promise<Response> => {
     const locationUrl = formatOSMUrl(location.lat, location.lng);
     const landmarkText = landmark || 'Unknown Location';
     const sosMessage = message || 
-      `🚨 ALERT: I'm at ${landmarkText}, Visakhapatnam. Exact loc: ${locationUrl} (${location.lat.toFixed(6)},${location.lng.toFixed(6)})`;
+      `ALERT: I'm at ${landmarkText}, Visakhapatnam. Exact loc: ${locationUrl} (${location.lat.toFixed(6)},${location.lng.toFixed(6)})`;
 
     console.log(`Sending SOS to ${contacts.length} contacts`);
 

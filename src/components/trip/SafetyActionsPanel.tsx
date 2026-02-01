@@ -31,6 +31,34 @@ const findNearestLandmark = (lat: number, lng: number): string => {
   return nearestArea;
 };
 
+// Get fresh GPS location
+const getFreshLocation = (): Promise<{ lat: number; lng: number }> => {
+  return new Promise((resolve, reject) => {
+    if (!navigator.geolocation) {
+      reject(new Error('Geolocation not supported'));
+      return;
+    }
+
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        resolve({
+          lat: position.coords.latitude,
+          lng: position.coords.longitude,
+        });
+      },
+      (error) => {
+        console.error('Geolocation error:', error);
+        reject(error);
+      },
+      {
+        enableHighAccuracy: true,
+        timeout: 10000,
+        maximumAge: 0,
+      }
+    );
+  });
+};
+
 const SafetyActionsPanel = () => {
   const { trip } = useTrip();
   const [showReportModal, setShowReportModal] = useState(false);
@@ -39,12 +67,64 @@ const SafetyActionsPanel = () => {
   const [reportSeverity, setReportSeverity] = useState<'low' | 'medium' | 'high'>('medium');
   const [isSending, setIsSending] = useState(false);
 
-  // Voice command handler - triggers SOS confirmation modal
-  const handleVoiceTrigger = useCallback(() => {
-    console.log('[Voice] SOS trigger phrase detected!');
-    setShowSosModal(true);
-    toast.warning('🎤 Voice SOS detected! Confirm to send alert.');
-  }, []);
+  // Send SOS alert function
+  const sendSosAlert = useCallback(async () => {
+    try {
+      let location = trip.currentPosition;
+      
+      try {
+        console.log('[SOS] Fetching fresh GPS location...');
+        location = await getFreshLocation();
+        console.log('[SOS] Fresh location obtained:', location);
+      } catch (geoError) {
+        console.warn('[SOS] Fresh location failed:', geoError);
+        if (!trip.currentPosition) {
+          toast.error('Unable to get location. Please enable GPS.');
+          return false;
+        }
+      }
+
+      if (!location) {
+        toast.error('Unable to get your location.');
+        return false;
+      }
+
+      const landmark = findNearestLandmark(location.lat, location.lng);
+      console.log('[SOS] Sending with location:', location, 'Landmark:', landmark);
+      
+      const { data, error } = await supabase.functions.invoke('send-sos', {
+        body: {
+          landmark,
+          location: { lat: location.lat, lng: location.lng },
+        },
+      });
+
+      if (error) {
+        console.error('SOS error:', error);
+        toast.error('Failed to send SOS. Call emergency services directly.');
+        return false;
+      }
+
+      if (data?.error === 'No emergency contacts found') {
+        toast.error('No emergency contacts configured.');
+        return false;
+      }
+
+      toast.success(`SOS sent to ${data?.sent || 0} contacts!`);
+      return true;
+    } catch (err) {
+      console.error('[SOS] Error:', err);
+      toast.error('Failed to send SOS.');
+      return false;
+    }
+  }, [trip.currentPosition]);
+
+  // Voice command handler - auto-sends SOS immediately
+  const handleVoiceTrigger = useCallback(async () => {
+    console.log('[Voice] SOS trigger detected! Auto-sending...');
+    toast.info('Voice SOS detected! Sending alert...');
+    await sendSosAlert();
+  }, [sendSosAlert]);
 
   const { isListening, isSupported, toggleListening } = useVoiceCommand({
     onTrigger: handleVoiceTrigger,
@@ -65,93 +145,13 @@ const SafetyActionsPanel = () => {
     toast.success('Area reported successfully');
   };
 
-  const getFreshLocation = (): Promise<{ lat: number; lng: number }> => {
-    return new Promise((resolve, reject) => {
-      if (!navigator.geolocation) {
-        reject(new Error('Geolocation not supported'));
-        return;
-      }
-
-      navigator.geolocation.getCurrentPosition(
-        (position) => {
-          resolve({
-            lat: position.coords.latitude,
-            lng: position.coords.longitude,
-          });
-        },
-        (error) => {
-          console.error('Geolocation error:', error);
-          reject(error);
-        },
-        {
-          enableHighAccuracy: true,
-          timeout: 10000,
-          maximumAge: 0, // Force fresh location
-        }
-      );
-    });
-  };
-
   const handleSos = async () => {
     setIsSending(true);
-    
-    try {
-      // Get fresh GPS location directly, don't rely on trip context
-      let location = trip.currentPosition;
-      
-      try {
-        console.log('[SOS] Fetching fresh GPS location...');
-        location = await getFreshLocation();
-        console.log('[SOS] Fresh location obtained:', location);
-      } catch (geoError) {
-        console.warn('[SOS] Fresh location failed, using trip position:', geoError);
-        // Fall back to trip context position if available
-        if (!trip.currentPosition) {
-          toast.error('Unable to get your location. Please enable GPS and try again.');
-          setIsSending(false);
-          return;
-        }
-      }
-
-      if (!location) {
-        toast.error('Unable to get your location. Please enable GPS.');
-        setIsSending(false);
-        return;
-      }
-
-      // Find nearest landmark for the location
-      const landmark = findNearestLandmark(location.lat, location.lng);
-      console.log('[SOS] Sending SOS with location:', location, 'Landmark:', landmark);
-      
-      const { data, error } = await supabase.functions.invoke('send-sos', {
-        body: {
-          landmark,
-          location: {
-            lat: location.lat,
-            lng: location.lng,
-          },
-        },
-      });
-
-      if (error) {
-        console.error('SOS error:', error);
-        toast.error('Failed to send SOS. Please call emergency services directly.');
-        return;
-      }
-
-      if (data?.error === 'No emergency contacts found') {
-        toast.error('No emergency contacts configured. Please add contacts first.');
-        return;
-      }
-
-      toast.success(`SOS sent to ${data?.sent || 0} emergency contacts with your location!`);
+    const success = await sendSosAlert();
+    if (success) {
       setShowSosModal(false);
-    } catch (err) {
-      console.error('SOS error:', err);
-      toast.error('Failed to send SOS. Please call emergency services directly.');
-    } finally {
-      setIsSending(false);
     }
+    setIsSending(false);
   };
 
   return (
@@ -163,7 +163,7 @@ const SafetyActionsPanel = () => {
           <Button
             variant={isListening ? 'sos' : 'glass'}
             size="default"
-            className={`flex-1 sm:flex-none shadow-lg text-xs sm:text-sm py-3 sm:py-2 ${isListening ? 'animate-pulse' : ''}`}
+            className="flex-1 sm:flex-none shadow-lg text-xs sm:text-sm py-3 sm:py-2"
             onClick={toggleListening}
           >
             {isListening ? (
