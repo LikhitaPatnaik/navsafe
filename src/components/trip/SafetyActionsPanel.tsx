@@ -5,6 +5,7 @@ import { RefreshCw, Flag, AlertOctagon, Loader2 } from 'lucide-react';
 import { useTrip } from '@/context/TripContext';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+import { areaCoordinates, haversineDistance } from '@/services/astarRouting';
 import {
   Dialog,
   DialogContent,
@@ -12,6 +13,22 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
+
+// Find nearest landmark/area for a given location
+const findNearestLandmark = (lat: number, lng: number): string => {
+  let nearestArea = 'Unknown Area';
+  let nearestDistance = Infinity;
+  
+  for (const [areaName, coords] of Object.entries(areaCoordinates)) {
+    const distance = haversineDistance({ lat, lng }, coords);
+    if (distance < nearestDistance) {
+      nearestDistance = distance;
+      nearestArea = areaName;
+    }
+  }
+  
+  return nearestArea;
+};
 
 const SafetyActionsPanel = () => {
   const { trip } = useTrip();
@@ -89,10 +106,13 @@ const SafetyActionsPanel = () => {
         return;
       }
 
-      console.log('[SOS] Sending SOS with location:', location);
+      // Find nearest landmark for the location
+      const landmark = findNearestLandmark(location.lat, location.lng);
+      console.log('[SOS] Sending SOS with location:', location, 'Landmark:', landmark);
       
       const { data, error } = await supabase.functions.invoke('send-sos', {
         body: {
+          landmark,
           location: {
             lat: location.lat,
             lng: location.lng,
