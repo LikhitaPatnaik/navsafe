@@ -1,11 +1,12 @@
-import { useState } from 'react';
+import { useState, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { RefreshCw, Flag, AlertOctagon, Loader2 } from 'lucide-react';
+import { RefreshCw, Flag, AlertOctagon, Loader2, Mic, MicOff } from 'lucide-react';
 import { useTrip } from '@/context/TripContext';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { areaCoordinates, haversineDistance } from '@/services/astarRouting';
+import { useVoiceCommand } from '@/hooks/useVoiceCommand';
 import {
   Dialog,
   DialogContent,
@@ -37,6 +38,18 @@ const SafetyActionsPanel = () => {
   const [reportReason, setReportReason] = useState('');
   const [reportSeverity, setReportSeverity] = useState<'low' | 'medium' | 'high'>('medium');
   const [isSending, setIsSending] = useState(false);
+
+  // Voice command handler - triggers SOS confirmation modal
+  const handleVoiceTrigger = useCallback(() => {
+    console.log('[Voice] SOS trigger phrase detected!');
+    setShowSosModal(true);
+    toast.warning('🎤 Voice SOS detected! Confirm to send alert.');
+  }, []);
+
+  const { isListening, isSupported, toggleListening } = useVoiceCommand({
+    onTrigger: handleVoiceTrigger,
+    continuous: true,
+  });
 
   if (!trip.isMonitoring) return null;
 
@@ -145,6 +158,23 @@ const SafetyActionsPanel = () => {
     <>
       {/* Mobile: Horizontal bottom bar | Desktop: Vertical side panel */}
       <div className="fixed bottom-4 left-4 right-4 sm:left-auto sm:bottom-6 sm:right-6 z-40 flex flex-row sm:flex-col gap-2 sm:gap-3 animate-slide-up safe-area-bottom">
+        {/* Voice SOS Button */}
+        {isSupported && (
+          <Button
+            variant={isListening ? 'sos' : 'glass'}
+            size="default"
+            className={`flex-1 sm:flex-none shadow-lg text-xs sm:text-sm py-3 sm:py-2 ${isListening ? 'animate-pulse' : ''}`}
+            onClick={toggleListening}
+          >
+            {isListening ? (
+              <Mic className="w-4 h-4 sm:w-5 sm:h-5 sm:mr-2" />
+            ) : (
+              <MicOff className="w-4 h-4 sm:w-5 sm:h-5 sm:mr-2" />
+            )}
+            <span className="hidden sm:inline">{isListening ? 'Voice On' : 'Voice SOS'}</span>
+          </Button>
+        )}
+
         {/* Reroute Button */}
         <Button
           variant="glass"
