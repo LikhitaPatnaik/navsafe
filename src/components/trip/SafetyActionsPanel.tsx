@@ -35,20 +35,67 @@ const SafetyActionsPanel = () => {
     toast.success('Area reported successfully');
   };
 
-  const handleSos = async () => {
-    if (!trip.currentPosition) {
-      toast.error('Unable to get your location. Please enable GPS.');
-      return;
-    }
+  const getFreshLocation = (): Promise<{ lat: number; lng: number }> => {
+    return new Promise((resolve, reject) => {
+      if (!navigator.geolocation) {
+        reject(new Error('Geolocation not supported'));
+        return;
+      }
 
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          resolve({
+            lat: position.coords.latitude,
+            lng: position.coords.longitude,
+          });
+        },
+        (error) => {
+          console.error('Geolocation error:', error);
+          reject(error);
+        },
+        {
+          enableHighAccuracy: true,
+          timeout: 10000,
+          maximumAge: 0, // Force fresh location
+        }
+      );
+    });
+  };
+
+  const handleSos = async () => {
     setIsSending(true);
     
     try {
+      // Get fresh GPS location directly, don't rely on trip context
+      let location = trip.currentPosition;
+      
+      try {
+        console.log('[SOS] Fetching fresh GPS location...');
+        location = await getFreshLocation();
+        console.log('[SOS] Fresh location obtained:', location);
+      } catch (geoError) {
+        console.warn('[SOS] Fresh location failed, using trip position:', geoError);
+        // Fall back to trip context position if available
+        if (!trip.currentPosition) {
+          toast.error('Unable to get your location. Please enable GPS and try again.');
+          setIsSending(false);
+          return;
+        }
+      }
+
+      if (!location) {
+        toast.error('Unable to get your location. Please enable GPS.');
+        setIsSending(false);
+        return;
+      }
+
+      console.log('[SOS] Sending SOS with location:', location);
+      
       const { data, error } = await supabase.functions.invoke('send-sos', {
         body: {
           location: {
-            lat: trip.currentPosition.lat,
-            lng: trip.currentPosition.lng,
+            lat: location.lat,
+            lng: location.lng,
           },
         },
       });
@@ -64,7 +111,7 @@ const SafetyActionsPanel = () => {
         return;
       }
 
-      toast.success(`SOS sent to ${data?.sent || 0} emergency contacts!`);
+      toast.success(`SOS sent to ${data?.sent || 0} emergency contacts with your location!`);
       setShowSosModal(false);
     } catch (err) {
       console.error('SOS error:', err);
