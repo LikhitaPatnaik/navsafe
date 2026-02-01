@@ -11,12 +11,13 @@ interface SOSRequest {
     lat: number;
     lng: number;
   };
+  landmark?: string;
   message?: string;
   contactIds?: string[];
 }
 
-const formatLocationUrl = (lat: number, lng: number): string => {
-  return `https://www.google.com/maps?q=${lat},${lng}`;
+const formatOSMUrl = (lat: number, lng: number): string => {
+  return `https://www.openstreetmap.org/?mlat=${lat}&mlon=${lng}&zoom=17`;
 };
 
 const sendTwilioSMS = async (to: string, body: string): Promise<{ success: boolean; error?: string }> => {
@@ -73,7 +74,7 @@ const handler = async (req: Request): Promise<Response> => {
   }
 
   try {
-    const { location, message, contactIds }: SOSRequest = await req.json();
+    const { location, landmark, message, contactIds }: SOSRequest = await req.json();
 
     if (!location || typeof location.lat !== 'number' || typeof location.lng !== 'number') {
       return new Response(
@@ -114,9 +115,10 @@ const handler = async (req: Request): Promise<Response> => {
       );
     }
 
-    const locationUrl = formatLocationUrl(location.lat, location.lng);
+    const locationUrl = formatOSMUrl(location.lat, location.lng);
+    const landmarkText = landmark || 'Unknown Location';
     const sosMessage = message || 
-      `🚨 SOS EMERGENCY ALERT 🚨\n\nI need help immediately!\n\n📍 My Location:\n${locationUrl}\n\nLat: ${location.lat.toFixed(6)}\nLng: ${location.lng.toFixed(6)}\n\nThis is an automated emergency alert.`;
+      `🚨 ALERT: I'm at ${landmarkText}, Visakhapatnam. Exact loc: ${locationUrl} (${location.lat.toFixed(6)},${location.lng.toFixed(6)})`;
 
     console.log(`Sending SOS to ${contacts.length} contacts`);
 
