@@ -27,7 +27,7 @@ export const haversineDistance = (p1: LatLng, p2: LatLng): number => {
 // Map known Visakhapatnam areas to accurate coordinates (from pre_processed_db-2.xlsx)
 export const areaCoordinates: Record<string, LatLng> = {
   // Extreme/High Risk Areas (Total Crimes: 50+)
-  'Beach Road': { lat: 17.7087, lng: 83.3283 }, // 50 crimes
+  'Beach Road': { lat: 17.7174, lng: 83.3212 }, // 50 crimes - FIXED coordinate (on land along coast)
   'Dwarakanagar': { lat: 17.72867, lng: 83.308634 }, // 38 crimes
   'Dwaraka Nagar': { lat: 17.72867, lng: 83.308634 },
   'Vizianagaram': { lat: 18.1067, lng: 83.3956 }, // 38 crimes
@@ -52,7 +52,7 @@ export const areaCoordinates: Record<string, LatLng> = {
   'Marripalem': { lat: 17.74, lng: 83.25 }, // 17 crimes
   'Steel Plant': { lat: 17.61, lng: 83.19 }, // 20 crimes
   'Steel Plant Township': { lat: 17.61, lng: 83.19 },
-  'Madhurawada': { lat: 17.8243, lng: 83.522 }, // 18 crimes - FIXED coordinate
+  'Madhurawada': { lat: 17.7957, lng: 83.3756 }, // 18 crimes - FIXED coordinate (on land)
   'Anakapalli': { lat: 17.69, lng: 83.0024 }, // 18 crimes
   'Malkapuram': { lat: 17.688, lng: 83.245 }, // 11 crimes
   'Seethammadhara': { lat: 17.7425, lng: 83.3124 }, // 8 crimes
@@ -77,7 +77,7 @@ export const areaCoordinates: Record<string, LatLng> = {
   'Allipuram': { lat: 17.7162, lng: 83.2965 }, // 1 crime
   
   // Very Safe Areas
-  'Tagarapuvalasa': { lat: 17.5552, lng: 83.2544 }, // 1 crime - FIXED coordinate
+  'Tagarapuvalasa': { lat: 17.5611, lng: 83.2267 }, // 1 crime - FIXED coordinate (on land)
   'Bhogapuram': { lat: 18.03, lng: 83.49 }, // 2 crimes
   'Boyapalem': { lat: 17.7312, lng: 83.2859 }, // 1 crime - FIXED coordinate
   'Kurmannapalem': { lat: 17.69, lng: 83.17 }, // 1 crime
