@@ -27,7 +27,7 @@ export const haversineDistance = (p1: LatLng, p2: LatLng): number => {
 // Map known Visakhapatnam areas to accurate coordinates (from pre_processed_db-2.xlsx)
 export const areaCoordinates: Record<string, LatLng> = {
   // Extreme/High Risk Areas (Total Crimes: 50+)
-  'Beach Road': { lat: 17.7174, lng: 83.3212 }, // 50 crimes - FIXED coordinate (on land along coast)
+  'Beach Road': { lat: 17.7215, lng: 83.3150 }, // 50 crimes - FIXED coordinate (on Beach Road near RK Beach)
   'Dwarakanagar': { lat: 17.72867, lng: 83.308634 }, // 38 crimes
   'Dwaraka Nagar': { lat: 17.72867, lng: 83.308634 },
   'Vizianagaram': { lat: 18.1067, lng: 83.3956 }, // 38 crimes
@@ -77,7 +77,7 @@ export const areaCoordinates: Record<string, LatLng> = {
   'Allipuram': { lat: 17.7162, lng: 83.2965 }, // 1 crime
   
   // Very Safe Areas
-  'Tagarapuvalasa': { lat: 17.5611, lng: 83.2267 }, // 1 crime - FIXED coordinate (on land)
+  'Tagarapuvalasa': { lat: 17.930125, lng: 83.425659 }, // 1 crime - FIXED coordinate
   'Bhogapuram': { lat: 18.03, lng: 83.49 }, // 2 crimes
   'Boyapalem': { lat: 17.7312, lng: 83.2859 }, // 1 crime - FIXED coordinate
   'Kurmannapalem': { lat: 17.69, lng: 83.17 }, // 1 crime
