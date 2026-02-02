@@ -26,62 +26,62 @@ export const haversineDistance = (p1: LatLng, p2: LatLng): number => {
 
 // Map known Visakhapatnam areas to accurate coordinates (from pre_processed_db-2.xlsx)
 export const areaCoordinates: Record<string, LatLng> = {
-  // Extreme/High Risk Areas
-  'Beach Road': { lat: 17.7087, lng: 83.3283 },
-  'Dwarakanagar': { lat: 17.72867, lng: 83.308634 },
+  // Extreme/High Risk Areas (Total Crimes: 50+)
+  'Beach Road': { lat: 17.7087, lng: 83.3283 }, // 50 crimes
+  'Dwarakanagar': { lat: 17.72867, lng: 83.308634 }, // 38 crimes
   'Dwaraka Nagar': { lat: 17.72867, lng: 83.308634 },
-  'Vizianagaram': { lat: 18.1067, lng: 83.3956 },
-  'Kancharapalem': { lat: 17.7354, lng: 83.2738 },
-  'Gajuwaka': { lat: 17.6853, lng: 83.2037 },
+  'Vizianagaram': { lat: 18.1067, lng: 83.3956 }, // 38 crimes
+  'Kancharapalem': { lat: 17.7354, lng: 83.2738 }, // 29 crimes
+  'Gajuwaka': { lat: 17.6853, lng: 83.2037 }, // 34 crimes
   
   // Moderate-High Risk Areas
-  'Simhachalam': { lat: 17.75, lng: 83.22 },
-  'MVP Colony': { lat: 17.7407, lng: 83.3367 },
-  'One Town': { lat: 17.7, lng: 83.29 },
+  'Simhachalam': { lat: 17.75, lng: 83.22 }, // 29 crimes
+  'MVP Colony': { lat: 17.7407, lng: 83.3367 }, // 30 crimes
+  'One Town': { lat: 17.7, lng: 83.29 }, // 33 crimes
   
   // Moderate-Low Risk Areas
-  'Jagadamba Jct': { lat: 17.7073, lng: 83.001 },
+  'Jagadamba Jct': { lat: 17.7073, lng: 83.001 }, // 25 crimes
   'Jagadamba Junction': { lat: 17.7073, lng: 83.001 },
-  'Maddilapalem': { lat: 17.7382, lng: 83.323 },
-  'Lawsons Bay': { lat: 17.73, lng: 83.33 },
+  'Maddilapalem': { lat: 17.7382, lng: 83.323 }, // 23 crimes
+  'Lawsons Bay': { lat: 17.73, lng: 83.33 }, // 24 crimes
   'Lawsons Bay Colony': { lat: 17.73, lng: 83.33 },
-  'Poorna Market': { lat: 17.7064, lng: 83.2982 },
+  'Poorna Market': { lat: 17.7064, lng: 83.2982 }, // 12 crimes
   
   // Low Risk Areas
-  'Anandapuram': { lat: 17.9, lng: 83.37 },
-  'Marripalem': { lat: 17.74, lng: 83.25 },
-  'Steel Plant': { lat: 17.61, lng: 83.19 },
+  'Anandapuram': { lat: 17.9, lng: 83.37 }, // 21 crimes
+  'Marripalem': { lat: 17.74, lng: 83.25 }, // 17 crimes
+  'Steel Plant': { lat: 17.61, lng: 83.19 }, // 20 crimes
   'Steel Plant Township': { lat: 17.61, lng: 83.19 },
-  'Madhurawada': { lat: 17.8243, lng: 83.522 },
-  'Anakapalli': { lat: 17.69, lng: 83.0024 },
-  'Malkapuram': { lat: 17.688, lng: 83.245 },
-  'Seethammadhara': { lat: 17.7425, lng: 83.3124 },
-  'Railway New Colony': { lat: 17.7245, lng: 83.2956 },
+  'Madhurawada': { lat: 17.8243, lng: 83.522 }, // 18 crimes - FIXED coordinate
+  'Anakapalli': { lat: 17.69, lng: 83.0024 }, // 18 crimes
+  'Malkapuram': { lat: 17.688, lng: 83.245 }, // 11 crimes
+  'Seethammadhara': { lat: 17.7425, lng: 83.3124 }, // 8 crimes
+  'Railway New Colony': { lat: 17.7245, lng: 83.2956 }, // 5 crimes
   
   // Minimal Risk Areas
-  'Akkayapalem': { lat: 17.7347, lng: 83.2977 },
-  'PM Palem': { lat: 17.7996, lng: 83.3531 },
-  'Yendada': { lat: 17.77, lng: 83.36 },
-  'NAD': { lat: 17.74, lng: 83.23 },
+  'Akkayapalem': { lat: 17.7347, lng: 83.2977 }, // 10 crimes
+  'PM Palem': { lat: 17.7996, lng: 83.3531 }, // 4 crimes
+  'Yendada': { lat: 17.77, lng: 83.36 }, // 8 crimes
+  'NAD': { lat: 17.74, lng: 83.23 }, // 12 crimes
   'NAD Junction': { lat: 17.74, lng: 83.23 },
   
   // Safe Areas
-  'Bheemunipatnam': { lat: 17.89, lng: 83.45 },
-  'Arilova': { lat: 17.7673, lng: 83.3134 },
-  'RTC Complex': { lat: 17.72, lng: 83.31 },
-  'Kommadhi': { lat: 17.72, lng: 83.31 },
+  'Bheemunipatnam': { lat: 17.89, lng: 83.45 }, // 4 crimes
+  'Arilova': { lat: 17.7673, lng: 83.3134 }, // 9 crimes
+  'RTC Complex': { lat: 17.72, lng: 83.31 }, // 4 crimes
+  'Kommadhi': { lat: 17.72, lng: 83.31 }, // 2 crimes
   'Kommadi': { lat: 17.72, lng: 83.31 },
-  'Marikavalasa': { lat: 17.8359, lng: 83.3581 },
-  'Sheelanagar': { lat: 17.719, lng: 83.202 },
+  'Marikavalasa': { lat: 17.8359, lng: 83.3581 }, // 2 crimes
+  'Sheelanagar': { lat: 17.719, lng: 83.202 }, // 2 crimes
   'Sheela Nagar': { lat: 17.719, lng: 83.202 },
-  'Allipuram': { lat: 17.7162, lng: 83.2965 },
+  'Allipuram': { lat: 17.7162, lng: 83.2965 }, // 1 crime
   
   // Very Safe Areas
-  'Tagarapuvalasa': { lat: 17.5552, lng: 83.2544 },
-  'Bhogapuram': { lat: 18.03, lng: 83.49 },
-  'Boyapalem': { lat: 17.7312, lng: 83.2859 },
-  'Kurmannapalem': { lat: 17.69, lng: 83.17 },
-  'Siripuram': { lat: 17.7198, lng: 83.3163 },
+  'Tagarapuvalasa': { lat: 17.5552, lng: 83.2544 }, // 1 crime - FIXED coordinate
+  'Bhogapuram': { lat: 18.03, lng: 83.49 }, // 2 crimes
+  'Boyapalem': { lat: 17.7312, lng: 83.2859 }, // 1 crime - FIXED coordinate
+  'Kurmannapalem': { lat: 17.69, lng: 83.17 }, // 1 crime
+  'Siripuram': { lat: 17.7198, lng: 83.3163 }, // 1 crime
 };
 
 // Get nearest safety zone info for a given point
