@@ -14,6 +14,45 @@ export type Database = {
   }
   public: {
     Tables: {
+      area_reports: {
+        Row: {
+          area: string
+          created_at: string
+          id: string
+          latitude: number
+          longitude: number
+          reason: string
+          severity: string
+          street: string | null
+          updated_at: string
+          user_id: string | null
+        }
+        Insert: {
+          area: string
+          created_at?: string
+          id?: string
+          latitude: number
+          longitude: number
+          reason: string
+          severity: string
+          street?: string | null
+          updated_at?: string
+          user_id?: string | null
+        }
+        Update: {
+          area?: string
+          created_at?: string
+          id?: string
+          latitude?: number
+          longitude?: number
+          reason?: string
+          severity?: string
+          street?: string | null
+          updated_at?: string
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       crime_type_counts: {
         Row: {
           area: string
