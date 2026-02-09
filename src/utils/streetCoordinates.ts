@@ -10,341 +10,456 @@ export interface StreetLocation {
 }
 
 export const areaStreetCoordinates: Record<string, StreetLocation[]> = {
-  // Akkayapalem - NH16 corridor
+  // Akkayapalem - 11 crimes
   'Akkayapalem': [
-    { street: 'NH16 Highway', coords: { lat: 17.7347, lng: 83.2977 }, crimeTypes: ['accident'] },
-    { street: 'Colony Main Road', coords: { lat: 17.7370, lng: 83.3000 }, crimeTypes: ['theft', 'murder'] },
-    { street: 'Akkayapalem Junction', coords: { lat: 17.7330, lng: 83.2950 }, crimeTypes: ['kidnap', 'robbery'] },
+    { street: 'Akkayapalem Intersection Junction', coords: { lat: 17.7347, lng: 83.2977 }, crimeTypes: ['accident'] },
+    { street: 'Thatichetlapalem Junction', coords: { lat: 17.7360, lng: 83.2960 }, crimeTypes: ['accident', 'murder', 'robbery'] },
+    { street: 'NH16 Highway, Thatichetlapalem', coords: { lat: 17.7370, lng: 83.2990 }, crimeTypes: ['accident'] },
+    { street: 'Lalitha Nagar', coords: { lat: 17.7335, lng: 83.2950 }, crimeTypes: ['kidnap'] },
+    { street: 'Akkayyapalem 80 Feet Rd', coords: { lat: 17.7380, lng: 83.3010 }, crimeTypes: ['robbery'] },
+    { street: 'Nandagiri Nagar', coords: { lat: 17.7320, lng: 83.2940 }, crimeTypes: ['murder'] },
   ],
   
-  // Allipuram
+  // Allipuram - 6 crimes
   'Allipuram': [
-    { street: 'Jalaripeta Road', coords: { lat: 17.7162, lng: 83.2965 }, crimeTypes: ['kidnap', 'murder'] },
-    { street: 'Allipuram Main', coords: { lat: 17.7180, lng: 83.2980 }, crimeTypes: ['robbery'] },
+    { street: 'Yellamma Temple', coords: { lat: 17.7162, lng: 83.2965 }, crimeTypes: ['accident'] },
+    { street: 'Allipuram Main Road', coords: { lat: 17.7180, lng: 83.2980 }, crimeTypes: ['murder', 'robbery'] },
+    { street: 'Jalaripeta', coords: { lat: 17.7150, lng: 83.2950 }, crimeTypes: ['robbery'] },
+    { street: 'Shankaramatham Road', coords: { lat: 17.7170, lng: 83.2970 }, crimeTypes: ['robbery'] },
+    { street: 'National Highway 16', coords: { lat: 17.7190, lng: 83.2990 }, crimeTypes: ['kidnap'] },
   ],
   
-  // Anakapalli - Multiple crime hotspots
+  // Anakapalli - 27 crimes
   'Anakapalli': [
-    { street: 'Town Center', coords: { lat: 17.6890, lng: 83.0035 }, crimeTypes: ['murder', 'robbery'] },
-    { street: 'Ring Road', coords: { lat: 17.6946, lng: 83.0086 }, crimeTypes: ['accident'] },
-    { street: 'Bus Stand Area', coords: { lat: 17.6875, lng: 82.9980 }, crimeTypes: ['theft', 'assault'] },
-    { street: 'Railway Station Road', coords: { lat: 17.6920, lng: 83.0050 }, crimeTypes: ['kidnap'] },
-    { street: 'Market Road', coords: { lat: 17.6860, lng: 83.0010 }, crimeTypes: ['robbery', 'accident'] },
+    { street: 'NH16, Nutulaguntla Palem', coords: { lat: 17.6890, lng: 83.0035 }, crimeTypes: ['accident'] },
+    { street: 'ShankarMuttam Junction', coords: { lat: 17.6946, lng: 83.0086 }, crimeTypes: ['accident'] },
+    { street: 'Narsipatnam Town', coords: { lat: 17.6860, lng: 83.0010 }, crimeTypes: ['murder', 'assault'] },
+    { street: 'Gavarapalem', coords: { lat: 17.6875, lng: 82.9980 }, crimeTypes: ['robbery'] },
+    { street: 'Bayyavarm, NH16', coords: { lat: 17.6920, lng: 83.0050 }, crimeTypes: ['accident', 'murder'] },
+    { street: 'Kokkirapalli, Yelamanchili', coords: { lat: 17.6930, lng: 83.0070 }, crimeTypes: ['kidnap'] },
+    { street: 'Lokavari Peta', coords: { lat: 17.6910, lng: 83.0040 }, crimeTypes: ['kidnap'] },
+    { street: 'Lankelapalem Junction', coords: { lat: 17.6850, lng: 83.0000 }, crimeTypes: ['accident'] },
+    { street: 'Sunkarpeta', coords: { lat: 17.6880, lng: 83.0060 }, crimeTypes: ['accident'] },
   ],
   
-  // Anandapuram
+  // Anandapuram - 19 crimes
   'Anandapuram': [
-    { street: 'Anandapuram Bypass', coords: { lat: 17.9000, lng: 83.3700 }, crimeTypes: ['kidnap', 'robbery'] },
-    { street: 'Main Road', coords: { lat: 17.8980, lng: 83.3680 }, crimeTypes: ['accident', 'murder'] },
-    { street: 'Junction Area', coords: { lat: 17.9020, lng: 83.3720 }, crimeTypes: ['assault'] },
+    { street: 'Anandapuram National Highway', coords: { lat: 17.9000, lng: 83.3700 }, crimeTypes: ['accident'] },
+    { street: 'Anandapuram Bypass', coords: { lat: 17.8980, lng: 83.3680 }, crimeTypes: ['assault', 'robbery'] },
+    { street: 'Sontyam Junction', coords: { lat: 17.9020, lng: 83.3720 }, crimeTypes: ['murder', 'accident'] },
+    { street: 'Kallivani Palem', coords: { lat: 17.8960, lng: 83.3660 }, crimeTypes: ['murder'] },
+    { street: 'Gummadi Vanipalem Highway', coords: { lat: 17.9040, lng: 83.3740 }, crimeTypes: ['accident'] },
+    { street: 'Gudilova', coords: { lat: 17.9060, lng: 83.3760 }, crimeTypes: ['robbery'] },
+    { street: 'AH45 Highway', coords: { lat: 17.9010, lng: 83.3710 }, crimeTypes: ['accident'] },
   ],
   
-  // Andhra University
+  // Andhra University - 2 crimes
   'Andhra University': [
-    { street: 'AU Campus Road', coords: { lat: 17.7320, lng: 83.3190 }, crimeTypes: ['murder'] },
-    { street: 'Engineering College', coords: { lat: 17.7300, lng: 83.3170 }, crimeTypes: ['theft'] },
+    { street: 'Near AU Samatha Hostel', coords: { lat: 17.7320, lng: 83.3190 }, crimeTypes: ['murder'] },
+    { street: 'AU Engineering College Ground', coords: { lat: 17.7300, lng: 83.3170 }, crimeTypes: ['robbery'] },
   ],
   
-  // Arilova
+  // Arilova - 9 crimes
   'Arilova': [
-    { street: 'Hanumantha Junction', coords: { lat: 17.7673, lng: 83.3134 }, crimeTypes: ['theft', 'kidnap'] },
-    { street: 'Main Road', coords: { lat: 17.7690, lng: 83.3150 }, crimeTypes: ['accident'] },
-    { street: 'Arilova Center', coords: { lat: 17.7660, lng: 83.3120 }, crimeTypes: ['assault'] },
+    { street: 'Ambedkar Nagar', coords: { lat: 17.7673, lng: 83.3134 }, crimeTypes: ['murder'] },
+    { street: 'Healthcity, Q1 Hospitals Road', coords: { lat: 17.7690, lng: 83.3150 }, crimeTypes: ['accident'] },
+    { street: 'Seethakonda Road', coords: { lat: 17.7660, lng: 83.3120 }, crimeTypes: ['kidnap', 'accident'] },
+    { street: 'BRTS Road', coords: { lat: 17.7680, lng: 83.3140 }, crimeTypes: ['accident'] },
+    { street: 'Hanumanthawaka Junction', coords: { lat: 17.7650, lng: 83.3100 }, crimeTypes: ['accident'] },
+    { street: 'Darapalem', coords: { lat: 17.7700, lng: 83.3160 }, crimeTypes: ['robbery'] },
+    { street: 'Adarsh Nagar', coords: { lat: 17.7640, lng: 83.3110 }, crimeTypes: ['robbery'] },
   ],
   
-  // Balayya Sastri Layout
+  // Balayya Sastri Layout - 1 crime
   'Balayya Sastri Layout': [
-    { street: 'Layout Main Road', coords: { lat: 17.7250, lng: 83.3050 }, crimeTypes: ['accident'] },
+    { street: 'Gurudwara Highway', coords: { lat: 17.7250, lng: 83.3050 }, crimeTypes: ['accident'] },
   ],
   
-  // Beach Road - Tourist area with multiple crime spots
+  // Beach Road - 10 crimes
   'Beach Road': [
-    { street: 'RK Beach', coords: { lat: 17.7215, lng: 83.3150 }, crimeTypes: ['accident', 'assault'] },
-    { street: 'Kali Temple Area', coords: { lat: 17.7180, lng: 83.3120 }, crimeTypes: ['kidnap'] },
-    { street: 'Dolphin Hill', coords: { lat: 17.7250, lng: 83.3170 }, crimeTypes: ['murder'] },
-    { street: 'VUDA Park', coords: { lat: 17.7290, lng: 83.3190 }, crimeTypes: ['accident'] },
+    { street: 'Sagar Nagar Area', coords: { lat: 17.7215, lng: 83.3150 }, crimeTypes: ['kidnap'] },
+    { street: 'Appughar Road', coords: { lat: 17.7180, lng: 83.3120 }, crimeTypes: ['accident'] },
+    { street: 'Tenneti Park', coords: { lat: 17.7230, lng: 83.3160 }, crimeTypes: ['accident'] },
+    { street: 'YMCA Parking Lot', coords: { lat: 17.7200, lng: 83.3140 }, crimeTypes: ['assault'] },
+    { street: 'VUDA Park Road', coords: { lat: 17.7250, lng: 83.3170 }, crimeTypes: ['assault'] },
+    { street: 'NTR Statue Road', coords: { lat: 17.7190, lng: 83.3130 }, crimeTypes: ['assault'] },
+    { street: 'Bhimili Beach Road', coords: { lat: 17.7270, lng: 83.3190 }, crimeTypes: ['accident'] },
+    { street: 'Madhavadhara', coords: { lat: 17.7160, lng: 83.3100 }, crimeTypes: ['murder'] },
   ],
   
-  // Bheemunipatnam
+  // Bheemunipatnam - 14 crimes
   'Bheemunipatnam': [
-    { street: 'Beach Road', coords: { lat: 17.8900, lng: 83.4500 }, crimeTypes: ['accident'] },
-    { street: 'Town Center', coords: { lat: 17.8920, lng: 83.4520 }, crimeTypes: ['assault'] },
-    { street: 'Temple Area', coords: { lat: 17.8880, lng: 83.4480 }, crimeTypes: ['murder'] },
+    { street: 'SOS Junction Beach Road', coords: { lat: 17.8900, lng: 83.4500 }, crimeTypes: ['accident'] },
+    { street: 'Gollapalem, Vellanki', coords: { lat: 17.8920, lng: 83.4520 }, crimeTypes: ['robbery'] },
+    { street: 'Chillapet, Bhimili-Tagarapuvalasa Road', coords: { lat: 17.8940, lng: 83.4540 }, crimeTypes: ['robbery'] },
+    { street: 'Nerellavalasa', coords: { lat: 17.8880, lng: 83.4480 }, crimeTypes: ['kidnap', 'assault'] },
+    { street: 'Near Hospital, Bheemunipatnam', coords: { lat: 17.8910, lng: 83.4510 }, crimeTypes: ['murder'] },
+    { street: 'INS Kalinga', coords: { lat: 17.8860, lng: 83.4460 }, crimeTypes: ['accident'] },
+    { street: 'Timmapuram Beach Road', coords: { lat: 17.8930, lng: 83.4530 }, crimeTypes: ['accident'] },
+    { street: 'Dakkamarri Fortune Layout', coords: { lat: 17.8870, lng: 83.4470 }, crimeTypes: ['murder'] },
+    { street: 'Kapuluppada', coords: { lat: 17.8950, lng: 83.4550 }, crimeTypes: ['murder'] },
+    { street: 'Thotlakonda', coords: { lat: 17.8840, lng: 83.4440 }, crimeTypes: ['assault'] },
   ],
   
-  // Bhogapuram
+  // Bhogapuram - 3 crimes
   'Bhogapuram': [
-    { street: 'Airport Road', coords: { lat: 18.0300, lng: 83.4900 }, crimeTypes: ['accident'] },
-    { street: 'Village Center', coords: { lat: 18.0280, lng: 83.4880 }, crimeTypes: ['accident'] },
+    { street: 'Ravivalasa', coords: { lat: 18.0300, lng: 83.4900 }, crimeTypes: ['accident'] },
+    { street: 'Polipalli', coords: { lat: 18.0280, lng: 83.4880 }, crimeTypes: ['accident'] },
   ],
   
-  // Boyapalem
+  // Boyapalem - 2 crimes
   'Boyapalem': [
-    { street: 'Boyapalem Main', coords: { lat: 17.7312, lng: 83.2859 }, crimeTypes: ['accident'] },
-    { street: 'Junction Road', coords: { lat: 17.7295, lng: 83.2840 }, crimeTypes: ['accident'] },
+    { street: 'Boyapalem Junction', coords: { lat: 17.7312, lng: 83.2859 }, crimeTypes: ['accident'] },
+    { street: 'Boyapalem Signal Junction', coords: { lat: 17.7295, lng: 83.2840 }, crimeTypes: ['accident'] },
   ],
   
-  // Chinna Waltair
-  'Chinna Waltair': [
-    { street: 'AU Out Gate', coords: { lat: 17.7280, lng: 83.3200 }, crimeTypes: ['accident'] },
-    { street: 'Beach Road Junction', coords: { lat: 17.7260, lng: 83.3180 }, crimeTypes: ['theft'] },
-  ],
-  
-  // Dabagardens
+  // Dabagardens - 2 crimes
   'Dabagardens': [
-    { street: 'Prakashrao Junction', coords: { lat: 17.7150, lng: 83.3050 }, crimeTypes: ['assault', 'murder'] },
-    { street: 'Main Road', coords: { lat: 17.7170, lng: 83.3070 }, crimeTypes: ['theft'] },
+    { street: 'Pedagantyada Area', coords: { lat: 17.7150, lng: 83.3050 }, crimeTypes: ['assault'] },
+    { street: 'Near Prakashrao Junction', coords: { lat: 17.7170, lng: 83.3070 }, crimeTypes: ['murder'] },
   ],
   
-  // Daspalla Hills
+  // Daspalla Hills - 2 crimes
   'Daspalla Hills': [
-    { street: 'Daspalla Hotel Area', coords: { lat: 17.7220, lng: 83.3100 }, crimeTypes: ['kidnap'] },
+    { street: '75 Feet Service Road', coords: { lat: 17.7220, lng: 83.3100 }, crimeTypes: ['robbery'] },
+    { street: 'Harbour Park, Jagannadha Swamy Temple', coords: { lat: 17.7200, lng: 83.3080 }, crimeTypes: ['kidnap'] },
   ],
   
-  // Dwaraka Nagar - Commercial hub
+  // Dwaraka Nagar - 11 crimes
   'Dwaraka Nagar': [
-    { street: 'Dwaraka Nagar Road', coords: { lat: 17.7287, lng: 83.3086 }, crimeTypes: ['assault', 'kidnap'] },
-    { street: 'Siripuram Junction', coords: { lat: 17.7260, lng: 83.3050 }, crimeTypes: ['assault'] },
-    { street: 'CMR Central', coords: { lat: 17.7310, lng: 83.3110 }, crimeTypes: ['robbery'] },
-    { street: 'Main Road', coords: { lat: 17.7295, lng: 83.3070 }, crimeTypes: ['accident'] },
+    { street: 'Dwaraka Nagar Road', coords: { lat: 17.7287, lng: 83.3086 }, crimeTypes: ['assault'] },
+    { street: 'Indian Bank, VIP Road', coords: { lat: 17.7260, lng: 83.3050 }, crimeTypes: ['robbery'] },
+    { street: 'DRM Office Road, Dondaparthy', coords: { lat: 17.7310, lng: 83.3110 }, crimeTypes: ['kidnap'] },
+    { street: 'Madhuranagar', coords: { lat: 17.7295, lng: 83.3070 }, crimeTypes: ['robbery'] },
   ],
   'Dwarakanagar': [
-    { street: 'Dwarakanagar Main', coords: { lat: 17.7287, lng: 83.3086 }, crimeTypes: ['accident'] },
+    { street: 'Satyam Junction, Rama Talkies', coords: { lat: 17.7287, lng: 83.3086 }, crimeTypes: ['accident'] },
+    { street: 'Dwarakanagar 5th Lane', coords: { lat: 17.7270, lng: 83.3070 }, crimeTypes: ['accident'] },
+    { street: 'Sangam Sarath Theatre Junction', coords: { lat: 17.7300, lng: 83.3100 }, crimeTypes: ['accident'] },
   ],
   
-  // Gajuwaka - Industrial area
+  // Gajuwaka - 27 crimes
   'Gajuwaka': [
-    { street: 'NAD-Gajuwaka Road', coords: { lat: 17.6853, lng: 83.2037 }, crimeTypes: ['accident'] },
-    { street: 'Old Gajuwaka', coords: { lat: 17.6820, lng: 83.2010 }, crimeTypes: ['murder'] },
-    { street: 'Steel Plant Junction', coords: { lat: 17.6880, lng: 83.2070 }, crimeTypes: ['accident'] },
-    { street: 'Autonagar', coords: { lat: 17.6790, lng: 83.1980 }, crimeTypes: ['robbery', 'assault'] },
-    { street: 'Kurmannapalem Junction', coords: { lat: 17.6910, lng: 83.2100 }, crimeTypes: ['kidnap'] },
+    { street: 'Autonagar Signal Junction', coords: { lat: 17.6853, lng: 83.2037 }, crimeTypes: ['accident'] },
+    { street: 'Krishna Nagar', coords: { lat: 17.6830, lng: 83.2010 }, crimeTypes: ['robbery'] },
+    { street: 'Gopalapatnam Railway Station', coords: { lat: 17.6870, lng: 83.2060 }, crimeTypes: ['kidnap'] },
+    { street: 'Aganampudi Junction', coords: { lat: 17.6810, lng: 83.1990 }, crimeTypes: ['accident', 'robbery'] },
+    { street: 'Butchirajupalem', coords: { lat: 17.6890, lng: 83.2080 }, crimeTypes: ['accident'] },
+    { street: 'NH16, Nathayyapalem', coords: { lat: 17.6840, lng: 83.2020 }, crimeTypes: ['accident'] },
+    { street: 'Pentayya Nagar', coords: { lat: 17.6800, lng: 83.1980 }, crimeTypes: ['murder'] },
+    { street: 'Gajuwaka Junction', coords: { lat: 17.6860, lng: 83.2050 }, crimeTypes: ['murder', 'robbery'] },
+    { street: 'Kanithi Road Market', coords: { lat: 17.6820, lng: 83.2000 }, crimeTypes: ['assault'] },
+    { street: 'Jaggu Junction', coords: { lat: 17.6880, lng: 83.2070 }, crimeTypes: ['murder', 'accident'] },
+    { street: 'Old Gajuwaka Junction', coords: { lat: 17.6850, lng: 83.2040 }, crimeTypes: ['accident'] },
+    { street: 'Gangavaram Port Road', coords: { lat: 17.6790, lng: 83.1970 }, crimeTypes: ['robbery'] },
   ],
   
-  // Ghat Road
+  // Ghat Road - 1 crime
   'Ghat road': [
-    { street: 'Simhachalam Ghat', coords: { lat: 17.7650, lng: 83.2380 }, crimeTypes: ['accident'] },
+    { street: 'Kailasagiri Ghat Road', coords: { lat: 17.7650, lng: 83.2380 }, crimeTypes: ['accident'] },
   ],
   
-  // Gopalapatnam
+  // Gopalapatnam - 1 crime
   'Gopalapatnam': [
-    { street: 'Baji Junction', coords: { lat: 17.7550, lng: 83.2700 }, crimeTypes: ['robbery'] },
-    { street: 'Main Road', coords: { lat: 17.7530, lng: 83.2680 }, crimeTypes: ['theft'] },
+    { street: 'Baji Junction Area', coords: { lat: 17.7550, lng: 83.2700 }, crimeTypes: ['robbery'] },
   ],
   
-  // Jagadamba Junction
+  // Jagadamba Junction - 15 crimes
   'Jagadamba Junction': [
-    { street: 'Jagadamba Circle', coords: { lat: 17.7105, lng: 83.2980 }, crimeTypes: ['accident', 'robbery'] },
-    { street: 'CMR Road', coords: { lat: 17.7090, lng: 83.2960 }, crimeTypes: ['kidnap'] },
-    { street: 'Shopping Complex', coords: { lat: 17.7120, lng: 83.3000 }, crimeTypes: ['assault'] },
-    { street: 'Cinema Road', coords: { lat: 17.7080, lng: 83.2940 }, crimeTypes: ['murder'] },
+    { street: 'Karakachettu Polamamba Temple', coords: { lat: 17.7105, lng: 83.2980 }, crimeTypes: ['robbery'] },
+    { street: 'Near Public Sector Bank', coords: { lat: 17.7090, lng: 83.2960 }, crimeTypes: ['robbery'] },
+    { street: 'Jagadamba Road', coords: { lat: 17.7120, lng: 83.3000 }, crimeTypes: ['murder', 'kidnap', 'accident'] },
+    { street: 'Maharanipeta', coords: { lat: 17.7080, lng: 83.2940 }, crimeTypes: ['murder'] },
+    { street: 'Fishing Harbour Area', coords: { lat: 17.7070, lng: 83.2950 }, crimeTypes: ['accident'] },
+    { street: 'KGH Hospital', coords: { lat: 17.7100, lng: 83.2990 }, crimeTypes: ['assault'] },
   ],
   
-  // Kancharapalem - Market area
+  // Kancharapalem - 22 crimes
   'Kancharapalem': [
-    { street: 'Market Area', coords: { lat: 17.7354, lng: 83.2738 }, crimeTypes: ['robbery', 'murder'] },
-    { street: 'Junction Road', coords: { lat: 17.7380, lng: 83.2760 }, crimeTypes: ['assault', 'kidnap'] },
-    { street: 'Temple Street', coords: { lat: 17.7330, lng: 83.2720 }, crimeTypes: ['accident'] },
-    { street: 'Old Kancharapalem', coords: { lat: 17.7360, lng: 83.2750 }, crimeTypes: ['murder'] },
+    { street: 'Pydimamba Temple', coords: { lat: 17.7354, lng: 83.2738 }, crimeTypes: ['murder'] },
+    { street: 'Kancharapalem Road', coords: { lat: 17.7380, lng: 83.2760 }, crimeTypes: ['murder', 'assault', 'accident'] },
+    { street: 'Gnanapuram', coords: { lat: 17.7340, lng: 83.2720 }, crimeTypes: ['robbery'] },
+    { street: 'Ayyappanagar, MuraliNagar', coords: { lat: 17.7360, lng: 83.2750 }, crimeTypes: ['robbery'] },
+    { street: 'Burma Colony, Madhavadhara', coords: { lat: 17.7330, lng: 83.2710 }, crimeTypes: ['assault'] },
+    { street: 'Madhava Swamy Temple, Madhavadhara', coords: { lat: 17.7370, lng: 83.2770 }, crimeTypes: ['robbery'] },
+    { street: 'Urvashi Junction', coords: { lat: 17.7350, lng: 83.2740 }, crimeTypes: ['assault', 'accident'] },
+    { street: 'ITI Junction', coords: { lat: 17.7390, lng: 83.2780 }, crimeTypes: ['robbery'] },
+    { street: 'Reddi Kancharapalem', coords: { lat: 17.7320, lng: 83.2700 }, crimeTypes: ['murder'] },
+    { street: 'Sanjeevayya Colony', coords: { lat: 17.7400, lng: 83.2790 }, crimeTypes: ['murder'] },
+    { street: 'Indra Nagar', coords: { lat: 17.7345, lng: 83.2730 }, crimeTypes: ['robbery'] },
   ],
   
-  // Kommadhi
+  // Kommadhi - 4 crimes
   'Kommadhi': [
-    { street: 'Kommadi Junction', coords: { lat: 17.8100, lng: 83.3800 }, crimeTypes: ['accident', 'murder'] },
-    { street: 'IT Corridor', coords: { lat: 17.8080, lng: 83.3780 }, crimeTypes: ['theft'] },
+    { street: 'Vikalangula Colony', coords: { lat: 17.8100, lng: 83.3800 }, crimeTypes: ['murder'] },
+    { street: 'National Highway 16', coords: { lat: 17.8120, lng: 83.3820 }, crimeTypes: ['accident'] },
+    { street: 'Kommadi Junction', coords: { lat: 17.8080, lng: 83.3780 }, crimeTypes: ['accident'] },
+    { street: 'SwayamKrushiNagar', coords: { lat: 17.8090, lng: 83.3790 }, crimeTypes: ['murder'] },
   ],
   
-  // Kurmannapalem
+  // Kurmannapalem - 9 crimes
   'Kurmannapalem': [
-    { street: 'Steel Plant Road', coords: { lat: 17.6900, lng: 83.1700 }, crimeTypes: ['accident'] },
-    { street: 'Junction', coords: { lat: 17.6880, lng: 83.1720 }, crimeTypes: ['murder'] },
+    { street: 'JNNURM Colony, Duvvada', coords: { lat: 17.6900, lng: 83.1700 }, crimeTypes: ['murder'] },
+    { street: 'Kurmannapalem Junction', coords: { lat: 17.6880, lng: 83.1720 }, crimeTypes: ['accident'] },
+    { street: 'RTC Depot', coords: { lat: 17.6860, lng: 83.1680 }, crimeTypes: ['accident'] },
+    { street: 'Simon Nagar', coords: { lat: 17.6910, lng: 83.1740 }, crimeTypes: ['robbery'] },
+    { street: 'Rajivnagar, Duvvada', coords: { lat: 17.6890, lng: 83.1710 }, crimeTypes: ['murder'] },
+    { street: 'National Highway 16', coords: { lat: 17.6870, lng: 83.1690 }, crimeTypes: ['accident'] },
   ],
   
-  // Lawsons Bay Colony
+  // Lawsons Bay Colony - 15 crimes
   'Lawsons Bay Colony': [
-    { street: 'Lawsons Bay Road', coords: { lat: 17.7300, lng: 83.3300 }, crimeTypes: ['assault', 'kidnap'] },
-    { street: 'Beach Side', coords: { lat: 17.7320, lng: 83.3320 }, crimeTypes: ['robbery'] },
-    { street: 'Colony Main', coords: { lat: 17.7280, lng: 83.3280 }, crimeTypes: ['accident'] },
-    { street: 'Residential Area', coords: { lat: 17.7290, lng: 83.3290 }, crimeTypes: ['murder'] },
+    { street: 'Lawsons Bay Road', coords: { lat: 17.7300, lng: 83.3300 }, crimeTypes: ['kidnap', 'murder', 'assault', 'accident'] },
+    { street: 'Lawsons Bay Main Road', coords: { lat: 17.7320, lng: 83.3320 }, crimeTypes: ['robbery'] },
+    { street: 'Bharat Petrol Bunk', coords: { lat: 17.7280, lng: 83.3280 }, crimeTypes: ['assault'] },
   ],
   
-  // Maddilapalem
+  // Maddilapalem - 23 crimes
   'Maddilapalem': [
-    { street: 'Maddilapalem Road', coords: { lat: 17.7382, lng: 83.3230 }, crimeTypes: ['kidnap', 'murder'] },
-    { street: 'Housing Board', coords: { lat: 17.7360, lng: 83.3210 }, crimeTypes: ['assault'] },
-    { street: 'Main Junction', coords: { lat: 17.7400, lng: 83.3250 }, crimeTypes: ['accident'] },
-    { street: 'Inner Colony', coords: { lat: 17.7375, lng: 83.3220 }, crimeTypes: ['robbery'] },
+    { street: 'Maddilapalem Road', coords: { lat: 17.7382, lng: 83.3230 }, crimeTypes: ['kidnap', 'murder', 'assault', 'accident'] },
+    { street: 'KRM Colony', coords: { lat: 17.7360, lng: 83.3210 }, crimeTypes: ['murder'] },
+    { street: 'Kranthi Nagar', coords: { lat: 17.7370, lng: 83.3220 }, crimeTypes: ['murder'] },
+    { street: 'CMR Function Hall', coords: { lat: 17.7390, lng: 83.3240 }, crimeTypes: ['murder'] },
+    { street: 'HB Colony', coords: { lat: 17.7375, lng: 83.3225 }, crimeTypes: ['assault'] },
+    { street: 'Pithapuram Colony', coords: { lat: 17.7400, lng: 83.3250 }, crimeTypes: ['murder'] },
+    { street: 'Nakkavanipalem', coords: { lat: 17.7365, lng: 83.3215 }, crimeTypes: ['murder'] },
+    { street: 'Maddilapalem Signal Junction', coords: { lat: 17.7395, lng: 83.3245 }, crimeTypes: ['accident'] },
   ],
   
-  // Madhurawada - NH16 corridor
+  // Madhurawada - 10 crimes
   'Madhurawada': [
     { street: 'NH16 Highway', coords: { lat: 17.7957, lng: 83.3756 }, crimeTypes: ['accident'] },
-    { street: 'APHB Colony', coords: { lat: 17.8056, lng: 83.3705 }, crimeTypes: ['murder'] },
-    { street: 'IT Park Junction', coords: { lat: 17.7980, lng: 83.3780 }, crimeTypes: ['assault'] },
+    { street: 'NGOs Colony', coords: { lat: 17.8056, lng: 83.3705 }, crimeTypes: ['murder'] },
+    { street: 'Chandrampalem High School', coords: { lat: 17.7980, lng: 83.3780 }, crimeTypes: ['accident'] },
+    { street: 'Panorama Hills', coords: { lat: 17.8000, lng: 83.3730 }, crimeTypes: ['robbery'] },
+    { street: 'PM Palem', coords: { lat: 17.7970, lng: 83.3770 }, crimeTypes: ['assault'] },
+    { street: 'IT SEZ Road', coords: { lat: 17.7990, lng: 83.3790 }, crimeTypes: ['accident'] },
   ],
   
-  // Malkapuram
+  // Malkapuram - 5 crimes
   'Malkapuram': [
-    { street: 'Malkapuram Road', coords: { lat: 17.6880, lng: 83.2450 }, crimeTypes: ['assault', 'murder'] },
-    { street: 'Junction Area', coords: { lat: 17.6900, lng: 83.2470 }, crimeTypes: ['robbery'] },
+    { street: 'Malkapuram Area', coords: { lat: 17.6880, lng: 83.2450 }, crimeTypes: ['robbery'] },
+    { street: 'Signal Junction, Agnampudi', coords: { lat: 17.6900, lng: 83.2470 }, crimeTypes: ['murder'] },
+    { street: 'Janatha Colony', coords: { lat: 17.6870, lng: 83.2440 }, crimeTypes: ['robbery'] },
+    { street: 'Coast Guard Quarters', coords: { lat: 17.6890, lng: 83.2460 }, crimeTypes: ['murder'] },
+    { street: 'Malkapuram Road', coords: { lat: 17.6860, lng: 83.2430 }, crimeTypes: ['assault'] },
   ],
   
-  // Marikavalasa
+  // Marikavalasa - 4 crimes
   'Marikavalasa': [
-    { street: 'NH16 Highway', coords: { lat: 17.8359, lng: 83.3581 }, crimeTypes: ['accident'] },
-    { street: 'Junction', coords: { lat: 17.8340, lng: 83.3560 }, crimeTypes: ['accident'] },
+    { street: 'Marikavalasa Road', coords: { lat: 17.8359, lng: 83.3581 }, crimeTypes: ['robbery'] },
+    { street: 'Marikavalasa Highway Junction', coords: { lat: 17.8340, lng: 83.3560 }, crimeTypes: ['murder', 'accident'] },
+    { street: 'NH16 Highway', coords: { lat: 17.8350, lng: 83.3570 }, crimeTypes: ['accident'] },
   ],
   
-  // Marripalem
+  // Marripalem - 15 crimes
   'Marripalem': [
-    { street: 'Airport Road', coords: { lat: 17.7400, lng: 83.2500 }, crimeTypes: ['accident', 'robbery'] },
-    { street: 'VUDA Layout', coords: { lat: 17.7420, lng: 83.2530 }, crimeTypes: ['assault', 'kidnap'] },
-    { street: 'Colony Area', coords: { lat: 17.7380, lng: 83.2470 }, crimeTypes: ['murder'] },
+    { street: 'Airport Road', coords: { lat: 17.7400, lng: 83.2500 }, crimeTypes: ['kidnap', 'murder', 'assault', 'accident'] },
+    { street: 'Shyamnagar Colony', coords: { lat: 17.7420, lng: 83.2530 }, crimeTypes: ['robbery'] },
+    { street: 'Near Railway Quarters', coords: { lat: 17.7380, lng: 83.2470 }, crimeTypes: ['murder'] },
+    { street: 'Marripalem VUDA Colony', coords: { lat: 17.7410, lng: 83.2520 }, crimeTypes: ['robbery'] },
   ],
   
-  // MVP Colony
+  // MVP Colony - 20 crimes
   'MVP Colony': [
-    { street: 'MVP Double Road', coords: { lat: 17.7407, lng: 83.3367 }, crimeTypes: ['assault', 'robbery'] },
-    { street: 'Sector 1', coords: { lat: 17.7420, lng: 83.3340 }, crimeTypes: ['murder'] },
-    { street: 'Sector 6', coords: { lat: 17.7390, lng: 83.3390 }, crimeTypes: ['accident'] },
-    { street: 'Pandurangapuram', coords: { lat: 17.7380, lng: 83.3350 }, crimeTypes: ['assault'] },
+    { street: 'MVP Double Road', coords: { lat: 17.7407, lng: 83.3367 }, crimeTypes: ['robbery', 'assault', 'accident'] },
+    { street: 'Ushodaya Junction', coords: { lat: 17.7420, lng: 83.3340 }, crimeTypes: ['murder'] },
+    { street: 'MVP Sector 2', coords: { lat: 17.7390, lng: 83.3390 }, crimeTypes: ['robbery'] },
+    { street: 'MVP Sector 6', coords: { lat: 17.7395, lng: 83.3380 }, crimeTypes: ['robbery', 'accident'] },
+    { street: 'Mangalapuram Colony', coords: { lat: 17.7380, lng: 83.3350 }, crimeTypes: ['robbery'] },
+    { street: 'Sivajipalem Road', coords: { lat: 17.7415, lng: 83.3360 }, crimeTypes: ['murder', 'accident'] },
+    { street: 'Nakkavanipalem Area', coords: { lat: 17.7400, lng: 83.3370 }, crimeTypes: ['murder'] },
+    { street: 'Samatha College', coords: { lat: 17.7385, lng: 83.3355 }, crimeTypes: ['assault'] },
   ],
   
-  // NAD Junction
+  // NAD Junction - 7 crimes
   'NAD Junction': [
-    { street: 'NAD Flyover', coords: { lat: 17.7400, lng: 83.2300 }, crimeTypes: ['accident'] },
-    { street: 'Kotha Road', coords: { lat: 17.7420, lng: 83.2320 }, crimeTypes: ['murder'] },
+    { street: 'NAD Junction', coords: { lat: 17.7400, lng: 83.2300 }, crimeTypes: ['accident'] },
+    { street: 'NAD Flyover', coords: { lat: 17.7420, lng: 83.2320 }, crimeTypes: ['accident'] },
+    { street: 'Regional Forensic Laboratory Road', coords: { lat: 17.7410, lng: 83.2310 }, crimeTypes: ['accident'] },
+    { street: 'Vasavi Apartments, Ganesh Nagar', coords: { lat: 17.7390, lng: 83.2290 }, crimeTypes: ['robbery'] },
+    { street: 'Viman Nagar', coords: { lat: 17.7430, lng: 83.2330 }, crimeTypes: ['murder'] },
   ],
   
-  // One Town
+  // One Town - 15 crimes
   'One Town': [
     { street: 'Town Kotha Road', coords: { lat: 17.7000, lng: 83.2900 }, crimeTypes: ['assault', 'kidnap'] },
-    { street: 'Market Street', coords: { lat: 17.7020, lng: 83.2920 }, crimeTypes: ['robbery'] },
-    { street: 'Fish Market', coords: { lat: 17.6980, lng: 83.2880 }, crimeTypes: ['accident'] },
-    { street: 'Old Town', coords: { lat: 17.7010, lng: 83.2910 }, crimeTypes: ['murder'] },
+    { street: 'Kurupam Market', coords: { lat: 17.7020, lng: 83.2920 }, crimeTypes: ['robbery'] },
+    { street: 'KGH Hospital', coords: { lat: 17.6990, lng: 83.2890 }, crimeTypes: ['kidnap'] },
+    { street: 'Relliveedhi', coords: { lat: 17.7010, lng: 83.2910 }, crimeTypes: ['murder'] },
+    { street: 'Fishing Harbour Area', coords: { lat: 17.6980, lng: 83.2880 }, crimeTypes: ['murder'] },
+    { street: 'Chilakapeta', coords: { lat: 17.7030, lng: 83.2930 }, crimeTypes: ['murder'] },
   ],
   
-  // Pendurthi
+  // Pendurthi - 20 crimes
   'Pendurthi': [
-    { street: 'Vepagunta Junction', coords: { lat: 17.7800, lng: 83.2600 }, crimeTypes: ['murder'] },
-    { street: 'Bus Station', coords: { lat: 17.7820, lng: 83.2620 }, crimeTypes: ['accident'] },
-    { street: 'Market Road', coords: { lat: 17.7780, lng: 83.2580 }, crimeTypes: ['kidnap', 'robbery'] },
+    { street: 'Juttada Village', coords: { lat: 17.7800, lng: 83.2600 }, crimeTypes: ['murder'] },
+    { street: 'Chinthalagraham Village', coords: { lat: 17.7820, lng: 83.2620 }, crimeTypes: ['kidnap'] },
+    { street: 'SujathaNagar', coords: { lat: 17.7790, lng: 83.2590 }, crimeTypes: ['kidnap', 'murder'] },
+    { street: '80 Feet Rd', coords: { lat: 17.7810, lng: 83.2610 }, crimeTypes: ['robbery'] },
+    { street: 'Brundavan Gardens', coords: { lat: 17.7780, lng: 83.2580 }, crimeTypes: ['murder'] },
+    { street: 'Vepagunta Junction', coords: { lat: 17.7840, lng: 83.2640 }, crimeTypes: ['accident', 'robbery'] },
+    { street: 'Anakapalli-Anandapuram Highway', coords: { lat: 17.7830, lng: 83.2630 }, crimeTypes: ['accident'] },
+    { street: 'Saripalli Flyover Road', coords: { lat: 17.7770, lng: 83.2570 }, crimeTypes: ['accident'] },
+    { street: 'Appannapalem', coords: { lat: 17.7850, lng: 83.2650 }, crimeTypes: ['murder'] },
+    { street: 'National Highway', coords: { lat: 17.7860, lng: 83.2660 }, crimeTypes: ['accident'] },
   ],
   
-  // PM Palem
+  // PM Palem - 5 crimes
   'PM Palem': [
-    { street: 'Vasundhara Nagar', coords: { lat: 17.7996, lng: 83.3531 }, crimeTypes: ['accident'] },
-    { street: 'Main Road', coords: { lat: 17.8010, lng: 83.3550 }, crimeTypes: ['accident'] },
+    { street: 'Vizag Conventions, Near Stadium', coords: { lat: 17.7996, lng: 83.3531 }, crimeTypes: ['accident'] },
+    { street: 'Vasundhara Nagar, MVV City Road', coords: { lat: 17.8010, lng: 83.3550 }, crimeTypes: ['accident'] },
+    { street: 'Midhilapuri VUDA Colony', coords: { lat: 17.8000, lng: 83.3540 }, crimeTypes: ['murder', 'assault'] },
+    { street: 'PM Palem Road', coords: { lat: 17.7990, lng: 83.3520 }, crimeTypes: ['kidnap'] },
   ],
   
-  // Poorna Market
+  // Poorna Market - 12 crimes
   'Poorna Market': [
-    { street: 'Market Road', coords: { lat: 17.7064, lng: 83.2982 }, crimeTypes: ['robbery', 'kidnap'] },
-    { street: 'Old Town', coords: { lat: 17.7050, lng: 83.2960 }, crimeTypes: ['murder'] },
-    { street: 'Main Bazaar', coords: { lat: 17.7080, lng: 83.3000 }, crimeTypes: ['assault'] },
+    { street: 'Panda Street', coords: { lat: 17.7064, lng: 83.2982 }, crimeTypes: ['murder'] },
+    { street: 'Market Road', coords: { lat: 17.7050, lng: 83.2960 }, crimeTypes: ['murder', 'kidnap', 'assault'] },
+    { street: 'Shopping Area', coords: { lat: 17.7080, lng: 83.3000 }, crimeTypes: ['accident'] },
   ],
   
-  // Port Area
+  // Port Area - 1 crime
   'Port Area': [
-    { street: 'Port Gate', coords: { lat: 17.6950, lng: 83.2850 }, crimeTypes: ['kidnap'] },
-    { street: 'Harbour Road', coords: { lat: 17.6930, lng: 83.2830 }, crimeTypes: ['robbery'] },
+    { street: 'Gosha Hospitals, ChengalRaoPet', coords: { lat: 17.6950, lng: 83.2850 }, crimeTypes: ['kidnap'] },
   ],
   
-  // Railway New Colony
+  // Railway new Colony - 6 crimes
   'Railway new Colony': [
-    { street: 'Station Road', coords: { lat: 17.7245, lng: 83.2956 }, crimeTypes: ['kidnap'] },
-    { street: 'Colony Main', coords: { lat: 17.7230, lng: 83.2940 }, crimeTypes: ['theft'] },
+    { street: 'Railway Station', coords: { lat: 17.7245, lng: 83.2956 }, crimeTypes: ['kidnap'] },
+    { street: 'BRTS Road, Near Gnanapuram', coords: { lat: 17.7230, lng: 83.2940 }, crimeTypes: ['accident'] },
+    { street: 'Balaji Metro Residency, Dondaparthy', coords: { lat: 17.7260, lng: 83.2970 }, crimeTypes: ['robbery'] },
+    { street: 'Railway Station Junction', coords: { lat: 17.7250, lng: 83.2950 }, crimeTypes: ['kidnap'] },
   ],
   
-  // RK Beach
+  // RK Beach - 19 crimes
   'RK Beach': [
-    { street: 'Beach Promenade', coords: { lat: 17.7180, lng: 83.3250 }, crimeTypes: ['robbery', 'kidnap'] },
-    { street: 'Submarine Museum', coords: { lat: 17.7160, lng: 83.3230 }, crimeTypes: ['murder'] },
-    { street: 'Aquarium Area', coords: { lat: 17.7200, lng: 83.3270 }, crimeTypes: ['accident'] },
+    { street: 'Beach Road', coords: { lat: 17.7180, lng: 83.3250 }, crimeTypes: ['murder', 'robbery', 'accident', 'assault'] },
+    { street: 'Gokul Park', coords: { lat: 17.7160, lng: 83.3230 }, crimeTypes: ['murder'] },
+    { street: 'Children Park', coords: { lat: 17.7200, lng: 83.3270 }, crimeTypes: ['kidnap'] },
   ],
   
-  // RTC Complex
+  // RTC Complex - 4 crimes
   'RTC Complex': [
-    { street: 'Bus Stand', coords: { lat: 17.7200, lng: 83.3100 }, crimeTypes: ['murder'] },
-    { street: 'Taxi Stand', coords: { lat: 17.7180, lng: 83.3080 }, crimeTypes: ['robbery'] },
+    { street: 'Telugu Thalli Flyover', coords: { lat: 17.7200, lng: 83.3100 }, crimeTypes: ['accident'] },
+    { street: 'Rama Talkies Road', coords: { lat: 17.7180, lng: 83.3080 }, crimeTypes: ['robbery'] },
+    { street: 'Dwaraka Bus Stop', coords: { lat: 17.7190, lng: 83.3090 }, crimeTypes: ['accident'] },
   ],
   
-  // Rushikonda
+  // Rushikonda - 19 crimes
   'Rushikonda': [
-    { street: 'Rushikonda Beach Road', coords: { lat: 17.7920, lng: 83.3850 }, crimeTypes: ['accident'] },
-    { street: 'Beach Area', coords: { lat: 17.7880, lng: 83.3820 }, crimeTypes: ['robbery', 'kidnap'] },
-    { street: 'TDP Circle', coords: { lat: 17.7950, lng: 83.3880 }, crimeTypes: ['assault'] },
+    { street: 'Rushikonda Beach Road', coords: { lat: 17.7920, lng: 83.3850 }, crimeTypes: ['assault', 'murder', 'robbery', 'accident'] },
+    { street: 'Balaji Bay Mount Road', coords: { lat: 17.7900, lng: 83.3830 }, crimeTypes: ['kidnap'] },
+    { street: 'Radisson Blue Junction', coords: { lat: 17.7940, lng: 83.3870 }, crimeTypes: ['accident'] },
   ],
   
-  // Scindia
+  // Scindia - 1 crime
   'Scindia': [
-    { street: 'Scindia Colony', coords: { lat: 17.7150, lng: 83.2900 }, crimeTypes: ['murder'] },
-    { street: 'Main Road', coords: { lat: 17.7130, lng: 83.2880 }, crimeTypes: ['accident'] },
+    { street: 'Essar Junction, Port Area', coords: { lat: 17.7150, lng: 83.2900 }, crimeTypes: ['accident'] },
   ],
   
-  // Seethammadhara
+  // Seethammadhara - 5 crimes
   'Seethammadhara': [
-    { street: 'Main Road', coords: { lat: 17.7425, lng: 83.3124 }, crimeTypes: ['accident', 'murder'] },
-    { street: 'Extension', coords: { lat: 17.7445, lng: 83.3150 }, crimeTypes: ['kidnap'] },
+    { street: 'ASR Nagar', coords: { lat: 17.7425, lng: 83.3124 }, crimeTypes: ['murder'] },
+    { street: 'Port Hospital Junction', coords: { lat: 17.7440, lng: 83.3140 }, crimeTypes: ['accident'] },
+    { street: 'Oxygen Towers', coords: { lat: 17.7410, lng: 83.3110 }, crimeTypes: ['assault'] },
+    { street: 'Main Road, Near AMG Hospital', coords: { lat: 17.7435, lng: 83.3130 }, crimeTypes: ['accident'] },
+    { street: 'SR Nagar', coords: { lat: 17.7420, lng: 83.3120 }, crimeTypes: ['assault'] },
   ],
   
-  // Sheela Nagar
+  // Sheela Nagar (combined with Sheelanagar) - 6 crimes
   'Sheela Nagar': [
-    { street: 'NH16 Signal', coords: { lat: 17.7190, lng: 83.2020 }, crimeTypes: ['robbery', 'accident'] },
-    { street: 'Industrial Area', coords: { lat: 17.7210, lng: 83.2040 }, crimeTypes: ['murder'] },
+    { street: 'Kakani Nagar', coords: { lat: 17.7190, lng: 83.2020 }, crimeTypes: ['robbery'] },
+    { street: 'Sheelanagar-Harbour City Road Flyover', coords: { lat: 17.7200, lng: 83.2030 }, crimeTypes: ['murder', 'accident'] },
+    { street: 'Y Junction', coords: { lat: 17.7180, lng: 83.2010 }, crimeTypes: ['accident'] },
+    { street: 'Venkateshwara Colony', coords: { lat: 17.7210, lng: 83.2040 }, crimeTypes: ['murder'] },
+    { street: 'NH16 Signal Point', coords: { lat: 17.7170, lng: 83.2000 }, crimeTypes: ['accident'] },
   ],
   
-  // Simhachalam - Temple area
+  // Simhachalam - 18 crimes
   'Simhachalam': [
-    { street: 'Simhachalam Ghat Road', coords: { lat: 17.7500, lng: 83.2200 }, crimeTypes: ['accident'] },
-    { street: 'Temple Road', coords: { lat: 17.7530, lng: 83.2230 }, crimeTypes: ['murder', 'robbery'] },
-    { street: 'Simhapuri Colony', coords: { lat: 17.7470, lng: 83.2180 }, crimeTypes: ['assault', 'kidnap'] },
+    { street: 'Simhachalam Ghat Road', coords: { lat: 17.7500, lng: 83.2200 }, crimeTypes: ['assault', 'accident'] },
+    { street: 'Viratnagar Locality', coords: { lat: 17.7520, lng: 83.2220 }, crimeTypes: ['murder'] },
+    { street: 'Simhachalam Road', coords: { lat: 17.7510, lng: 83.2210 }, crimeTypes: ['murder', 'accident'] },
+    { street: 'Adavivaram', coords: { lat: 17.7490, lng: 83.2190 }, crimeTypes: ['murder'] },
+    { street: 'Old Adavivaram', coords: { lat: 17.7480, lng: 83.2180 }, crimeTypes: ['kidnap'] },
+    { street: 'Simhapuri Colony', coords: { lat: 17.7470, lng: 83.2170 }, crimeTypes: ['accident'] },
+    { street: 'Near Appanna, Simhachalam Road', coords: { lat: 17.7530, lng: 83.2230 }, crimeTypes: ['accident'] },
   ],
   
-  // Siripuram
+  // Siripuram - 3 crimes
   'Siripuram': [
-    { street: 'Dutt Island', coords: { lat: 17.7198, lng: 83.3163 }, crimeTypes: ['murder'] },
-    { street: 'VIP Road', coords: { lat: 17.7215, lng: 83.3180 }, crimeTypes: ['assault'] },
+    { street: 'Soma Restobar, VIP Road', coords: { lat: 17.7198, lng: 83.3163 }, crimeTypes: ['accident'] },
+    { street: 'Siripuram Junction', coords: { lat: 17.7210, lng: 83.3175 }, crimeTypes: ['accident'] },
+    { street: 'Siripuram Dutt Island', coords: { lat: 17.7190, lng: 83.3155 }, crimeTypes: ['accident'] },
   ],
   
-  // Steel Plant Township
+  // Steel Plant Township - 10 crimes
   'Steel Plant Township': [
-    { street: 'Ukkunagaram Road', coords: { lat: 17.6100, lng: 83.1900 }, crimeTypes: ['assault', 'robbery'] },
-    { street: 'Sector 1', coords: { lat: 17.6120, lng: 83.1920 }, crimeTypes: ['murder'] },
-    { street: 'Main Gate', coords: { lat: 17.6080, lng: 83.1880 }, crimeTypes: ['accident'] },
+    { street: 'Ukkunagaram Road', coords: { lat: 17.6100, lng: 83.1900 }, crimeTypes: ['assault'] },
+    { street: 'Sector 3 Road, Ukkunagaram', coords: { lat: 17.6120, lng: 83.1920 }, crimeTypes: ['robbery'] },
+    { street: 'Balacheruvu Road, Sector 8', coords: { lat: 17.6090, lng: 83.1890 }, crimeTypes: ['accident'] },
+    { street: 'Sector 2 Road', coords: { lat: 17.6110, lng: 83.1910 }, crimeTypes: ['accident'] },
+    { street: 'Lankelapalem Junction', coords: { lat: 17.6080, lng: 83.1880 }, crimeTypes: ['accident'] },
+    { street: 'Thatichetlapalem Junction', coords: { lat: 17.6130, lng: 83.1930 }, crimeTypes: ['accident'] },
+    { street: 'Quarter 149-D, Sector 1', coords: { lat: 17.6105, lng: 83.1905 }, crimeTypes: ['robbery'] },
+    { street: 'Pragati Maidan (RINL)', coords: { lat: 17.6095, lng: 83.1895 }, crimeTypes: ['murder'] },
   ],
   
-  // Tagarapuvalasa
+  // Tagarapuvalasa - 9 crimes
   'Tagarapuvalasa': [
-    { street: 'Gostani Bridge', coords: { lat: 17.9301, lng: 83.4257 }, crimeTypes: ['accident'] },
-    { street: 'Beach Road', coords: { lat: 17.9280, lng: 83.4230 }, crimeTypes: ['murder'] },
+    { street: 'Tagarapuvalasa Main Road', coords: { lat: 17.9301, lng: 83.4257 }, crimeTypes: ['robbery', 'murder'] },
+    { street: 'Sanghivalasa, NH16', coords: { lat: 17.9280, lng: 83.4230 }, crimeTypes: ['accident'] },
+    { street: 'Sangivalasa Mulugulla', coords: { lat: 17.9260, lng: 83.4210 }, crimeTypes: ['accident'] },
+    { street: 'Gollaveedhi', coords: { lat: 17.9290, lng: 83.4240 }, crimeTypes: ['murder'] },
+    { street: 'SBI ATM, Avanti Engineering College', coords: { lat: 17.9310, lng: 83.4260 }, crimeTypes: ['robbery'] },
+    { street: 'Gostani Bridge', coords: { lat: 17.9270, lng: 83.4220 }, crimeTypes: ['accident'] },
   ],
   
-  // Venkojipalem
+  // Venkojipalem - 2 crimes
   'Venkojipalem': [
-    { street: 'Main Road', coords: { lat: 17.7100, lng: 83.2920 }, crimeTypes: ['murder'] },
-    { street: 'Temple Street', coords: { lat: 17.7080, lng: 83.2900 }, crimeTypes: ['assault'] },
+    { street: 'NH16, Near CMR Function Hall', coords: { lat: 17.7100, lng: 83.2920 }, crimeTypes: ['accident'] },
+    { street: 'Venkojipalem Junction', coords: { lat: 17.7080, lng: 83.2900 }, crimeTypes: ['assault'] },
   ],
   
-  // Vishalakshinagar
+  // Vishalakshinagar - 1 crime
   'Vishalakshinagar': [
-    { street: 'Main Colony', coords: { lat: 17.7350, lng: 83.3200 }, crimeTypes: ['murder', 'assault'] },
-    { street: 'Layout Road', coords: { lat: 17.7330, lng: 83.3180 }, crimeTypes: ['accident'] },
+    { street: 'NH16, Near Visakha Valley School', coords: { lat: 17.7350, lng: 83.3200 }, crimeTypes: ['accident'] },
   ],
   
-  // Vizianagaram - Multiple areas
+  // Vizianagaram - 24 crimes
   'Vizianagaram': [
-    { street: 'Fort Area', coords: { lat: 18.1067, lng: 83.3956 }, crimeTypes: ['murder', 'assault'] },
-    { street: 'Bus Station', coords: { lat: 18.1100, lng: 83.3920 }, crimeTypes: ['robbery'] },
-    { street: 'Railway Station', coords: { lat: 18.1040, lng: 83.3990 }, crimeTypes: ['kidnap'] },
-    { street: 'Main Bazaar', coords: { lat: 18.1080, lng: 83.3940 }, crimeTypes: ['accident'] },
+    { street: 'Ravada Village', coords: { lat: 18.1067, lng: 83.3956 }, crimeTypes: ['assault'] },
+    { street: 'Pasupatirega', coords: { lat: 18.1100, lng: 83.3920 }, crimeTypes: ['assault'] },
+    { street: 'Kothapeta', coords: { lat: 18.1080, lng: 83.3940 }, crimeTypes: ['murder'] },
+    { street: 'Gajapathi Nagaram', coords: { lat: 18.1040, lng: 83.3990 }, crimeTypes: ['accident'] },
+    { street: 'S Kota Mandal', coords: { lat: 18.1090, lng: 83.3950 }, crimeTypes: ['murder'] },
+    { street: 'Sringavarapukota', coords: { lat: 18.1030, lng: 83.3980 }, crimeTypes: ['kidnap'] },
+    { street: 'Ettu Bridge', coords: { lat: 18.1060, lng: 83.3960 }, crimeTypes: ['kidnap'] },
+    { street: 'NH16, Madhupada', coords: { lat: 18.1050, lng: 83.3970 }, crimeTypes: ['accident'] },
+    { street: 'Gajularega', coords: { lat: 18.1070, lng: 83.3945 }, crimeTypes: ['assault'] },
+    { street: 'RTC Complex', coords: { lat: 18.1110, lng: 83.3910 }, crimeTypes: ['accident'] },
+    { street: 'YSR Nagar', coords: { lat: 18.1045, lng: 83.3975 }, crimeTypes: ['accident'] },
+    { street: 'Vizianagaram Town', coords: { lat: 18.1055, lng: 83.3965 }, crimeTypes: ['robbery', 'assault', 'accident'] },
   ],
   
-  // Yendada
+  // Waltair - 3 crimes
+  'Waltair': [
+    { street: 'Pedda Waltair', coords: { lat: 17.7280, lng: 83.3200 }, crimeTypes: ['murder'] },
+    { street: 'AU Out Gate, Chinna Waltair', coords: { lat: 17.7260, lng: 83.3180 }, crimeTypes: ['accident'] },
+    { street: 'CBM Compound Road', coords: { lat: 17.7270, lng: 83.3190 }, crimeTypes: ['robbery'] },
+  ],
+  
+  // Yendada - 9 crimes
   'Yendada': [
-    { street: 'NH5 Road', coords: { lat: 17.7700, lng: 83.3600 }, crimeTypes: ['accident'] },
-    { street: 'IT Park Road', coords: { lat: 17.7720, lng: 83.3620 }, crimeTypes: ['murder'] },
-    { street: 'Layout Area', coords: { lat: 17.7680, lng: 83.3580 }, crimeTypes: ['robbery'] },
+    { street: 'Yendada Junction', coords: { lat: 17.7700, lng: 83.3600 }, crimeTypes: ['accident'] },
+    { street: 'Vikalangula Colony', coords: { lat: 17.7690, lng: 83.3590 }, crimeTypes: ['kidnap'] },
+    { street: 'Near Dairy Farm, Zoo Park', coords: { lat: 17.7710, lng: 83.3610 }, crimeTypes: ['accident'] },
+    { street: 'National Highway 16', coords: { lat: 17.7720, lng: 83.3620 }, crimeTypes: ['accident'] },
+    { street: 'Yendada Double Road', coords: { lat: 17.7680, lng: 83.3580 }, crimeTypes: ['murder'] },
+    { street: 'Zoo Park Road', coords: { lat: 17.7730, lng: 83.3630 }, crimeTypes: ['accident', 'robbery'] },
+    { street: 'NH5, Mahila Police Station Road', coords: { lat: 17.7740, lng: 83.3640 }, crimeTypes: ['accident'] },
   ],
 };
 
