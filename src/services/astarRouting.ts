@@ -76,12 +76,26 @@ export const areaCoordinates: Record<string, LatLng> = {
   'Sheela Nagar': { lat: 17.719, lng: 83.202 },
   'Allipuram': { lat: 17.7162, lng: 83.2965 }, // 1 crime
   
-  // Very Safe Areas
-  'Tagarapuvalasa': { lat: 17.930125, lng: 83.425659 }, // 1 crime - FIXED coordinate
-  'Bhogapuram': { lat: 18.03, lng: 83.49 }, // 2 crimes
-  'Boyapalem': { lat: 17.7312, lng: 83.2859 }, // 1 crime - FIXED coordinate
-  'Kurmannapalem': { lat: 17.69, lng: 83.17 }, // 1 crime
-  'Siripuram': { lat: 17.7198, lng: 83.3163 }, // 1 crime
+  // Additional Areas
+  'Tagarapuvalasa': { lat: 17.930125, lng: 83.425659 },
+  'Bhogapuram': { lat: 18.03, lng: 83.49 },
+  'Boyapalem': { lat: 17.7312, lng: 83.2859 },
+  'Kurmannapalem': { lat: 17.69, lng: 83.17 },
+  'Siripuram': { lat: 17.7198, lng: 83.3163 },
+  'Dabagardens': { lat: 17.715, lng: 83.305 },
+  'Daspalla Hills': { lat: 17.722, lng: 83.310 },
+  'Balayya Sastri Layout': { lat: 17.725, lng: 83.305 },
+  'Gopalapatnam': { lat: 17.755, lng: 83.270 },
+  'Waltair': { lat: 17.728, lng: 83.320 },
+  'Scindia': { lat: 17.715, lng: 83.290 },
+  'Rushikonda': { lat: 17.792, lng: 83.385 },
+  'Pendurthi': { lat: 17.780, lng: 83.260 },
+  'Port Area': { lat: 17.695, lng: 83.285 },
+  'Vishalakshinagar': { lat: 17.735, lng: 83.320 },
+  'Venkojipalem': { lat: 17.710, lng: 83.292 },
+  'Andhra University': { lat: 17.732, lng: 83.319 },
+  'RK Beach': { lat: 17.718, lng: 83.325 },
+  'Ghat road': { lat: 17.765, lng: 83.238 },
 };
 
 // Get nearest safety zone info for a given point
