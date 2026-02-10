@@ -24,78 +24,96 @@ export const haversineDistance = (p1: LatLng, p2: LatLng): number => {
   return R * c;
 };
 
-// Map known Visakhapatnam areas to accurate coordinates (from pre_processed_db-2.xlsx)
+// Map known Visakhapatnam areas to accurate coordinates (from FINAL_PREPROCESSED_DB.xlsx)
 export const areaCoordinates: Record<string, LatLng> = {
-  // Extreme/High Risk Areas (Total Crimes: 50+)
-  'Beach Road': { lat: 17.7215, lng: 83.3150 }, // 50 crimes - FIXED coordinate (on Beach Road near RK Beach)
-  'Dwarakanagar': { lat: 17.72867, lng: 83.308634 }, // 38 crimes
-  'Dwaraka Nagar': { lat: 17.72867, lng: 83.308634 },
-  'Vizianagaram': { lat: 18.1067, lng: 83.3956 }, // 38 crimes
-  'Kancharapalem': { lat: 17.7354, lng: 83.2738 }, // 29 crimes
-  'Gajuwaka': { lat: 17.6853, lng: 83.2037 }, // 34 crimes
-  
-  // Moderate-High Risk Areas
-  'Simhachalam': { lat: 17.75, lng: 83.22 }, // 29 crimes
-  'MVP Colony': { lat: 17.7407, lng: 83.3367 }, // 30 crimes
-  'One Town': { lat: 17.7, lng: 83.29 }, // 33 crimes
-  
-  // Moderate-Low Risk Areas
-  'Jagadamba Jct': { lat: 17.7073, lng: 83.001 }, // 25 crimes
-  'Jagadamba Junction': { lat: 17.7073, lng: 83.001 },
-  'Maddilapalem': { lat: 17.7382, lng: 83.323 }, // 23 crimes
-  'Lawsons Bay': { lat: 17.73, lng: 83.33 }, // 24 crimes
-  'Lawsons Bay Colony': { lat: 17.73, lng: 83.33 },
-  'Poorna Market': { lat: 17.7064, lng: 83.2982 }, // 12 crimes
-  
-  // Low Risk Areas
-  'Anandapuram': { lat: 17.9, lng: 83.37 }, // 21 crimes
-  'Marripalem': { lat: 17.74, lng: 83.25 }, // 17 crimes
-  'Steel Plant': { lat: 17.61, lng: 83.19 }, // 20 crimes
-  'Steel Plant Township': { lat: 17.61, lng: 83.19 },
-  'Madhurawada': { lat: 17.7957, lng: 83.3756 }, // 18 crimes - FIXED coordinate (on land)
-  'Anakapalli': { lat: 17.69, lng: 83.0024 }, // 18 crimes
-  'Malkapuram': { lat: 17.688, lng: 83.245 }, // 11 crimes
-  'Seethammadhara': { lat: 17.7425, lng: 83.3124 }, // 8 crimes
-  'Railway New Colony': { lat: 17.7245, lng: 83.2956 }, // 5 crimes
-  
-  // Minimal Risk Areas
-  'Akkayapalem': { lat: 17.7347, lng: 83.2977 }, // 10 crimes
-  'PM Palem': { lat: 17.7996, lng: 83.3531 }, // 4 crimes
-  'Yendada': { lat: 17.77, lng: 83.36 }, // 8 crimes
-  'NAD': { lat: 17.74, lng: 83.23 }, // 12 crimes
-  'NAD Junction': { lat: 17.74, lng: 83.23 },
-  
-  // Safe Areas
-  'Bheemunipatnam': { lat: 17.89, lng: 83.45 }, // 4 crimes
-  'Arilova': { lat: 17.7673, lng: 83.3134 }, // 9 crimes
-  'RTC Complex': { lat: 17.72, lng: 83.31 }, // 4 crimes
-  'Kommadhi': { lat: 17.72, lng: 83.31 }, // 2 crimes
-  'Kommadi': { lat: 17.72, lng: 83.31 },
-  'Marikavalasa': { lat: 17.8359, lng: 83.3581 }, // 2 crimes
-  'Sheelanagar': { lat: 17.719, lng: 83.202 }, // 2 crimes
-  'Sheela Nagar': { lat: 17.719, lng: 83.202 },
-  'Allipuram': { lat: 17.7162, lng: 83.2965 }, // 1 crime
-  
-  // Additional Areas
-  'Tagarapuvalasa': { lat: 17.930125, lng: 83.425659 },
-  'Bhogapuram': { lat: 18.03, lng: 83.49 },
-  'Boyapalem': { lat: 17.7312, lng: 83.2859 },
-  'Kurmannapalem': { lat: 17.69, lng: 83.17 },
+  // Extreme Risk (SafetyScore 0-2)
+  'Anakapalle NH16': { lat: 17.6913, lng: 83.0039 },
+  'One Town Heritage': { lat: 17.7135, lng: 83.3155 },
+  'One Town': { lat: 17.7135, lng: 83.3155 },
+  'Jagadamba Jct': { lat: 17.713, lng: 83.308 },
+  'Jagadamba Junction': { lat: 17.713, lng: 83.308 },
+  'Pendurthi Vepagunta': { lat: 17.815, lng: 83.215 },
+  'Pendurthi': { lat: 17.815, lng: 83.215 },
+
+  // High Risk (SafetyScore 2-4)
+  'RK Beach South': { lat: 17.713, lng: 83.316 },
+  'RK Beach': { lat: 17.713, lng: 83.316 },
+  'Beach Road': { lat: 17.713, lng: 83.316 },
+  'NAD Flyover Zone': { lat: 17.75, lng: 83.27 },
+  'NAD': { lat: 17.75, lng: 83.27 },
+  'NAD Junction': { lat: 17.75, lng: 83.27 },
+  'Dwaraka Nagar Hub': { lat: 17.73, lng: 83.305 },
+  'Dwarakanagar': { lat: 17.73, lng: 83.305 },
+  'Dwaraka Nagar': { lat: 17.73, lng: 83.305 },
+  'Rushikonda North': { lat: 17.78, lng: 83.37 },
+  'Rushikonda': { lat: 17.78, lng: 83.37 },
+  'Kancharapalem Core': { lat: 17.74, lng: 83.29 },
+  'Kancharapalem': { lat: 17.74, lng: 83.29 },
+  'Arilova': { lat: 17.78, lng: 83.32 },
+  'Gajuwaka Industrial': { lat: 17.68, lng: 83.21 },
+  'Gajuwaka': { lat: 17.68, lng: 83.21 },
+  'Maddilapalem Jct': { lat: 17.74, lng: 83.32 },
+  'Maddilapalem': { lat: 17.74, lng: 83.32 },
+
+  // Moderate Risk (SafetyScore 4-6)
+  'Old Gajuwaka': { lat: 17.67, lng: 83.21 },
+  'Marripalem': { lat: 17.75, lng: 83.25 },
+  'Lawsons Bay': { lat: 17.73, lng: 83.34 },
+  'Lawsons Bay Colony': { lat: 17.73, lng: 83.34 },
+  'Anandapuram Bypass': { lat: 17.9, lng: 83.45 },
+  'Anandapuram': { lat: 17.9, lng: 83.45 },
+  'Akkayapalem Central': { lat: 17.74, lng: 83.31 },
+  'Akkayapalem': { lat: 17.74, lng: 83.31 },
+  'Anakapalle Central': { lat: 17.69, lng: 83.0 },
+  'Anakapalli': { lat: 17.69, lng: 83.0 },
+  'MVP Colony Core': { lat: 17.74, lng: 83.34 },
+  'MVP Colony': { lat: 17.74, lng: 83.34 },
+
+  // Low Risk (SafetyScore 6-8)
+  'Madhurawada Hub': { lat: 17.85, lng: 83.37 },
+  'Madhurawada': { lat: 17.85, lng: 83.37 },
+  'Bheemunipatnam': { lat: 17.89, lng: 83.45 },
+  'Sheelanagar': { lat: 17.7, lng: 83.25 },
+  'Sheela Nagar': { lat: 17.7, lng: 83.25 },
+  'Simhachalam Ghat': { lat: 17.78, lng: 83.25 },
+  'Simhachalam': { lat: 17.78, lng: 83.25 },
+  'Steel Plant East': { lat: 17.7, lng: 83.27 },
+  'Steel Plant': { lat: 17.7, lng: 83.27 },
+  'PM Palem': { lat: 17.78, lng: 83.35 },
+
+  // Safe (SafetyScore 8-10)
+  'Steel Plant West': { lat: 17.69, lng: 83.26 },
+  'Vizianagaram Town': { lat: 18.116, lng: 83.41 },
+  'Vizianagaram': { lat: 18.116, lng: 83.41 },
+  'Vizianagaram Rural': { lat: 18.12, lng: 83.42 },
+  'Seethammadhara': { lat: 17.74, lng: 83.33 },
+  'Tagarapuvalasa': { lat: 17.95, lng: 83.43 },
+
+  // Additional aliases for routing
   'Siripuram': { lat: 17.7198, lng: 83.3163 },
   'Dabagardens': { lat: 17.715, lng: 83.305 },
-  'Daspalla Hills': { lat: 17.722, lng: 83.310 },
-  'Balayya Sastri Layout': { lat: 17.725, lng: 83.305 },
   'Gopalapatnam': { lat: 17.755, lng: 83.270 },
   'Waltair': { lat: 17.728, lng: 83.320 },
-  'Scindia': { lat: 17.715, lng: 83.290 },
-  'Rushikonda': { lat: 17.792, lng: 83.385 },
-  'Pendurthi': { lat: 17.780, lng: 83.260 },
+  'Andhra University': { lat: 17.732, lng: 83.319 },
   'Port Area': { lat: 17.695, lng: 83.285 },
+  'Kommadi': { lat: 17.72, lng: 83.31 },
+  'Kommadhi': { lat: 17.72, lng: 83.31 },
+  'RTC Complex': { lat: 17.72, lng: 83.31 },
+  'Allipuram': { lat: 17.7162, lng: 83.2965 },
+  'Malkapuram': { lat: 17.688, lng: 83.245 },
+  'Poorna Market': { lat: 17.7064, lng: 83.2982 },
+  'Railway New Colony': { lat: 17.7245, lng: 83.2956 },
+  'Yendada': { lat: 17.77, lng: 83.36 },
+  'Boyapalem': { lat: 17.7312, lng: 83.2859 },
+  'Kurmannapalem': { lat: 17.69, lng: 83.17 },
+  'Balayya Sastri Layout': { lat: 17.725, lng: 83.305 },
+  'Daspalla Hills': { lat: 17.722, lng: 83.310 },
   'Vishalakshinagar': { lat: 17.735, lng: 83.320 },
   'Venkojipalem': { lat: 17.710, lng: 83.292 },
-  'Andhra University': { lat: 17.732, lng: 83.319 },
-  'RK Beach': { lat: 17.718, lng: 83.325 },
+  'Scindia': { lat: 17.715, lng: 83.290 },
   'Ghat road': { lat: 17.765, lng: 83.238 },
+  'Marikavalasa': { lat: 17.8359, lng: 83.3581 },
+  'Bhogapuram': { lat: 18.03, lng: 83.49 },
 };
 
 // Get nearest safety zone info for a given point
