@@ -383,7 +383,8 @@ const validateRouteQuality = (osrmRoute: OSRMRoute, source: LatLng, destination:
 // Main function to calculate 3 distinct routes
 export const calculateRoutes = async (
   source: LatLng,
-  destination: LatLng
+  destination: LatLng,
+  demographicSafetyWeight: number = 1.0
 ): Promise<RouteInfo[]> => {
   const safetyZones = await fetchSafetyZones();
   console.log('Safety zones loaded:', safetyZones.length);
@@ -403,6 +404,14 @@ export const calculateRoutes = async (
 
   const fastestPath = fastestOSRM.geometry.coordinates.map(([lng, lat]) => ({ lat, lng }));
   const fastestAnalysis = analyzeRouteSafety(fastestPath, safetyZones);
+  
+  // Apply demographic weight to safety scoring
+  const applyDemographicWeight = (score: number): number => {
+    if (demographicSafetyWeight <= 1.0) return score;
+    // Vulnerable demographics: penalise low-safety routes more
+    const penalty = (100 - score) * (demographicSafetyWeight - 1.0) * 0.5;
+    return Math.max(0, Math.round(score - penalty));
+  };
 
   // Calculate realistic duration with traffic (average 25 km/h in urban traffic)
   const fastestDistanceKm = Math.round(fastestOSRM.distance / 100) / 10;
@@ -413,7 +422,7 @@ export const calculateRoutes = async (
     type: 'fastest',
     distance: fastestDistanceKm,
     duration: fastestDurationWithTraffic,
-    safetyScore: fastestAnalysis.overallScore,
+    safetyScore: applyDemographicWeight(fastestAnalysis.overallScore),
     riskLevel: fastestAnalysis.riskLevel,
     path: fastestPath,
   };
@@ -468,7 +477,7 @@ export const calculateRoutes = async (
   
   // If no good alternative, try safe waypoints
   if (!safestRoute) {
-    const safeAreas = getSafeAreasWithCoords(safetyZones, 70);
+    const safeAreas = getSafeAreasWithCoords(safetyZones, Math.min(80, 70 + (demographicSafetyWeight - 1.0) * 20));
     console.log('Safe areas found:', safeAreas.length);
     
     const viableWaypoints = safeAreas.filter(area => {
