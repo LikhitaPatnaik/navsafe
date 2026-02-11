@@ -262,14 +262,14 @@ const MapView = ({ routes = [], sourceCoords, destinationCoords, selectedRoute, 
             crimeDataByArea.get(normalizedArea)!.set(record.crime_type as CrimeType, record.count);
           });
           
-          // Helper: Check if area is along the route path (within 1.5km)
-          const isAreaAlongRoute = (areaCoords: LatLng): boolean => {
-            const maxDistance = 1500; // 1.5km detection radius
-            const sampleRate = Math.max(1, Math.floor(selectedRoute.path.length / 50));
+          // Helper: Check if a specific coordinate is along the route path (within 800m)
+          const isPointAlongRoute = (coords: LatLng): boolean => {
+            const maxDistance = 800; // 800m detection radius for street-level precision
+            const sampleRate = Math.max(1, Math.floor(selectedRoute.path.length / 80));
             
             for (let i = 0; i < selectedRoute.path.length; i += sampleRate) {
               const point = selectedRoute.path[i];
-              const distance = haversineDistance(point, areaCoords);
+              const distance = haversineDistance(point, coords);
               if (distance < maxDistance) {
                 return true;
               }
@@ -296,11 +296,6 @@ const MapView = ({ routes = [], sourceCoords, destinationCoords, selectedRoute, 
             
             if (!mainCoords || !mapRef.current) return;
             
-            // Skip areas NOT along the selected route
-            if (!isAreaAlongRoute(mainCoords)) {
-              return;
-            }
-            
             // Get safety zone info for this area
             const safetyZone = allZones.find(z => 
               z.area.toLowerCase().trim() === normalizedArea ||
@@ -309,12 +304,11 @@ const MapView = ({ routes = [], sourceCoords, destinationCoords, selectedRoute, 
             );
             
             const safetyScore = safetyZone?.safety_score ?? 50;
-            const severity = safetyZone?.severity ?? 'medium';
             
-            // For each selected crime type, show STREET-LEVEL markers
+            // For each selected crime type, show ONLY street markers that are on the route
             highlightedCrimeTypes.forEach((crimeType) => {
               const count = crimeTypes.get(crimeType);
-              if (!count || count === 0) return; // Skip if no crimes of this type
+              if (!count || count === 0) return;
               
               const crimeConfig = crimeTypeConfig[crimeType];
               const color = crimeConfig.mapColor;
@@ -322,104 +316,51 @@ const MapView = ({ routes = [], sourceCoords, destinationCoords, selectedRoute, 
               // Get street locations for this crime type in this area
               const streetLocations = getStreetLocationsForCrimeType(originalAreaName, crimeType);
               
-              // If we have street-level data, show multiple markers
-              if (streetLocations.length > 0) {
-                // Distribute crime count across streets (simulate realistic distribution)
-                const countPerStreet = Math.max(1, Math.floor(count / streetLocations.length));
-                const remainder = count % streetLocations.length;
+              // Filter streets that are actually along the route path
+              const onRouteStreets = streetLocations.filter(sl => isPointAlongRoute(sl.coords));
+              
+              if (onRouteStreets.length === 0) return; // Skip if no streets on route
+              
+              // Distribute crime count across on-route streets
+              const countPerStreet = Math.max(1, Math.floor(count / streetLocations.length));
+              const remainder = count % Math.max(1, streetLocations.length);
+              
+              onRouteStreets.forEach((streetLoc, streetIndex) => {
+                const streetCount = countPerStreet + (streetIndex < remainder ? 1 : 0);
+                if (streetCount === 0) return;
                 
-                streetLocations.forEach((streetLoc, streetIndex) => {
-                  const streetCount = countPerStreet + (streetIndex < remainder ? 1 : 0);
-                  if (streetCount === 0) return;
-                  
-                  // Smaller marker and area radius for street-level
-                  const markerRadius = streetCount > 3 ? 10 : streetCount > 1 ? 8 : 6;
-                  const areaRadius = streetCount > 3 ? 250 : streetCount > 1 ? 180 : 120;
-                  
-                  // Create circle marker at street location
-                  const circle = L.circleMarker([streetLoc.coords.lat, streetLoc.coords.lng], {
-                    radius: markerRadius,
-                    fillColor: color,
-                    color: color,
-                    weight: 3,
-                    opacity: 1,
-                    fillOpacity: 0.85,
-                  });
-                  
-                  // Risk label based on count
-                  let riskLabel = 'LOW RISK';
-                  if (streetCount > 3) riskLabel = 'HIGH RISK';
-                  else if (streetCount > 1) riskLabel = 'MODERATE RISK';
-                  
-                  const popupContent = `
-                    <div style="padding: 10px; min-width: 200px;">
-                      <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 6px;">
-                        <div style="width: 10px; height: 10px; border-radius: 50%; background: ${color};"></div>
-                        <strong style="font-size: 14px; color: #333;">${originalAreaName}</strong>
-                      </div>
-                      <div style="font-size: 12px; color: #555; margin-bottom: 8px; padding: 4px 8px; background: #f5f5f5; border-radius: 4px;">
-                        📍 ${streetLoc.street}
-                      </div>
-                      <hr style="margin: 6px 0; border-color: ${color}40;"/>
-                      <div style="font-size: 13px; color: #333; margin-bottom: 6px; padding: 6px; background: ${color}15; border-radius: 4px; border-left: 3px solid ${color};">
-                        <strong>${crimeConfig.icon} ${crimeConfig.label}</strong>
-                      </div>
-                      <div style="font-size: 12px; color: #333; margin-bottom: 4px;">
-                        <strong>🚔 Cases:</strong> <span style="color: ${streetCount > 3 ? '#ef4444' : streetCount > 1 ? '#f59e0b' : '#666'}; font-weight: bold;">${streetCount}</span>
-                      </div>
-                      <div style="font-size: 12px; color: #333; margin-bottom: 4px;">
-                        <strong>🛡️ Area Score:</strong> <span style="font-weight: bold;">${safetyScore}/100</span>
-                      </div>
-                      <div style="font-size: 11px; padding: 4px 8px; border-radius: 4px; background: ${color}; color: white; text-align: center; font-weight: bold; margin-top: 6px;">
-                        ${riskLabel}
-                      </div>
-                    </div>
-                  `;
-                  circle.bindPopup(popupContent);
-                  circle.addTo(mapRef.current!);
-                  safetyZoneLayersRef.current.push(circle);
-                  
-                  // Add smaller area circle for street
-                  const areaCircle = L.circle([streetLoc.coords.lat, streetLoc.coords.lng], {
-                    radius: areaRadius,
-                    fillColor: color,
-                    color: color,
-                    weight: 1,
-                    fillOpacity: 0.2,
-                  });
-                  areaCircle.addTo(mapRef.current!);
-                  safetyZoneLayersRef.current.push(areaCircle as unknown as L.CircleMarker);
-                });
-              } else {
-                // Fallback: No street data, show single marker at area center with smaller size
-                const markerRadius = count > 5 ? 12 : count > 2 ? 10 : 8;
-                const areaRadius = count > 5 ? 350 : count > 2 ? 280 : 200;
+                // Reduced marker sizes for precision
+                const markerRadius = streetCount > 3 ? 7 : streetCount > 1 ? 5 : 4;
+                const areaRadius = streetCount > 3 ? 150 : streetCount > 1 ? 100 : 70;
                 
-                const circle = L.circleMarker([mainCoords!.lat, mainCoords!.lng], {
+                const circle = L.circleMarker([streetLoc.coords.lat, streetLoc.coords.lng], {
                   radius: markerRadius,
                   fillColor: color,
                   color: color,
-                  weight: 3,
+                  weight: 2,
                   opacity: 1,
                   fillOpacity: 0.85,
                 });
                 
                 let riskLabel = 'LOW RISK';
-                if (count > 5) riskLabel = 'HIGH RISK';
-                else if (count > 2) riskLabel = 'MODERATE RISK';
+                if (streetCount > 3) riskLabel = 'HIGH RISK';
+                else if (streetCount > 1) riskLabel = 'MODERATE RISK';
                 
                 const popupContent = `
                   <div style="padding: 10px; min-width: 200px;">
-                    <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px;">
+                    <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 6px;">
                       <div style="width: 10px; height: 10px; border-radius: 50%; background: ${color};"></div>
                       <strong style="font-size: 14px; color: #333;">${originalAreaName}</strong>
+                    </div>
+                    <div style="font-size: 12px; color: #555; margin-bottom: 8px; padding: 4px 8px; background: #f5f5f5; border-radius: 4px;">
+                      📍 ${streetLoc.street}
                     </div>
                     <hr style="margin: 6px 0; border-color: ${color}40;"/>
                     <div style="font-size: 13px; color: #333; margin-bottom: 6px; padding: 6px; background: ${color}15; border-radius: 4px; border-left: 3px solid ${color};">
                       <strong>${crimeConfig.icon} ${crimeConfig.label}</strong>
                     </div>
                     <div style="font-size: 12px; color: #333; margin-bottom: 4px;">
-                      <strong>🚔 Cases:</strong> <span style="color: ${count > 5 ? '#ef4444' : count > 2 ? '#f59e0b' : '#666'}; font-weight: bold;">${count}</span>
+                      <strong>🚔 Cases:</strong> <span style="color: ${streetCount > 3 ? '#ef4444' : streetCount > 1 ? '#f59e0b' : '#666'}; font-weight: bold;">${streetCount}</span>
                     </div>
                     <div style="font-size: 12px; color: #333; margin-bottom: 4px;">
                       <strong>🛡️ Area Score:</strong> <span style="font-weight: bold;">${safetyScore}/100</span>
@@ -433,16 +374,17 @@ const MapView = ({ routes = [], sourceCoords, destinationCoords, selectedRoute, 
                 circle.addTo(mapRef.current!);
                 safetyZoneLayersRef.current.push(circle);
                 
-                const areaCircle = L.circle([mainCoords!.lat, mainCoords!.lng], {
+                // Smaller area circle
+                const areaCircle = L.circle([streetLoc.coords.lat, streetLoc.coords.lng], {
                   radius: areaRadius,
                   fillColor: color,
                   color: color,
                   weight: 1,
-                  fillOpacity: 0.2,
+                  fillOpacity: 0.15,
                 });
                 areaCircle.addTo(mapRef.current!);
                 safetyZoneLayersRef.current.push(areaCircle as unknown as L.CircleMarker);
-              }
+              });
             });
           });
           
