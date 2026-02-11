@@ -76,6 +76,20 @@ const TripApp = () => {
     setSelectedAgeGroups([]);
   }, []);
 
+  // Auto-recalculate routes when demographics change (if routes already exist)
+  const prevDemoRef = useRef<string>('');
+  useEffect(() => {
+    const demoKey = `${selectedGenders.join(',')}-${selectedAgeGroups.join(',')}`;
+    if (prevDemoRef.current === demoKey) return;
+    const isFirstRender = prevDemoRef.current === '';
+    prevDemoRef.current = demoKey;
+    if (isFirstRender) return; // Don't trigger on mount
+    
+    if (trip.routes.length > 0 && trip.sourceCoords && trip.destinationCoords && !trip.isMonitoring) {
+      handleFindRoutes();
+    }
+  }, [selectedGenders, selectedAgeGroups]);
+
   // Fetch safety zones for deviation detection
   useEffect(() => {
     const fetchSafetyZones = async () => {
