@@ -12,8 +12,6 @@ import SafetyActionsPanel from '@/components/trip/SafetyActionsPanel';
 import TripSummaryComponent from '@/components/trip/TripSummary';
 import ProfileDropdown from '@/components/ProfileDropdown';
 import CrimeTypeFilter from '@/components/trip/CrimeTypeFilter';
-import DemographicFilter from '@/components/trip/DemographicFilter';
-import { Gender, AgeGroup, getDemographicSafetyWeight } from '@/components/trip/DemographicFilter';
 import { Button } from '@/components/ui/button';
 import { ArrowLeft, StopCircle, Loader2, LogIn } from 'lucide-react';
 import { calculateRoutes } from '@/services/routingService';
@@ -42,8 +40,6 @@ const TripApp = () => {
   const [isCalculatingRoutes, setIsCalculatingRoutes] = useState(false);
   const [safetyZones, setSafetyZones] = useState<any[]>([]);
   const [selectedCrimeTypes, setSelectedCrimeTypes] = useState<CrimeType[]>([]);
-  const [selectedGenders, setSelectedGenders] = useState<Gender[]>([]);
-  const [selectedAgeGroups, setSelectedAgeGroups] = useState<AgeGroup[]>([]);
 
   // Toggle crime type filter - for highlighting zones on map
   const handleToggleCrimeType = useCallback((crimeType: CrimeType) => {
@@ -59,36 +55,6 @@ const TripApp = () => {
     setSelectedCrimeTypes([]);
   }, []);
 
-  const handleToggleGender = useCallback((gender: Gender) => {
-    setSelectedGenders(prev =>
-      prev.includes(gender) ? prev.filter(g => g !== gender) : [...prev, gender]
-    );
-  }, []);
-
-  const handleToggleAgeGroup = useCallback((ageGroup: AgeGroup) => {
-    setSelectedAgeGroups(prev =>
-      prev.includes(ageGroup) ? prev.filter(a => a !== ageGroup) : [...prev, ageGroup]
-    );
-  }, []);
-
-  const handleClearDemographics = useCallback(() => {
-    setSelectedGenders([]);
-    setSelectedAgeGroups([]);
-  }, []);
-
-  // Auto-recalculate routes when demographics change (if routes already exist)
-  const prevDemoRef = useRef<string>('');
-  useEffect(() => {
-    const demoKey = `${selectedGenders.join(',')}-${selectedAgeGroups.join(',')}`;
-    if (prevDemoRef.current === demoKey) return;
-    const isFirstRender = prevDemoRef.current === '';
-    prevDemoRef.current = demoKey;
-    if (isFirstRender) return; // Don't trigger on mount
-    
-    if (trip.routes.length > 0 && trip.sourceCoords && trip.destinationCoords && !trip.isMonitoring) {
-      handleFindRoutes();
-    }
-  }, [selectedGenders, selectedAgeGroups]);
 
   // Fetch safety zones for deviation detection
   useEffect(() => {
@@ -114,8 +80,7 @@ const TripApp = () => {
     setIsCalculatingRoutes(true);
     
     try {
-      const demographicWeight = getDemographicSafetyWeight(selectedGenders, selectedAgeGroups);
-      const routes = await calculateRoutes(trip.sourceCoords, trip.destinationCoords, demographicWeight);
+      const routes = await calculateRoutes(trip.sourceCoords, trip.destinationCoords);
       
       if (routes.length === 0) {
         toast.error('No routes found. Please try different locations.');
@@ -400,16 +365,6 @@ const TripApp = () => {
             <TripInputPanel onFindRoutes={handleFindRoutes} isLoading={isCalculatingRoutes} />
           )}
 
-          {/* Demographic Filter - Show before and after route calculation */}
-          {!trip.isMonitoring && (
-            <DemographicFilter
-              selectedGenders={selectedGenders}
-              selectedAgeGroups={selectedAgeGroups}
-              onToggleGender={handleToggleGender}
-              onToggleAgeGroup={handleToggleAgeGroup}
-              onClearAll={handleClearDemographics}
-            />
-          )}
 
           {/* Crime Type Filter - Show when routes are available */}
           {trip.routes.length > 0 && !trip.isMonitoring && (
