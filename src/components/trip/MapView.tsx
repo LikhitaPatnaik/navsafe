@@ -267,9 +267,9 @@ const MapView = ({ routes = [], sourceCoords, destinationCoords, selectedRoute, 
             crimeDataByArea.get(normalizedArea)!.set(crimeType, record.count);
           });
           
-          // Helper: Check if a specific coordinate is along the route path (within 600m for precision)
+          // Helper: Check if a specific coordinate is along the route path (within 1km radius)
           const isPointAlongRoute = (coords: LatLng): boolean => {
-            const maxDistance = 600; // 600m detection radius for street-level precision
+            const maxDistance = 1000; // 1km detection radius
             const sampleRate = Math.max(1, Math.floor(selectedRoute.path.length / 100));
             
             for (let i = 0; i < selectedRoute.path.length; i += sampleRate) {
@@ -332,9 +332,9 @@ const MapView = ({ routes = [], sourceCoords, destinationCoords, selectedRoute, 
                 const streetCount = countPerStreet + (streetIndex < remainder ? 1 : 0);
                 if (streetCount === 0) return;
                 
-                // Small marker sizes for precision
-                const markerRadius = streetCount > 3 ? 6 : streetCount > 1 ? 5 : 4;
-                const areaRadius = streetCount > 3 ? 120 : streetCount > 1 ? 80 : 50;
+                // Medium marker sizes for visibility
+                const markerRadius = streetCount > 3 ? 10 : streetCount > 1 ? 8 : 7;
+                const areaRadius = streetCount > 3 ? 300 : streetCount > 1 ? 220 : 150;
                 
                 const circle = L.circleMarker([streetLoc.coords.lat, streetLoc.coords.lng], {
                   radius: markerRadius,
@@ -395,49 +395,64 @@ const MapView = ({ routes = [], sourceCoords, destinationCoords, selectedRoute, 
           return; // Exit early - we've rendered filtered zones
         }
         
-        // Default behavior: show all safety zones when no crime filter is active
-        // This shows GENERAL safety info (area, total crime count, score, severity) - NO crime type
+        // Default behavior: show ALL 50 areas from dataset with total crime counts
+        // Fetch all crime type counts and aggregate by area
+        const { data: allCrimeCounts, error: crimeError } = await supabase
+          .from('crime_type_counts')
+          .select('area, crime_type, count');
+        
+        // Aggregate total crime counts per area
+        const areaTotals = new Map<string, number>();
+        if (allCrimeCounts) {
+          allCrimeCounts.forEach(record => {
+            const current = areaTotals.get(record.area) || 0;
+            areaTotals.set(record.area, current + record.count);
+          });
+        }
+
+        // Build a map of safety zone data for popup info
+        const safetyZoneMap = new Map<string, typeof allZones[0]>();
         allZones.forEach(zone => {
-          const normalizedArea = zone.area.toLowerCase().trim();
-          let coords: LatLng | null = null;
+          safetyZoneMap.set(zone.area.toLowerCase().trim(), zone);
+        });
+
+        // Show all 50 areas from areaStreetCoordinates
+        Object.entries(areaStreetCoordinates).forEach(([areaName, streets]) => {
+          if (!streets || streets.length === 0 || !mapRef.current) return;
           
-          // Match area name to coordinates
-          for (const [key, value] of Object.entries(areaCoordinates)) {
-            const normalizedKey = key.toLowerCase().trim();
-            if (normalizedKey === normalizedArea || 
-                normalizedArea.includes(normalizedKey) ||
-                normalizedKey.includes(normalizedArea)) {
-              coords = value;
-              break;
+          // Get the center coordinate (first street location)
+          const centerCoords = streets[0].coords;
+          
+          // Find total crime count for this area
+          let totalCrimes = 0;
+          areaTotals.forEach((count, dbArea) => {
+            if (dbArea.toLowerCase().includes(areaName.toLowerCase()) ||
+                areaName.toLowerCase().includes(dbArea.toLowerCase().replace(/ (central|hub|core|industrial|heritage|jct|junction|flyover zone|ghat|east|west|north|south|bypass|vepagunta|nh16|rural|town)$/i, '').trim())) {
+              totalCrimes += count;
             }
-          }
+          });
           
-          if (!coords || !mapRef.current) {
-            return;
-          }
-
-          const color = getSafetyZoneColor(zone.safety_score);
-          const isCritical = zone.safety_score < 35;
-          const isRisky = zone.safety_score < 50;
-          const isSafe = zone.safety_score >= 75;
-
-          // Determine marker size based on risk level
-          let markerRadius = 8;
-          let areaRadius = 300;
+          // Find matching safety zone for score/severity
+          let safetyScore = 50;
+          let severity = 'medium';
+          safetyZoneMap.forEach((zone, key) => {
+            const cleanArea = areaName.toLowerCase().trim();
+            if (key.includes(cleanArea) || cleanArea.includes(key.replace(/ (central|hub|core|industrial|heritage|jct|junction|flyover zone|ghat|east|west|north|south|bypass|vepagunta|nh16|rural|town)$/i, '').trim())) {
+              safetyScore = zone.safety_score;
+              severity = zone.severity || 'medium';
+            }
+          });
           
-          if (isCritical) {
-            markerRadius = 12;
-            areaRadius = 500;
-          } else if (isRisky) {
-            markerRadius = 10;
-            areaRadius = 400;
-          } else if (!isSafe) {
-            markerRadius = 8;
-            areaRadius = 350;
-          }
+          const color = getSafetyZoneColor(safetyScore);
+          const isCritical = safetyScore < 35;
+          const isRisky = safetyScore < 50;
 
-          // Create circle marker for the zone
-          const circle = L.circleMarker([coords.lat, coords.lng], {
+          // Medium marker sizes
+          let markerRadius = 9;
+          if (totalCrimes > 20) markerRadius = 12;
+          else if (totalCrimes > 10) markerRadius = 10;
+
+          const circle = L.circleMarker([centerCoords.lat, centerCoords.lng], {
             radius: markerRadius,
             fillColor: color,
             color: isCritical ? '#450a0a' : isRisky ? '#7f1d1d' : color,
@@ -446,55 +461,53 @@ const MapView = ({ routes = [], sourceCoords, destinationCoords, selectedRoute, 
             fillOpacity: isCritical ? 0.7 : isRisky ? 0.5 : 0.4,
           });
 
-          // Risk label
           let riskLabel = 'SAFE';
           if (isCritical) riskLabel = 'CRITICAL - BLACK SPOT';
           else if (isRisky) riskLabel = 'HIGH RISK';
-          else if (zone.safety_score < 75) riskLabel = 'MODERATE';
+          else if (safetyScore < 75) riskLabel = 'MODERATE';
 
-          // BEFORE LOCATIONS: Show general safety info (area, total crime count, score, severity)
-          // NO crime type shown in this view
           const popupContent = `
             <div style="padding: 12px; min-width: 220px;">
               <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px;">
                 <div style="width: 12px; height: 12px; border-radius: 50%; background: ${color};"></div>
-                <strong style="font-size: 15px; color: #333;">${zone.area}</strong>
+                <strong style="font-size: 15px; color: #333;">${areaName}</strong>
               </div>
               <hr style="margin: 8px 0; border-color: ${color}40;"/>
               <div style="font-size: 13px; color: #333; margin-bottom: 6px;">
-                <strong>🚔 Total Crime Count:</strong> <span style="color: ${zone.crime_count > 10 ? '#ef4444' : zone.crime_count > 5 ? '#f59e0b' : '#666'}; font-weight: bold; font-size: 14px;">${zone.crime_count}</span>
+                <strong>🚔 Total Crime Count:</strong> <span style="color: ${totalCrimes > 10 ? '#ef4444' : totalCrimes > 5 ? '#f59e0b' : '#666'}; font-weight: bold; font-size: 14px;">${totalCrimes}</span>
               </div>
               <div style="font-size: 13px; color: #333; margin-bottom: 6px;">
-                <strong>🛡️ Safety Score:</strong> <span style="color: ${color}; font-weight: bold;">${zone.safety_score}/100</span>
+                <strong>🛡️ Safety Score:</strong> <span style="color: ${color}; font-weight: bold;">${safetyScore}/100</span>
               </div>
               <div style="font-size: 13px; color: #333; margin-bottom: 6px;">
-                <strong>⚠️ Severity:</strong> <span style="text-transform: uppercase; color: ${color}; font-weight: 500;">${zone.severity || 'N/A'}</span>
+                <strong>⚠️ Severity:</strong> <span style="text-transform: uppercase; color: ${color}; font-weight: 500;">${severity}</span>
               </div>
-              ${zone.street ? `<div style="font-size: 12px; color: #666; margin-bottom: 8px;">📍 ${zone.street}</div>` : ''}
+              <div style="font-size: 12px; color: #666; margin-bottom: 8px;">📍 ${streets.length} street locations mapped</div>
               <div style="font-size: 12px; padding: 6px 10px; border-radius: 6px; background: ${color}; color: white; text-align: center; font-weight: bold;">
                 ${riskLabel}
               </div>
             </div>
           `;
           circle.bindPopup(popupContent);
-          circle.addTo(mapRef.current);
+          circle.addTo(mapRef.current!);
           safetyZoneLayersRef.current.push(circle);
 
           // Add area circle for risky zones
           if (isRisky) {
-            const areaCircle = L.circle([coords.lat, coords.lng], {
+            const areaRadius = isCritical ? 500 : 400;
+            const areaCircle = L.circle([centerCoords.lat, centerCoords.lng], {
               radius: areaRadius,
               fillColor: color,
               color: isCritical ? '#7f1d1d' : 'transparent',
               weight: isCritical ? 2 : 0,
               fillOpacity: isCritical ? 0.25 : 0.15,
             });
-            areaCircle.addTo(mapRef.current);
+            areaCircle.addTo(mapRef.current!);
             safetyZoneLayersRef.current.push(areaCircle as unknown as L.CircleMarker);
           }
         });
         
-        console.log('Safety zones rendered:', safetyZoneLayersRef.current.length);
+        console.log('All 50 areas rendered:', safetyZoneLayersRef.current.length);
       } catch (error) {
         console.error('Error loading safety zones:', error);
       }
