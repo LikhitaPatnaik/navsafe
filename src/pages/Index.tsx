@@ -1,4 +1,5 @@
-import { useState, useEffect, useRef, useMemo, useCallback } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
+import { ScrollArea } from '@/components/ui/scroll-area';
 import { useNavigate } from 'react-router-dom';
 import { TripProvider, useTrip } from '@/context/TripContext';
 import { useAuth } from '@/contexts/AuthContext';
@@ -377,21 +378,23 @@ const TripApp = () => {
 
           {/* Route Cards */}
           {trip.routes.length > 0 && !trip.isMonitoring && (
-            <div className="space-y-2 sm:space-y-3 animate-slide-up">
-              <div className="flex items-center justify-between px-1">
-                <h2 className="text-base sm:text-lg font-semibold text-foreground">Available Routes</h2>
+            <ScrollArea className="max-h-[60vh] lg:max-h-[calc(100vh-20rem)] animate-slide-up">
+              <div className="space-y-2 sm:space-y-3 pr-3">
+                <div className="flex items-center justify-between px-1">
+                  <h2 className="text-base sm:text-lg font-semibold text-foreground">Available Routes</h2>
+                </div>
+                {trip.routes.map((route) => (
+                  <RouteCard
+                    key={route.id}
+                    route={route}
+                    isSelected={trip.selectedRoute?.id === route.id}
+                    onSelect={() => selectRoute(route)}
+                    onStartMonitoring={handleStartMonitoring}
+                    safetyZones={safetyZones}
+                  />
+                ))}
               </div>
-              {trip.routes.map((route) => (
-                <RouteCard
-                  key={route.id}
-                  route={route}
-                  isSelected={trip.selectedRoute?.id === route.id}
-                  onSelect={() => selectRoute(route)}
-                  onStartMonitoring={handleStartMonitoring}
-                  safetyZones={safetyZones}
-                />
-              ))}
-            </div>
+            </ScrollArea>
           )}
 
           {/* Selected Route Info During Monitoring - Hidden on mobile during monitoring to save space */}
