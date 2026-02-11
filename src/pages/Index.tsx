@@ -408,8 +408,7 @@ const TripApp = () => {
           )}
         </div>
 
-        {/* Map Area - Shows first on mobile, takes remaining space on desktop */}
-        <div className="flex-1 min-h-[50vh] sm:min-h-[400px] lg:min-h-0 lg:h-[calc(100vh-8rem)] order-1 lg:order-2">
+        <div className="flex-1 min-h-[50vh] sm:min-h-[400px] lg:min-h-0 lg:h-auto lg:self-stretch order-1 lg:order-2 lg:sticky lg:top-20" style={{ minHeight: 'calc(100vh - 6rem)' }}>
           <MapView 
             routes={trip.routes} 
             sourceCoords={trip.sourceCoords}
