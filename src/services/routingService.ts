@@ -55,27 +55,7 @@ const getOSRMRoute = async (waypoints: LatLng[]): Promise<OSRMRoute | null> => {
     const data: OSRMResponse = await response.json();
     
     if (data.code === 'Ok' && data.routes?.[0]) {
-      const route = data.routes[0];
-      
-      // Verify the route actually reaches the destination
-      const coords = route.geometry.coordinates;
-      if (coords.length > 0) {
-        const lastCoord = coords[coords.length - 1];
-        const destWaypoint = waypoints[waypoints.length - 1];
-        const distToDestination = haversineDistance(
-          { lat: lastCoord[1], lng: lastCoord[0] },
-          destWaypoint
-        );
-        
-        // If route doesn't end within 100m of destination, it's incomplete
-        if (distToDestination > 100) {
-          console.warn(`Route incomplete: ends ${distToDestination.toFixed(0)}m from destination`);
-          // Try to extend the route to destination
-          coords.push([destWaypoint.lng, destWaypoint.lat]);
-        }
-      }
-      
-      return route;
+      return data.routes[0];
     }
   } catch (error) {
     console.error('Error fetching OSRM route:', error);
