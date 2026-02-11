@@ -196,11 +196,39 @@ const MapView = ({ routes = [], sourceCoords, destinationCoords, selectedRoute, 
     });
     routeLayersRef.current = [];
 
+    // Clean path: trim segments that backtrack or create artifacts near start/end
+    const cleanPath = (path: LatLng[]): LatLng[] => {
+      if (path.length < 4 || !sourceCoords || !destinationCoords) return path;
+      
+      // Find the index closest to source and destination
+      let startIdx = 0;
+      let endIdx = path.length - 1;
+      let minStartDist = Infinity;
+      let minEndDist = Infinity;
+      
+      for (let i = 0; i < Math.min(path.length, 20); i++) {
+        const d = Math.abs(path[i].lat - sourceCoords.lat) + Math.abs(path[i].lng - sourceCoords.lng);
+        if (d < minStartDist) { minStartDist = d; startIdx = i; }
+      }
+      
+      for (let i = Math.max(0, path.length - 20); i < path.length; i++) {
+        const d = Math.abs(path[i].lat - destinationCoords.lat) + Math.abs(path[i].lng - destinationCoords.lng);
+        if (d < minEndDist) { minEndDist = d; endIdx = i; }
+      }
+      
+      // Only trim if we found closer points (avoids cutting valid segments)
+      if (startIdx > 0 || endIdx < path.length - 1) {
+        return path.slice(startIdx, endIdx + 1);
+      }
+      return path;
+    };
+
     // Draw each route
     routes.forEach(route => {
       if (route.path && route.path.length > 0) {
         const isSelected = selectedRoute?.id === route.id;
-        const latLngs: L.LatLngExpression[] = route.path.map(p => [p.lat, p.lng] as L.LatLngTuple);
+        const cleaned = cleanPath(route.path);
+        const latLngs: L.LatLngExpression[] = cleaned.map(p => [p.lat, p.lng] as L.LatLngTuple);
         const polyline = L.polyline(latLngs, {
           color: getRouteColor(route.type, isSelected),
           weight: isSelected ? 6 : 4,
@@ -210,7 +238,7 @@ const MapView = ({ routes = [], sourceCoords, destinationCoords, selectedRoute, 
         routeLayersRef.current.push(polyline);
       }
     });
-  }, [routes, selectedRoute, mapReady]);
+  }, [routes, selectedRoute, mapReady, sourceCoords, destinationCoords]);
 
   // Load and display safety zones on map - filter by highlighted crime types AND route path
   useEffect(() => {

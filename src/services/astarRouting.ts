@@ -70,8 +70,8 @@ export const areaCoordinates: Record<string, LatLng> = {
   'MVP Colony': { lat: 17.7407, lng: 83.3367 },
 
   // Low Risk (SafetyScore 6-8)
-  'Madhurawada Hub': { lat: 17.7957, lng: 83.3756 },
-  'Madhurawada': { lat: 17.7957, lng: 83.3756 },
+  'Madhurawada Hub': { lat: 17.8017, lng: 83.3533 },
+  'Madhurawada': { lat: 17.8017, lng: 83.3533 },
   'Bheemunipatnam': { lat: 17.8900, lng: 83.4500 },
   'Sheelanagar': { lat: 17.7190, lng: 83.2020 },
   'Sheela Nagar': { lat: 17.7190, lng: 83.2020 },
@@ -79,7 +79,7 @@ export const areaCoordinates: Record<string, LatLng> = {
   'Simhachalam': { lat: 17.7500, lng: 83.2200 },
   'Steel Plant East': { lat: 17.6100, lng: 83.1900 },
   'Steel Plant': { lat: 17.6100, lng: 83.1900 },
-  'PM Palem': { lat: 17.7996, lng: 83.3531 },
+  'PM Palem': { lat: 17.7990, lng: 83.3531 },
 
   // Safe (SafetyScore 8-10)
   'Steel Plant West': { lat: 17.6080, lng: 83.1880 },
@@ -99,7 +99,7 @@ export const areaCoordinates: Record<string, LatLng> = {
   'Kommadi': { lat: 17.8428, lng: 83.3215 },
   'Kommadhi': { lat: 17.8428, lng: 83.3215 },
   'RTC Complex': { lat: 17.7200, lng: 83.3100 },
-  'Allipuram': { lat: 17.7162, lng: 83.2965 },
+  'Allipuram': { lat: 17.7193, lng: 83.2971 },
   'Malkapuram': { lat: 17.6880, lng: 83.2450 },
   'Poorna Market': { lat: 17.7064, lng: 83.2982 },
   'Railway New Colony': { lat: 17.7245, lng: 83.2956 },
@@ -109,7 +109,7 @@ export const areaCoordinates: Record<string, LatLng> = {
   'Balayya Sastri Layout': { lat: 17.7250, lng: 83.3050 },
   'Daspalla Hills': { lat: 17.7220, lng: 83.3100 },
   'Vishalakshinagar': { lat: 17.7350, lng: 83.3200 },
-  'Venkojipalem': { lat: 17.7100, lng: 83.2920 },
+  'Venkojipalem': { lat: 17.7456, lng: 83.3289 },
   'Scindia': { lat: 17.7150, lng: 83.2900 },
   'Ghat road': { lat: 17.7650, lng: 83.2380 },
   'Marikavalasa': { lat: 17.8359, lng: 83.3581 },

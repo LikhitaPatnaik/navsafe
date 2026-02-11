@@ -22,11 +22,11 @@ export const areaStreetCoordinates: Record<string, StreetLocation[]> = {
   
   // Allipuram - 6 crimes
   'Allipuram': [
-    { street: 'Yellamma Temple', coords: { lat: 17.7162, lng: 83.2965 }, crimeTypes: ['accident'] },
-    { street: 'Allipuram Main Road', coords: { lat: 17.7180, lng: 83.2980 }, crimeTypes: ['murder', 'robbery'] },
-    { street: 'Jalaripeta', coords: { lat: 17.7150, lng: 83.2950 }, crimeTypes: ['robbery'] },
-    { street: 'Shankaramatham Road', coords: { lat: 17.7170, lng: 83.2970 }, crimeTypes: ['robbery'] },
-    { street: 'National Highway 16', coords: { lat: 17.7190, lng: 83.2990 }, crimeTypes: ['kidnap'] },
+    { street: 'Yellamma Temple', coords: { lat: 17.7193, lng: 83.2971 }, crimeTypes: ['accident'] },
+    { street: 'Allipuram Main Road', coords: { lat: 17.7200, lng: 83.2985 }, crimeTypes: ['murder', 'robbery'] },
+    { street: 'Jalaripeta', coords: { lat: 17.7185, lng: 83.2960 }, crimeTypes: ['robbery'] },
+    { street: 'Shankaramatham Road', coords: { lat: 17.7195, lng: 83.2975 }, crimeTypes: ['robbery'] },
+    { street: 'National Highway 16', coords: { lat: 17.7210, lng: 83.2990 }, crimeTypes: ['kidnap'] },
   ],
   
   // Anakapalli - 27 crimes
@@ -228,12 +228,12 @@ export const areaStreetCoordinates: Record<string, StreetLocation[]> = {
   
   // Madhurawada - 10 crimes
   'Madhurawada': [
-    { street: 'NH16 Highway', coords: { lat: 17.7957, lng: 83.3756 }, crimeTypes: ['accident'] },
-    { street: 'NGOs Colony', coords: { lat: 17.8056, lng: 83.3705 }, crimeTypes: ['murder'] },
-    { street: 'Chandrampalem High School', coords: { lat: 17.7980, lng: 83.3780 }, crimeTypes: ['accident'] },
-    { street: 'Panorama Hills', coords: { lat: 17.8000, lng: 83.3730 }, crimeTypes: ['robbery'] },
-    { street: 'PM Palem', coords: { lat: 17.7970, lng: 83.3770 }, crimeTypes: ['assault'] },
-    { street: 'IT SEZ Road', coords: { lat: 17.7990, lng: 83.3790 }, crimeTypes: ['accident'] },
+    { street: 'NH16 Highway', coords: { lat: 17.8017, lng: 83.3533 }, crimeTypes: ['accident'] },
+    { street: 'NGOs Colony', coords: { lat: 17.8056, lng: 83.3505 }, crimeTypes: ['murder'] },
+    { street: 'Chandrampalem High School', coords: { lat: 17.7990, lng: 83.3550 }, crimeTypes: ['accident'] },
+    { street: 'Panorama Hills', coords: { lat: 17.8030, lng: 83.3520 }, crimeTypes: ['robbery'] },
+    { street: 'PM Palem', coords: { lat: 17.7990, lng: 83.3531 }, crimeTypes: ['assault'] },
+    { street: 'IT SEZ Road', coords: { lat: 17.8040, lng: 83.3560 }, crimeTypes: ['accident'] },
   ],
   
   // Malkapuram - 5 crimes
@@ -419,8 +419,8 @@ export const areaStreetCoordinates: Record<string, StreetLocation[]> = {
   
   // Venkojipalem - 2 crimes
   'Venkojipalem': [
-    { street: 'NH16, Near CMR Function Hall', coords: { lat: 17.7100, lng: 83.2920 }, crimeTypes: ['accident'] },
-    { street: 'Venkojipalem Junction', coords: { lat: 17.7080, lng: 83.2900 }, crimeTypes: ['assault'] },
+    { street: 'Venkojipalem Junction', coords: { lat: 17.7456, lng: 83.3289 }, crimeTypes: ['accident'] },
+    { street: 'Near Seethammadhara Road', coords: { lat: 17.7445, lng: 83.3275 }, crimeTypes: ['assault'] },
   ],
   
   // Vishalakshinagar - 1 crime
