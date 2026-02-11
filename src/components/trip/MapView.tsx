@@ -240,10 +240,13 @@ const MapView = ({ routes = [], sourceCoords, destinationCoords, selectedRoute, 
           const crimeTypesToShow: CrimeType[] = highlightedCrimeTypes;
           
           // Fetch crime type counts from database
+          // Map lowercase crime types to DB capitalized format
+          const dbCrimeTypes = crimeTypesToShow.map(ct => ct.charAt(0).toUpperCase() + ct.slice(1));
+          
           const { data: crimeTypeCounts, error } = await supabase
             .from('crime_type_counts')
             .select('area, crime_type, count')
-            .in('crime_type', crimeTypesToShow);
+            .in('crime_type', dbCrimeTypes);
           
           if (error) {
             console.error('Error fetching crime type counts:', error);
@@ -259,7 +262,9 @@ const MapView = ({ routes = [], sourceCoords, destinationCoords, selectedRoute, 
             if (!crimeDataByArea.has(normalizedArea)) {
               crimeDataByArea.set(normalizedArea, new Map());
             }
-            crimeDataByArea.get(normalizedArea)!.set(record.crime_type as CrimeType, record.count);
+            // Normalize DB crime_type (capitalized) to lowercase to match CrimeType
+            const crimeType = record.crime_type.toLowerCase() as CrimeType;
+            crimeDataByArea.get(normalizedArea)!.set(crimeType, record.count);
           });
           
           // Helper: Check if a specific coordinate is along the route path (within 600m for precision)
