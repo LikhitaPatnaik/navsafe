@@ -230,20 +230,21 @@ const MapView = ({ routes = [], sourceCoords, destinationCoords, selectedRoute, 
         const allZones = await fetchSafetyZones();
         console.log('Loaded safety zones:', allZones.length);
         
-        // If crime type filters are active, fetch actual crime counts from database
-        // ONLY show zones along the selected route path
-        if (highlightedCrimeTypes.length > 0) {
-          // Require a selected route with a valid path to show filtered crime zones
-          if (!selectedRoute || !selectedRoute.path || selectedRoute.path.length === 0) {
-            console.log('Crime filter active but no route selected - skipping crime zone display');
-            return;
-          }
+        // Auto-show crime zones along the route when a route is selected
+        // If crime type filters are active, use those; otherwise show ALL crime types
+        const hasRoute = selectedRoute && selectedRoute.path && selectedRoute.path.length > 0;
+        
+        if (hasRoute) {
+          // Determine which crime types to display
+          const crimeTypesToShow: CrimeType[] = highlightedCrimeTypes.length > 0 
+            ? highlightedCrimeTypes 
+            : ['kidnap', 'robbery', 'murder', 'assault', 'accident'];
           
           // Fetch crime type counts from database
           const { data: crimeTypeCounts, error } = await supabase
             .from('crime_type_counts')
             .select('area, crime_type, count')
-            .in('crime_type', highlightedCrimeTypes);
+            .in('crime_type', crimeTypesToShow);
           
           if (error) {
             console.error('Error fetching crime type counts:', error);
@@ -262,10 +263,10 @@ const MapView = ({ routes = [], sourceCoords, destinationCoords, selectedRoute, 
             crimeDataByArea.get(normalizedArea)!.set(record.crime_type as CrimeType, record.count);
           });
           
-          // Helper: Check if a specific coordinate is along the route path (within 800m)
+          // Helper: Check if a specific coordinate is along the route path (within 600m for precision)
           const isPointAlongRoute = (coords: LatLng): boolean => {
-            const maxDistance = 800; // 800m detection radius for street-level precision
-            const sampleRate = Math.max(1, Math.floor(selectedRoute.path.length / 80));
+            const maxDistance = 600; // 600m detection radius for street-level precision
+            const sampleRate = Math.max(1, Math.floor(selectedRoute.path.length / 100));
             
             for (let i = 0; i < selectedRoute.path.length; i += sampleRate) {
               const point = selectedRoute.path[i];
@@ -279,7 +280,6 @@ const MapView = ({ routes = [], sourceCoords, destinationCoords, selectedRoute, 
           
           // Render STREET-LEVEL markers for areas along the selected route
           crimeDataByArea.forEach((crimeTypes, normalizedArea) => {
-            // Find main coordinates for this area
             let mainCoords: LatLng | null = null;
             let originalAreaName = normalizedArea;
             
@@ -296,7 +296,6 @@ const MapView = ({ routes = [], sourceCoords, destinationCoords, selectedRoute, 
             
             if (!mainCoords || !mapRef.current) return;
             
-            // Get safety zone info for this area
             const safetyZone = allZones.find(z => 
               z.area.toLowerCase().trim() === normalizedArea ||
               normalizedArea.includes(z.area.toLowerCase().trim()) ||
@@ -305,8 +304,8 @@ const MapView = ({ routes = [], sourceCoords, destinationCoords, selectedRoute, 
             
             const safetyScore = safetyZone?.safety_score ?? 50;
             
-            // For each selected crime type, show ONLY street markers that are on the route
-            highlightedCrimeTypes.forEach((crimeType) => {
+            // For each crime type, show ONLY street markers that are on the route
+            crimeTypesToShow.forEach((crimeType) => {
               const count = crimeTypes.get(crimeType);
               if (!count || count === 0) return;
               
@@ -319,7 +318,7 @@ const MapView = ({ routes = [], sourceCoords, destinationCoords, selectedRoute, 
               // Filter streets that are actually along the route path
               const onRouteStreets = streetLocations.filter(sl => isPointAlongRoute(sl.coords));
               
-              if (onRouteStreets.length === 0) return; // Skip if no streets on route
+              if (onRouteStreets.length === 0) return;
               
               // Distribute crime count across on-route streets
               const countPerStreet = Math.max(1, Math.floor(count / streetLocations.length));
@@ -329,9 +328,9 @@ const MapView = ({ routes = [], sourceCoords, destinationCoords, selectedRoute, 
                 const streetCount = countPerStreet + (streetIndex < remainder ? 1 : 0);
                 if (streetCount === 0) return;
                 
-                // Reduced marker sizes for precision
-                const markerRadius = streetCount > 3 ? 7 : streetCount > 1 ? 5 : 4;
-                const areaRadius = streetCount > 3 ? 150 : streetCount > 1 ? 100 : 70;
+                // Small marker sizes for precision
+                const markerRadius = streetCount > 3 ? 6 : streetCount > 1 ? 5 : 4;
+                const areaRadius = streetCount > 3 ? 120 : streetCount > 1 ? 80 : 50;
                 
                 const circle = L.circleMarker([streetLoc.coords.lat, streetLoc.coords.lng], {
                   radius: markerRadius,
@@ -380,7 +379,7 @@ const MapView = ({ routes = [], sourceCoords, destinationCoords, selectedRoute, 
                   fillColor: color,
                   color: color,
                   weight: 1,
-                  fillOpacity: 0.15,
+                  fillOpacity: 0.12,
                 });
                 areaCircle.addTo(mapRef.current!);
                 safetyZoneLayersRef.current.push(areaCircle as unknown as L.CircleMarker);
@@ -598,12 +597,12 @@ const MapView = ({ routes = [], sourceCoords, destinationCoords, selectedRoute, 
             </>
           )}
           
-          {/* Crime Type Legend - Show when filters are active */}
-          {highlightedCrimeTypes.length > 0 ? (
+          {/* Crime Type Legend - Show when route is selected */}
+          {(highlightedCrimeTypes.length > 0 || selectedRoute) ? (
             <>
               <p className="text-xs sm:text-sm font-medium text-foreground mb-1.5 sm:mb-2">Crime Types</p>
               <div className="flex flex-wrap gap-2 sm:gap-3">
-                {highlightedCrimeTypes.map((crimeType) => {
+                {(highlightedCrimeTypes.length > 0 ? highlightedCrimeTypes : (['kidnap', 'robbery', 'murder', 'assault', 'accident'] as CrimeType[])).map((crimeType) => {
                   const config = crimeTypeConfig[crimeType];
                   return (
                     <div key={crimeType} className="flex items-center gap-1 sm:gap-1.5">
