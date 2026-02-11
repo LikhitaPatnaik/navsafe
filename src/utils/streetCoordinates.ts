@@ -463,8 +463,63 @@ export const areaStreetCoordinates: Record<string, StreetLocation[]> = {
   ],
 };
 
-// Get all street locations for an area
+// Mapping from DB area names (safety_zones/crime_type_counts) to streetCoordinates keys
+// This handles naming differences like "Akkayapalem Central" → "Akkayapalem"
+const dbToStreetKeyMap: Record<string, string[]> = {
+  'akkayapalem central': ['Akkayapalem'],
+  'anakapalle central': ['Anakapalli'],
+  'anakapalle nh16': ['Anakapalli'],
+  'anandapuram bypass': ['Anandapuram'],
+  'arilova': ['Arilova'],
+  'bheemunipatnam': ['Bheemunipatnam'],
+  'dwaraka nagar hub': ['Dwaraka Nagar', 'Dwarakanagar'],
+  'gajuwaka industrial': ['Gajuwaka'],
+  'jagadamba jct': ['Jagadamba Junction'],
+  'kancharapalem core': ['Kancharapalem'],
+  'lawsons bay': ['Lawsons Bay Colony'],
+  'maddilapalem jct': ['Maddilapalem'],
+  'madhurawada hub': ['Madhurawada'],
+  'marripalem': ['Marripalem'],
+  'mvp colony core': ['MVP Colony'],
+  'nad flyover zone': ['NAD Junction'],
+  'old gajuwaka': ['Gajuwaka'],
+  'one town heritage': ['One Town'],
+  'pendurthi vepagunta': ['Pendurthi'],
+  'pm palem': ['PM Palem'],
+  'rk beach south': ['RK Beach', 'Beach Road'],
+  'rushikonda north': ['Rushikonda'],
+  'seethammadhara': ['Seethammadhara'],
+  'sheelanagar': ['Sheela Nagar'],
+  'simhachalam ghat': ['Simhachalam'],
+  'steel plant east': ['Steel Plant Township'],
+  'steel plant west': ['Steel Plant Township'],
+  'tagarapuvalasa': ['Tagarapuvalasa'],
+  'vizianagaram rural': ['Vizianagaram'],
+  'vizianagaram town': ['Vizianagaram'],
+};
+
+// Get streetCoordinates keys that match a DB area name
+export const getStreetKeysForDbArea = (dbArea: string): string[] => {
+  const normalized = dbArea.toLowerCase().trim();
+  const mapped = dbToStreetKeyMap[normalized];
+  if (mapped) return mapped;
+
+  // Fallback: try direct match against areaStreetCoordinates keys
+  for (const key of Object.keys(areaStreetCoordinates)) {
+    if (key.toLowerCase() === normalized ||
+        normalized.includes(key.toLowerCase()) ||
+        key.toLowerCase().includes(normalized)) {
+      return [key];
+    }
+  }
+  return [];
+};
+
+// Get all street locations for a streetCoordinates key (exact or fuzzy)
 export const getStreetLocations = (area: string): StreetLocation[] => {
+  // Try exact key first
+  if (areaStreetCoordinates[area]) return areaStreetCoordinates[area];
+
   const normalizedArea = area.toLowerCase().trim();
   
   for (const [key, locations] of Object.entries(areaStreetCoordinates)) {
