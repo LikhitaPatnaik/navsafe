@@ -235,10 +235,9 @@ const MapView = ({ routes = [], sourceCoords, destinationCoords, selectedRoute, 
         const hasRoute = selectedRoute && selectedRoute.path && selectedRoute.path.length > 0;
         
         if (hasRoute) {
-          // Determine which crime types to display
-          const crimeTypesToShow: CrimeType[] = highlightedCrimeTypes.length > 0 
-            ? highlightedCrimeTypes 
-            : ['kidnap', 'robbery', 'murder', 'assault', 'accident'];
+          // Only show crime zones when user has selected checkboxes
+          if (highlightedCrimeTypes.length === 0) return;
+          const crimeTypesToShow: CrimeType[] = highlightedCrimeTypes;
           
           // Fetch crime type counts from database
           const { data: crimeTypeCounts, error } = await supabase
