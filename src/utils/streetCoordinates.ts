@@ -191,10 +191,10 @@ export const areaStreetCoordinates: Record<string, StreetLocation[]> = {
   
   // Kommadhi - 4 crimes
   'Kommadhi': [
-    { street: 'Vikalangula Colony', coords: { lat: 17.8100, lng: 83.3800 }, crimeTypes: ['murder'] },
-    { street: 'National Highway 16', coords: { lat: 17.8120, lng: 83.3820 }, crimeTypes: ['accident'] },
-    { street: 'Kommadi Junction', coords: { lat: 17.8080, lng: 83.3780 }, crimeTypes: ['accident'] },
-    { street: 'SwayamKrushiNagar', coords: { lat: 17.8090, lng: 83.3790 }, crimeTypes: ['murder'] },
+    { street: 'Vikalangula Colony', coords: { lat: 17.8440, lng: 83.3230 }, crimeTypes: ['murder'] },
+    { street: 'National Highway 16', coords: { lat: 17.8460, lng: 83.3250 }, crimeTypes: ['accident'] },
+    { street: 'Kommadi Junction', coords: { lat: 17.8420, lng: 83.3210 }, crimeTypes: ['accident'] },
+    { street: 'SwayamKrushiNagar', coords: { lat: 17.8430, lng: 83.3220 }, crimeTypes: ['murder'] },
   ],
   
   // Kurmannapalem - 9 crimes
