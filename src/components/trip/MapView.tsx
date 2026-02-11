@@ -522,33 +522,77 @@ const MapView = ({ routes = [], sourceCoords, destinationCoords, selectedRoute, 
           });
         });
 
-        // Also render streetCoordinates areas not in DB (with 0 crimes)
+        // Also render streetCoordinates areas not in DB — count crimes from local crimeTypes data
         Object.entries(areaStreetCoordinates).forEach(([areaName, streets]) => {
           if (renderedKeys.has(areaName) || !streets || streets.length === 0 || !mapRef.current) return;
           renderedKeys.add(areaName);
 
           const centerCoords = streets[0].coords;
-          const color = '#22c55e'; // Default safe
+          
+          // Count crimes from local street crimeTypes arrays
+          let localCrimeCount = 0;
+          streets.forEach(st => {
+            if (st.crimeTypes) localCrimeCount += st.crimeTypes.length;
+          });
+
+          const estimatedSafetyScore = Math.max(0, 100 - (localCrimeCount * 2.5));
+          const color = getSafetyZoneColor(estimatedSafetyScore);
+          const isCritical = estimatedSafetyScore < 35;
+          const isRisky = estimatedSafetyScore < 50;
+
+          let markerRadius = 7;
+          if (localCrimeCount > 20) markerRadius = 12;
+          else if (localCrimeCount > 10) markerRadius = 10;
+          else if (localCrimeCount > 5) markerRadius = 9;
+
+          let riskLabel = 'SAFE';
+          if (isCritical) riskLabel = 'CRITICAL - BLACK SPOT';
+          else if (isRisky) riskLabel = 'HIGH RISK';
+          else if (estimatedSafetyScore < 75) riskLabel = 'MODERATE';
 
           const circle = L.circleMarker([centerCoords.lat, centerCoords.lng], {
-            radius: 7,
+            radius: markerRadius,
             fillColor: color,
-            color: color,
-            weight: 2,
+            color: isCritical ? '#450a0a' : isRisky ? '#7f1d1d' : color,
+            weight: isCritical ? 4 : isRisky ? 3 : 2,
             opacity: 1,
-            fillOpacity: 0.4,
+            fillOpacity: isCritical ? 0.7 : isRisky ? 0.5 : 0.4,
           });
 
           circle.bindPopup(`
             <div style="padding: 12px; min-width: 200px;">
-              <strong style="font-size: 15px; color: #333;">${areaName}</strong>
-              <hr style="margin: 8px 0;"/>
-              <div style="font-size: 13px; color: #333; margin-bottom: 6px;">🚔 Total Crime Count: <strong>0</strong></div>
-              <div style="font-size: 12px; padding: 6px; border-radius: 6px; background: ${color}; color: white; text-align: center; font-weight: bold;">SAFE</div>
+              <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px;">
+                <div style="width: 12px; height: 12px; border-radius: 50%; background: ${color};"></div>
+                <strong style="font-size: 15px; color: #333;">${areaName}</strong>
+              </div>
+              <hr style="margin: 8px 0; border-color: ${color}40;"/>
+              <div style="font-size: 13px; color: #333; margin-bottom: 6px;">
+                <strong>🚔 Total Crime Count:</strong> <span style="color: ${localCrimeCount > 10 ? '#ef4444' : localCrimeCount > 5 ? '#f59e0b' : '#666'}; font-weight: bold; font-size: 14px;">${localCrimeCount}</span>
+              </div>
+              <div style="font-size: 13px; color: #333; margin-bottom: 6px;">
+                <strong>🛡️ Safety Score:</strong> <span style="color: ${color}; font-weight: bold;">${Math.round(estimatedSafetyScore)}/100</span>
+              </div>
+              <div style="font-size: 12px; color: #666; margin-bottom: 8px;">📍 ${streets.length} street locations mapped</div>
+              <div style="font-size: 12px; padding: 6px 10px; border-radius: 6px; background: ${color}; color: white; text-align: center; font-weight: bold;">
+                ${riskLabel}
+              </div>
             </div>
           `);
           circle.addTo(mapRef.current!);
           safetyZoneLayersRef.current.push(circle);
+
+          if (isRisky) {
+            const areaRadius = isCritical ? 500 : 400;
+            const areaCircle = L.circle([centerCoords.lat, centerCoords.lng], {
+              radius: areaRadius,
+              fillColor: color,
+              color: isCritical ? '#7f1d1d' : 'transparent',
+              weight: isCritical ? 2 : 0,
+              fillOpacity: isCritical ? 0.25 : 0.15,
+            });
+            areaCircle.addTo(mapRef.current!);
+            safetyZoneLayersRef.current.push(areaCircle as unknown as L.CircleMarker);
+          }
         });
         console.log('All 50 areas rendered:', safetyZoneLayersRef.current.length);
       } catch (error) {
