@@ -84,34 +84,32 @@ const getOSRMAlternatives = async (source: LatLng, destination: LatLng): Promise
   return [];
 };
 
-// Check if two paths are sufficiently different (stricter check)
+// Check if two paths are sufficiently different
 const arePathsDifferent = (path1: LatLng[], path2: LatLng[]): boolean => {
-  if (path1.length < 5 || path2.length < 5) return false;
+  if (path1.length < 3 || path2.length < 3) return false;
   
-  // Sample 15 points along each path and compare
-  const sampleCount = 15;
+  const sampleCount = 20;
   let differentPoints = 0;
   
   for (let i = 1; i < sampleCount - 1; i++) {
     const idx1 = Math.floor((i / sampleCount) * path1.length);
     const p1 = path1[idx1];
     
-    // Find the closest point on path2 to this point
     let minDist = Infinity;
-    const searchRate = Math.max(1, Math.floor(path2.length / 50));
+    const searchRate = Math.max(1, Math.floor(path2.length / 80));
     for (let j = 0; j < path2.length; j += searchRate) {
       const d = haversineDistance(p1, path2[j]);
       if (d < minDist) minDist = d;
     }
     
-    // If closest point on other path is more than 300m away, it's different
-    if (minDist > 300) {
+    // 150m threshold - even small street-level differences count
+    if (minDist > 150) {
       differentPoints++;
     }
   }
   
-  // Paths are different if at least 4 of 13 middle sample points diverge by 300m+
-  return differentPoints >= 4;
+  // Paths are different if at least 3 of 18 middle points diverge by 150m+
+  return differentPoints >= 3;
 };
 
 // Detect if a route has U-turns or loops by checking for backtracking
@@ -224,39 +222,31 @@ const bearingDifference = (b1: number, b2: number): number => {
   return diff;
 };
 
-// Check if waypoint is along the route direction (relaxed for more alternatives)
+// Check if waypoint is roughly along the route direction
 const isAlongRoute = (source: LatLng, waypoint: LatLng, destination: LatLng): boolean => {
-  const mainBearing = calculateBearing(source, destination);
-  const toWaypointBearing = calculateBearing(source, waypoint);
-  
-  // Waypoint should be in roughly forward direction (within 70 degrees - relaxed)
-  const sourceToWpDiff = bearingDifference(mainBearing, toWaypointBearing);
-  if (sourceToWpDiff > 70) return false;
-  
-  // Ensure waypoint is between source and destination (progress check)
   const distSourceToDest = haversineDistance(source, destination);
   const distSourceToWp = haversineDistance(source, waypoint);
   const distWpToDest = haversineDistance(waypoint, destination);
   
-  // Waypoint should be at least 15% into the journey and not past 85%
+  // Waypoint should be at least 10% into the journey and not past 90%
   const progressRatio = distSourceToWp / distSourceToDest;
-  if (progressRatio < 0.15 || progressRatio > 0.85) return false;
+  if (progressRatio < 0.10 || progressRatio > 0.90) return false;
   
   // Total path via waypoint shouldn't be much longer than direct
   const pathViaDist = distSourceToWp + distWpToDest;
-  if (pathViaDist > distSourceToDest * 1.8) return false;
+  if (pathViaDist > distSourceToDest * 2.0) return false;
   
   return true;
 };
 
-// Check if a waypoint creates a smooth path (no sharp turns)
+// Check if a waypoint creates a reasonably smooth path
 const isSmooth = (source: LatLng, waypoint: LatLng, destination: LatLng): boolean => {
   const bearing1 = calculateBearing(source, waypoint);
   const bearing2 = calculateBearing(waypoint, destination);
   const turnAngle = bearingDifference(bearing1, bearing2);
   
-  // Reject if turn angle > 80 degrees (relaxed to allow more alternatives)
-  return turnAngle <= 80;
+  // Reject if turn angle > 120 degrees
+  return turnAngle <= 120;
 };
 
 // Calculate realistic duration considering traffic conditions
@@ -364,7 +354,8 @@ const validateRouteQuality = (osrmRoute: OSRMRoute, source: LatLng, destination:
 const findIntermediateAreaWaypoints = (
   source: LatLng,
   destination: LatLng,
-  direction: 'left' | 'right' | 'center'
+  direction: 'left' | 'right' | 'center',
+  excludePoints: LatLng[] = []
 ): LatLng[] => {
   const directDist = haversineDistance(source, destination);
   const mainBearing = calculateBearing(source, destination);
@@ -372,33 +363,38 @@ const findIntermediateAreaWaypoints = (
   const candidates: { point: LatLng; name: string; score: number }[] = [];
   
   for (const [name, coords] of Object.entries(areaCoordinates)) {
+    // Skip points too close to already-used waypoints
+    const tooCloseToExcluded = excludePoints.some(ep => haversineDistance(ep, coords) < 500);
+    if (tooCloseToExcluded) continue;
+    
     const distFromSource = haversineDistance(source, coords);
     const distFromDest = haversineDistance(coords, destination);
     const detourRatio = (distFromSource + distFromDest) / directDist;
     
-    // Must be between source and dest (not too close to either, not too far as detour)
-    if (distFromSource < directDist * 0.15 || distFromDest < directDist * 0.15) continue;
-    if (detourRatio > 1.6) continue; // Max 60% longer
+    if (distFromSource < directDist * 0.1 || distFromDest < directDist * 0.1) continue;
+    if (detourRatio > 2.0) continue; // Allow up to 2x detour for more options
     
-    // Calculate which side of the main route this point is on
     const bearingToPoint = calculateBearing(source, coords);
     const angleDiff = ((bearingToPoint - mainBearing) + 360) % 360;
     
     let sideScore = 0;
-    if (direction === 'left' && angleDiff > 10 && angleDiff < 170) sideScore = 1;
-    else if (direction === 'right' && angleDiff > 190 && angleDiff < 350) sideScore = 1;
-    else if (direction === 'center' && (angleDiff < 30 || angleDiff > 330)) sideScore = 1;
+    if (direction === 'left' && angleDiff > 5 && angleDiff < 175) sideScore = 1;
+    else if (direction === 'right' && angleDiff > 185 && angleDiff < 355) sideScore = 1;
+    else if (direction === 'center' && (angleDiff < 40 || angleDiff > 320)) sideScore = 1;
     
     if (sideScore === 0) continue;
     
-    // Prefer points at ~40-60% progress
     const progress = distFromSource / directDist;
     const progressScore = 1 - Math.abs(progress - 0.5) * 2;
+    
+    // Favor points further from the main bearing line for more divergent routes
+    const lateralAngle = Math.min(angleDiff, 360 - angleDiff);
+    const lateralScore = lateralAngle / 90; // Higher = more lateral = more different
     
     candidates.push({
       point: coords,
       name,
-      score: progressScore - detourRatio * 0.5
+      score: progressScore + lateralScore * 0.5 - detourRatio * 0.3
     });
   }
   
@@ -406,7 +402,7 @@ const findIntermediateAreaWaypoints = (
   
   if (candidates.length === 0) return [];
   
-  // Return top candidate as waypoint
+  console.log(`Area waypoint candidates (${direction}): ${candidates.slice(0, 3).map(c => c.name).join(', ')}`);
   return [candidates[0].point];
 };
 
@@ -456,38 +452,45 @@ export const calculateRoutes = async (
   console.log(`Distinct paths from OSRM: ${distinctPaths.length}`);
 
   // ===== Step 3: Generate alternatives via known area waypoints (real road locations) =====
-  if (distinctPaths.length < 3) {
-    const directions: ('left' | 'right' | 'center')[] = ['left', 'right', 'center'];
+  // Try ALL directions multiple times with different waypoints
+  const usedWaypoints: LatLng[] = [];
+  const allDirections: ('left' | 'right' | 'center')[] = ['left', 'right', 'center', 'left', 'right'];
+  
+  for (const dir of allDirections) {
+    if (distinctPaths.length >= 5) break; // Collect up to 5 candidates for best selection
     
-    for (const dir of directions) {
-      if (distinctPaths.length >= 3) break;
-      
-      const waypoints = findIntermediateAreaWaypoints(source, destination, dir);
-      if (waypoints.length === 0) continue;
-      
-      const osrmRoute = await getOSRMRoute([source, ...waypoints, destination]);
-      if (osrmRoute && validateRouteQuality(osrmRoute, source, destination)) {
-        const path = osrmRoute.geometry.coordinates.map(([lng, lat]) => ({ lat, lng }));
-        const isDuplicate = distinctPaths.some(existing => !arePathsDifferent(path, existing.path));
-        if (!isDuplicate) {
-          const analysis = analyzeRouteSafety(path, safetyZones);
-          distinctPaths.push({ path, distance: osrmRoute.distance, duration: osrmRoute.duration, analysis, source: `area-wp-${dir}` });
-          console.log(`Found distinct route via ${dir} area waypoint`);
-        }
+    const waypoints = findIntermediateAreaWaypoints(source, destination, dir, usedWaypoints);
+    if (waypoints.length === 0) continue;
+    
+    const osrmRoute = await getOSRMRoute([source, ...waypoints, destination]);
+    if (osrmRoute && validateRouteQuality(osrmRoute, source, destination)) {
+      const path = osrmRoute.geometry.coordinates.map(([lng, lat]) => ({ lat, lng }));
+      const isDuplicate = distinctPaths.some(existing => !arePathsDifferent(path, existing.path));
+      if (!isDuplicate) {
+        const analysis = analyzeRouteSafety(path, safetyZones);
+        distinctPaths.push({ path, distance: osrmRoute.distance, duration: osrmRoute.duration, analysis, source: `area-wp-${dir}` });
+        usedWaypoints.push(...waypoints);
+        console.log(`Found distinct route via ${dir} area waypoint`);
+      } else {
+        // Even if duplicate, mark waypoint as used so next iteration picks a different one
+        usedWaypoints.push(...waypoints);
       }
+    } else {
+      usedWaypoints.push(...waypoints);
     }
   }
 
-  // ===== Step 4: Try safe-area waypoints as last resort =====
+  // ===== Step 4: Try safe-area waypoints =====
   if (distinctPaths.length < 3) {
-    const safeAreas = getSafeAreasWithCoords(safetyZones, 60);
-    const viableWaypoints = safeAreas.filter(area => 
-      isAlongRoute(source, area.point, destination) && isSmooth(source, area.point, destination)
-    );
+    const safeAreas = getSafeAreasWithCoords(safetyZones, 50); // Lower threshold to 50
+    const viableWaypoints = safeAreas.filter(area => {
+      const tooClose = usedWaypoints.some(uw => haversineDistance(uw, area.point) < 500);
+      return !tooClose && isAlongRoute(source, area.point, destination) && isSmooth(source, area.point, destination);
+    });
     viableWaypoints.sort((a, b) => b.score - a.score);
     
-    for (const wp of viableWaypoints.slice(0, 5)) {
-      if (distinctPaths.length >= 3) break;
+    for (const wp of viableWaypoints.slice(0, 8)) {
+      if (distinctPaths.length >= 5) break;
       
       const osrmRoute = await getOSRMRoute([source, wp.point, destination]);
       if (osrmRoute && validateRouteQuality(osrmRoute, source, destination)) {
@@ -502,16 +505,20 @@ export const calculateRoutes = async (
     }
   }
 
-  // ===== Step 5: Try small perpendicular offsets only as final fallback =====
+  // ===== Step 5: Perpendicular offsets as final fallback =====
   if (distinctPaths.length < 3) {
-    const smallOffsets = [
-      { km: 1.0, dir: 'left' as const, progress: 0.5 },
-      { km: 1.0, dir: 'right' as const, progress: 0.5 },
-      { km: 1.5, dir: 'left' as const, progress: 0.4 },
-      { km: 1.5, dir: 'right' as const, progress: 0.6 },
+    const offsets = [
+      { km: 0.8, dir: 'left' as const, progress: 0.5 },
+      { km: 0.8, dir: 'right' as const, progress: 0.5 },
+      { km: 1.2, dir: 'left' as const, progress: 0.3 },
+      { km: 1.2, dir: 'right' as const, progress: 0.7 },
+      { km: 1.5, dir: 'left' as const, progress: 0.5 },
+      { km: 1.5, dir: 'right' as const, progress: 0.5 },
+      { km: 2.0, dir: 'left' as const, progress: 0.4 },
+      { km: 2.0, dir: 'right' as const, progress: 0.6 },
     ];
     
-    for (const strategy of smallOffsets) {
+    for (const strategy of offsets) {
       if (distinctPaths.length >= 3) break;
       const offsetPoint = getPerpendicularPoint(source, destination, strategy.km, strategy.dir, strategy.progress);
       const osrmRoute = await getOSRMRoute([source, offsetPoint, destination]);
