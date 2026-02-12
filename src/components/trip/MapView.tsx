@@ -196,7 +196,7 @@ const MapView = ({ routes = [], sourceCoords, destinationCoords, selectedRoute, 
     });
     routeLayersRef.current = [];
 
-    // Clean path: remove straight-line artifacts, backtracking, and loops
+    // Clean path: remove straight-line artifacts, backtracking, and dangling tails
     const cleanPath = (path: LatLng[]): LatLng[] => {
       if (path.length < 4 || !sourceCoords || !destinationCoords) return path;
       
@@ -206,13 +206,13 @@ const MapView = ({ routes = [], sourceCoords, destinationCoords, selectedRoute, 
       let minStartDist = Infinity;
       let minEndDist = Infinity;
       
-      for (let i = 0; i < Math.min(path.length, 20); i++) {
-        const d = Math.abs(path[i].lat - sourceCoords.lat) + Math.abs(path[i].lng - sourceCoords.lng);
+      for (let i = 0; i < Math.min(path.length, 30); i++) {
+        const d = haversineDistance(path[i], sourceCoords);
         if (d < minStartDist) { minStartDist = d; startIdx = i; }
       }
       
-      for (let i = Math.max(0, path.length - 20); i < path.length; i++) {
-        const d = Math.abs(path[i].lat - destinationCoords.lat) + Math.abs(path[i].lng - destinationCoords.lng);
+      for (let i = Math.max(0, path.length - 30); i < path.length; i++) {
+        const d = haversineDistance(path[i], destinationCoords);
         if (d < minEndDist) { minEndDist = d; endIdx = i; }
       }
       
@@ -220,30 +220,32 @@ const MapView = ({ routes = [], sourceCoords, destinationCoords, selectedRoute, 
       if (trimmed.length < 3) return trimmed;
       
       // Step 2: Remove straight-line segments (non-road artifacts)
-      // A genuine road segment between two distant points will have many intermediate points with curvature.
-      // Straight-line artifacts have very few points over long distances.
+      // If two consecutive points are far apart (>500m), check if it looks like a genuine road
       const filtered: LatLng[] = [trimmed[0]];
       for (let i = 1; i < trimmed.length; i++) {
         const prev = filtered[filtered.length - 1];
         const curr = trimmed[i];
         const segDist = haversineDistance(prev, curr);
         
-        // If two consecutive points are very far apart (>1km), it's likely a straight-line artifact — skip it
-        // unless it's the last point (destination)
-        if (segDist > 1000 && i < trimmed.length - 1) {
-          // Check if there's curvature: look at the next few points
-          // If the next point is also far and roughly collinear, skip this segment
+        // Skip long straight-line jumps (>500m between consecutive points)
+        if (segDist > 500 && i < trimmed.length - 1 && i > 0) {
+          // Check surrounding points for continuity
           const next = trimmed[Math.min(i + 1, trimmed.length - 1)];
+          const prevToNext = haversineDistance(prev, next);
+          // If skipping this point doesn't increase path much, it's likely an artifact
+          if (prevToNext < segDist * 0.8) {
+            continue;
+          }
+          // If the next segment is also very long, both are artifacts
           const nextDist = haversineDistance(curr, next);
-          if (nextDist > 800) {
-            // Two consecutive long straight segments — likely artifact, skip curr
+          if (nextDist > 500) {
             continue;
           }
         }
         filtered.push(curr);
       }
       
-      // Step 3: Remove backtracking loops — if we get closer to destination then move away significantly
+      // Step 3: Remove backtracking — points that move away from destination after getting closer
       if (filtered.length < 5) return filtered;
       
       const result: LatLng[] = [filtered[0]];
@@ -252,9 +254,7 @@ const MapView = ({ routes = [], sourceCoords, destinationCoords, selectedRoute, 
       for (let i = 1; i < filtered.length; i++) {
         const distToDest = haversineDistance(filtered[i], destinationCoords);
         
-        // Allow some regression (up to 500m) but reject large backtracking
-        if (distToDest > minDistToDest + 2000 && i < filtered.length - 5) {
-          // Skip this point — it's backtracking significantly
+        if (distToDest > minDistToDest + 1500 && i < filtered.length - 3) {
           continue;
         }
         
@@ -262,6 +262,19 @@ const MapView = ({ routes = [], sourceCoords, destinationCoords, selectedRoute, 
           minDistToDest = distToDest;
         }
         result.push(filtered[i]);
+      }
+      
+      // Step 4: Trim any dangling tail at the end that moves away from destination
+      while (result.length > 3) {
+        const last = result[result.length - 1];
+        const secondLast = result[result.length - 2];
+        const lastDist = haversineDistance(last, destinationCoords);
+        const secondLastDist = haversineDistance(secondLast, destinationCoords);
+        if (lastDist > secondLastDist + 200) {
+          result.pop();
+        } else {
+          break;
+        }
       }
       
       return result;
