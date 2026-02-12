@@ -245,26 +245,48 @@ const MapView = ({ routes = [], sourceCoords, destinationCoords, selectedRoute, 
         filtered.push(curr);
       }
       
-      // Step 3: Remove backtracking — points that move away from destination after getting closer
-      if (filtered.length < 5) return filtered;
-      
-      const result: LatLng[] = [filtered[0]];
-      let minDistToDest = haversineDistance(filtered[0], destinationCoords);
-      
-      for (let i = 1; i < filtered.length; i++) {
-        const distToDest = haversineDistance(filtered[i], destinationCoords);
+      // Step 3: Remove loops/spurs — detect when path revisits a nearby point and cut the loop
+      const delooped: LatLng[] = [];
+      for (let i = 0; i < filtered.length; i++) {
+        // Check if a later point is very close to this one (loop back)
+        let loopEnd = -1;
+        for (let j = i + 5; j < Math.min(i + 80, filtered.length); j++) {
+          const dist = haversineDistance(filtered[i], filtered[j]);
+          if (dist < 300) { // Points within 300m = loop detected
+            loopEnd = j;
+            break;
+          }
+        }
         
-        if (distToDest > minDistToDest + 1500 && i < filtered.length - 3) {
+        if (loopEnd > 0) {
+          // Skip the loop: jump from i to loopEnd
+          delooped.push(filtered[i]);
+          i = loopEnd - 1; // -1 because the for loop will increment
+        } else {
+          delooped.push(filtered[i]);
+        }
+      }
+      
+      // Step 4: Remove backtracking — points moving away from destination
+      if (delooped.length < 5) return delooped;
+      
+      const result: LatLng[] = [delooped[0]];
+      let minDistToDest = haversineDistance(delooped[0], destinationCoords);
+      
+      for (let i = 1; i < delooped.length; i++) {
+        const distToDest = haversineDistance(delooped[i], destinationCoords);
+        
+        if (distToDest > minDistToDest + 1500 && i < delooped.length - 3) {
           continue;
         }
         
         if (distToDest < minDistToDest) {
           minDistToDest = distToDest;
         }
-        result.push(filtered[i]);
+        result.push(delooped[i]);
       }
       
-      // Step 4: Trim any dangling tail at the end that moves away from destination
+      // Step 5: Trim any dangling tail at the end
       while (result.length > 3) {
         const last = result[result.length - 1];
         const secondLast = result[result.length - 2];
