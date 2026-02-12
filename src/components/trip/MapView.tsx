@@ -196,7 +196,7 @@ const MapView = ({ routes = [], sourceCoords, destinationCoords, selectedRoute, 
     });
     routeLayersRef.current = [];
 
-    // Clean path: remove straight-line artifacts, backtracking, and dangling tails
+    // Clean path: remove U-turns, spurs, loops, and straight-line artifacts
     const cleanPath = (path: LatLng[]): LatLng[] => {
       if (path.length < 4 || !sourceCoords || !destinationCoords) return path;
       
@@ -218,85 +218,86 @@ const MapView = ({ routes = [], sourceCoords, destinationCoords, selectedRoute, 
       
       let trimmed = path.slice(startIdx, endIdx + 1);
       if (trimmed.length < 3) return trimmed;
+
+      // Step 2: Remove U-turn spurs — detect where path leaves and returns to nearly the same spot
+      const removeSpurs = (pts: LatLng[]): LatLng[] => {
+        if (pts.length < 10) return pts;
+        const cleaned: LatLng[] = [];
+        let i = 0;
+        while (i < pts.length) {
+          let bestLoopEnd = -1;
+          let bestLoopDist = Infinity;
+          // Search forward for a point close to pts[i] (within 200m) at least 8 points away
+          for (let j = i + 8; j < Math.min(i + 150, pts.length); j++) {
+            const dist = haversineDistance(pts[i], pts[j]);
+            if (dist < 200 && dist < bestLoopDist) {
+              bestLoopDist = dist;
+              bestLoopEnd = j;
+            }
+          }
+          if (bestLoopEnd > 0) {
+            // Only remove if the spur extends >100m from base point
+            let maxSpurDist = 0;
+            for (let k = i; k <= bestLoopEnd; k++) {
+              const d = haversineDistance(pts[i], pts[k]);
+              if (d > maxSpurDist) maxSpurDist = d;
+            }
+            if (maxSpurDist > 100) {
+              cleaned.push(pts[i]);
+              i = bestLoopEnd;
+              continue;
+            }
+          }
+          cleaned.push(pts[i]);
+          i++;
+        }
+        return cleaned;
+      };
       
-      // Step 2: Remove straight-line segments (non-road artifacts)
-      // If two consecutive points are far apart (>500m), check if it looks like a genuine road
-      const filtered: LatLng[] = [trimmed[0]];
-      for (let i = 1; i < trimmed.length; i++) {
+      // Apply spur removal multiple passes for nested spurs
+      let despurred = trimmed;
+      for (let pass = 0; pass < 3; pass++) {
+        const before = despurred.length;
+        despurred = removeSpurs(despurred);
+        if (despurred.length === before) break;
+      }
+
+      // Step 3: Remove straight-line artifact segments (>500m between consecutive points)
+      const filtered: LatLng[] = [despurred[0]];
+      for (let i = 1; i < despurred.length; i++) {
         const prev = filtered[filtered.length - 1];
-        const curr = trimmed[i];
+        const curr = despurred[i];
         const segDist = haversineDistance(prev, curr);
-        
-        // Skip long straight-line jumps (>500m between consecutive points)
-        if (segDist > 500 && i < trimmed.length - 1 && i > 0) {
-          // Check surrounding points for continuity
-          const next = trimmed[Math.min(i + 1, trimmed.length - 1)];
+        if (segDist > 500 && i < despurred.length - 1 && i > 0) {
+          const next = despurred[Math.min(i + 1, despurred.length - 1)];
           const prevToNext = haversineDistance(prev, next);
-          // If skipping this point doesn't increase path much, it's likely an artifact
-          if (prevToNext < segDist * 0.8) {
-            continue;
-          }
-          // If the next segment is also very long, both are artifacts
-          const nextDist = haversineDistance(curr, next);
-          if (nextDist > 500) {
-            continue;
-          }
+          if (prevToNext < segDist * 0.8) continue;
+          if (haversineDistance(curr, next) > 500) continue;
         }
         filtered.push(curr);
       }
       
-      // Step 3: Remove loops/spurs — detect when path revisits a nearby point and cut the loop
-      const delooped: LatLng[] = [];
-      for (let i = 0; i < filtered.length; i++) {
-        // Check if a later point is very close to this one (loop back)
-        let loopEnd = -1;
-        for (let j = i + 5; j < Math.min(i + 80, filtered.length); j++) {
-          const dist = haversineDistance(filtered[i], filtered[j]);
-          if (dist < 300) { // Points within 300m = loop detected
-            loopEnd = j;
-            break;
-          }
-        }
-        
-        if (loopEnd > 0) {
-          // Skip the loop: jump from i to loopEnd
-          delooped.push(filtered[i]);
-          i = loopEnd - 1; // -1 because the for loop will increment
-        } else {
-          delooped.push(filtered[i]);
-        }
-      }
-      
       // Step 4: Remove backtracking — points moving away from destination
-      if (delooped.length < 5) return delooped;
-      
-      const result: LatLng[] = [delooped[0]];
-      let minDistToDest = haversineDistance(delooped[0], destinationCoords);
-      
-      for (let i = 1; i < delooped.length; i++) {
-        const distToDest = haversineDistance(delooped[i], destinationCoords);
-        
-        if (distToDest > minDistToDest + 1500 && i < delooped.length - 3) {
-          continue;
-        }
-        
-        if (distToDest < minDistToDest) {
-          minDistToDest = distToDest;
-        }
-        result.push(delooped[i]);
+      if (filtered.length < 5) return filtered;
+      const result: LatLng[] = [filtered[0]];
+      let minDistToDest = haversineDistance(filtered[0], destinationCoords);
+      for (let i = 1; i < filtered.length; i++) {
+        const distToDest = haversineDistance(filtered[i], destinationCoords);
+        if (distToDest > minDistToDest + 1000 && i < filtered.length - 3) continue;
+        if (distToDest < minDistToDest) minDistToDest = distToDest;
+        result.push(filtered[i]);
       }
       
-      // Step 5: Trim any dangling tail at the end
+      // Step 5: Trim dangling tails at both ends
       while (result.length > 3) {
-        const last = result[result.length - 1];
-        const secondLast = result[result.length - 2];
-        const lastDist = haversineDistance(last, destinationCoords);
-        const secondLastDist = haversineDistance(secondLast, destinationCoords);
-        if (lastDist > secondLastDist + 200) {
+        if (haversineDistance(result[result.length - 1], destinationCoords) > haversineDistance(result[result.length - 2], destinationCoords) + 150) {
           result.pop();
-        } else {
-          break;
-        }
+        } else break;
+      }
+      while (result.length > 3) {
+        if (haversineDistance(result[0], sourceCoords) > haversineDistance(result[1], sourceCoords) + 150) {
+          result.shift();
+        } else break;
       }
       
       return result;
