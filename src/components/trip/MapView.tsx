@@ -196,11 +196,11 @@ const MapView = ({ routes = [], sourceCoords, destinationCoords, selectedRoute, 
     });
     routeLayersRef.current = [];
 
-    // Clean path: trim segments that backtrack or create artifacts near start/end
+    // Clean path: remove straight-line artifacts, backtracking, and loops
     const cleanPath = (path: LatLng[]): LatLng[] => {
       if (path.length < 4 || !sourceCoords || !destinationCoords) return path;
       
-      // Find the index closest to source and destination
+      // Step 1: Trim to closest points near source/destination
       let startIdx = 0;
       let endIdx = path.length - 1;
       let minStartDist = Infinity;
@@ -216,11 +216,55 @@ const MapView = ({ routes = [], sourceCoords, destinationCoords, selectedRoute, 
         if (d < minEndDist) { minEndDist = d; endIdx = i; }
       }
       
-      // Only trim if we found closer points (avoids cutting valid segments)
-      if (startIdx > 0 || endIdx < path.length - 1) {
-        return path.slice(startIdx, endIdx + 1);
+      let trimmed = path.slice(startIdx, endIdx + 1);
+      if (trimmed.length < 3) return trimmed;
+      
+      // Step 2: Remove straight-line segments (non-road artifacts)
+      // A genuine road segment between two distant points will have many intermediate points with curvature.
+      // Straight-line artifacts have very few points over long distances.
+      const filtered: LatLng[] = [trimmed[0]];
+      for (let i = 1; i < trimmed.length; i++) {
+        const prev = filtered[filtered.length - 1];
+        const curr = trimmed[i];
+        const segDist = haversineDistance(prev, curr);
+        
+        // If two consecutive points are very far apart (>1km), it's likely a straight-line artifact — skip it
+        // unless it's the last point (destination)
+        if (segDist > 1000 && i < trimmed.length - 1) {
+          // Check if there's curvature: look at the next few points
+          // If the next point is also far and roughly collinear, skip this segment
+          const next = trimmed[Math.min(i + 1, trimmed.length - 1)];
+          const nextDist = haversineDistance(curr, next);
+          if (nextDist > 800) {
+            // Two consecutive long straight segments — likely artifact, skip curr
+            continue;
+          }
+        }
+        filtered.push(curr);
       }
-      return path;
+      
+      // Step 3: Remove backtracking loops — if we get closer to destination then move away significantly
+      if (filtered.length < 5) return filtered;
+      
+      const result: LatLng[] = [filtered[0]];
+      let minDistToDest = haversineDistance(filtered[0], destinationCoords);
+      
+      for (let i = 1; i < filtered.length; i++) {
+        const distToDest = haversineDistance(filtered[i], destinationCoords);
+        
+        // Allow some regression (up to 500m) but reject large backtracking
+        if (distToDest > minDistToDest + 2000 && i < filtered.length - 5) {
+          // Skip this point — it's backtracking significantly
+          continue;
+        }
+        
+        if (distToDest < minDistToDest) {
+          minDistToDest = distToDest;
+        }
+        result.push(filtered[i]);
+      }
+      
+      return result;
     };
 
     // Draw each route
