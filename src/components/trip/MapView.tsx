@@ -196,7 +196,7 @@ const MapView = ({ routes = [], sourceCoords, destinationCoords, selectedRoute, 
     });
     routeLayersRef.current = [];
 
-    // Clean path: remove U-turns, spurs, loops, and straight-line artifacts
+    // Clean path: conservatively remove only true U-turn spurs while preserving road geometry
     const cleanPath = (path: LatLng[]): LatLng[] => {
       if (path.length < 4 || !sourceCoords || !destinationCoords) return path;
       
@@ -219,34 +219,33 @@ const MapView = ({ routes = [], sourceCoords, destinationCoords, selectedRoute, 
       let trimmed = path.slice(startIdx, endIdx + 1);
       if (trimmed.length < 3) return trimmed;
 
-      // Step 2: Remove U-turn spurs — detect where path leaves and returns to nearly the same spot
+      // Step 2: Remove only genuine U-turn spurs (path goes somewhere 500m+ away then returns to within 80m)
       const removeSpurs = (pts: LatLng[]): LatLng[] => {
-        if (pts.length < 10) return pts;
+        if (pts.length < 15) return pts;
         const cleaned: LatLng[] = [];
         let i = 0;
         while (i < pts.length) {
           let bestLoopEnd = -1;
-          let bestLoopDist = Infinity;
-          // Search forward for a point close to pts[i] (within 200m) at least 8 points away
-          for (let j = i + 8; j < Math.min(i + 150, pts.length); j++) {
+          // Look for return to within 80m, at least 15 points away (significant detour, not road curve)
+          for (let j = i + 15; j < Math.min(i + 200, pts.length); j++) {
             const dist = haversineDistance(pts[i], pts[j]);
-            if (dist < 200 && dist < bestLoopDist) {
-              bestLoopDist = dist;
-              bestLoopEnd = j;
+            if (dist < 80) {
+              // Verify this is a real spur: the path must go at least 500m away
+              let maxDist = 0;
+              for (let k = i; k <= j; k += Math.max(1, Math.floor((j - i) / 10))) {
+                const d = haversineDistance(pts[i], pts[k]);
+                if (d > maxDist) maxDist = d;
+              }
+              if (maxDist > 500) {
+                bestLoopEnd = j;
+                break;
+              }
             }
           }
           if (bestLoopEnd > 0) {
-            // Only remove if the spur extends >100m from base point
-            let maxSpurDist = 0;
-            for (let k = i; k <= bestLoopEnd; k++) {
-              const d = haversineDistance(pts[i], pts[k]);
-              if (d > maxSpurDist) maxSpurDist = d;
-            }
-            if (maxSpurDist > 100) {
-              cleaned.push(pts[i]);
-              i = bestLoopEnd;
-              continue;
-            }
+            cleaned.push(pts[i]);
+            i = bestLoopEnd;
+            continue;
           }
           cleaned.push(pts[i]);
           i++;
@@ -254,53 +253,23 @@ const MapView = ({ routes = [], sourceCoords, destinationCoords, selectedRoute, 
         return cleaned;
       };
       
-      // Apply spur removal multiple passes for nested spurs
-      let despurred = trimmed;
-      for (let pass = 0; pass < 3; pass++) {
-        const before = despurred.length;
-        despurred = removeSpurs(despurred);
-        if (despurred.length === before) break;
-      }
+      let despurred = removeSpurs(trimmed);
 
-      // Step 3: Remove straight-line artifact segments (>500m between consecutive points)
-      const filtered: LatLng[] = [despurred[0]];
-      for (let i = 1; i < despurred.length; i++) {
-        const prev = filtered[filtered.length - 1];
-        const curr = despurred[i];
-        const segDist = haversineDistance(prev, curr);
-        if (segDist > 500 && i < despurred.length - 1 && i > 0) {
-          const next = despurred[Math.min(i + 1, despurred.length - 1)];
-          const prevToNext = haversineDistance(prev, next);
-          if (prevToNext < segDist * 0.8) continue;
-          if (haversineDistance(curr, next) > 500) continue;
-        }
-        filtered.push(curr);
-      }
-      
-      // Step 4: Remove backtracking — points moving away from destination
-      if (filtered.length < 5) return filtered;
-      const result: LatLng[] = [filtered[0]];
-      let minDistToDest = haversineDistance(filtered[0], destinationCoords);
-      for (let i = 1; i < filtered.length; i++) {
-        const distToDest = haversineDistance(filtered[i], destinationCoords);
-        if (distToDest > minDistToDest + 1000 && i < filtered.length - 3) continue;
-        if (distToDest < minDistToDest) minDistToDest = distToDest;
-        result.push(filtered[i]);
-      }
-      
-      // Step 5: Trim dangling tails at both ends
-      while (result.length > 3) {
-        if (haversineDistance(result[result.length - 1], destinationCoords) > haversineDistance(result[result.length - 2], destinationCoords) + 150) {
-          result.pop();
+      // Step 3: Trim dangling tails at ends (points moving away from source/dest)
+      while (despurred.length > 3) {
+        if (haversineDistance(despurred[despurred.length - 1], destinationCoords) > 
+            haversineDistance(despurred[despurred.length - 2], destinationCoords) + 200) {
+          despurred.pop();
         } else break;
       }
-      while (result.length > 3) {
-        if (haversineDistance(result[0], sourceCoords) > haversineDistance(result[1], sourceCoords) + 150) {
-          result.shift();
+      while (despurred.length > 3) {
+        if (haversineDistance(despurred[0], sourceCoords) > 
+            haversineDistance(despurred[1], sourceCoords) + 200) {
+          despurred.shift();
         } else break;
       }
       
-      return result;
+      return despurred;
     };
 
     // Draw each route
