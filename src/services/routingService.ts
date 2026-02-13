@@ -88,7 +88,7 @@ const getOSRMAlternatives = async (source: LatLng, destination: LatLng): Promise
 const arePathsDifferent = (path1: LatLng[], path2: LatLng[]): boolean => {
   if (path1.length < 3 || path2.length < 3) return false;
   
-  const sampleCount = 20;
+  const sampleCount = 30;
   let differentPoints = 0;
   
   for (let i = 1; i < sampleCount - 1; i++) {
@@ -96,20 +96,20 @@ const arePathsDifferent = (path1: LatLng[], path2: LatLng[]): boolean => {
     const p1 = path1[idx1];
     
     let minDist = Infinity;
-    const searchRate = Math.max(1, Math.floor(path2.length / 80));
+    const searchRate = Math.max(1, Math.floor(path2.length / 100));
     for (let j = 0; j < path2.length; j += searchRate) {
       const d = haversineDistance(p1, path2[j]);
       if (d < minDist) minDist = d;
     }
     
-    // 150m threshold - even small street-level differences count
-    if (minDist > 150) {
+    // 100m threshold - catch even minor street-level differences
+    if (minDist > 100) {
       differentPoints++;
     }
   }
   
-  // Paths are different if at least 3 of 18 middle points diverge by 150m+
-  return differentPoints >= 3;
+  // Paths are different if at least 4 of 28 middle points diverge by 100m+
+  return differentPoints >= 4;
 };
 
 // Detect if a route has U-turns or loops by checking for backtracking
@@ -452,12 +452,12 @@ export const calculateRoutes = async (
   console.log(`Distinct paths from OSRM: ${distinctPaths.length}`);
 
   // ===== Step 3: Generate alternatives via known area waypoints (real road locations) =====
-  // Try ALL directions multiple times with different waypoints
+  // Try ALL directions multiple times with different waypoints - be aggressive
   const usedWaypoints: LatLng[] = [];
-  const allDirections: ('left' | 'right' | 'center')[] = ['left', 'right', 'center', 'left', 'right'];
+  const allDirections: ('left' | 'right' | 'center')[] = ['left', 'right', 'center', 'left', 'right', 'center', 'right', 'left'];
   
   for (const dir of allDirections) {
-    if (distinctPaths.length >= 5) break; // Collect up to 5 candidates for best selection
+    if (distinctPaths.length >= 6) break; // Collect more candidates for best selection
     
     const waypoints = findIntermediateAreaWaypoints(source, destination, dir, usedWaypoints);
     if (waypoints.length === 0) continue;
@@ -472,7 +472,6 @@ export const calculateRoutes = async (
         usedWaypoints.push(...waypoints);
         console.log(`Found distinct route via ${dir} area waypoint`);
       } else {
-        // Even if duplicate, mark waypoint as used so next iteration picks a different one
         usedWaypoints.push(...waypoints);
       }
     } else {
@@ -482,7 +481,7 @@ export const calculateRoutes = async (
 
   // ===== Step 4: Try safe-area waypoints =====
   if (distinctPaths.length < 3) {
-    const safeAreas = getSafeAreasWithCoords(safetyZones, 50); // Lower threshold to 50
+    const safeAreas = getSafeAreasWithCoords(safetyZones, 50);
     const viableWaypoints = safeAreas.filter(area => {
       const tooClose = usedWaypoints.some(uw => haversineDistance(uw, area.point) < 500);
       return !tooClose && isAlongRoute(source, area.point, destination) && isSmooth(source, area.point, destination);
@@ -490,7 +489,7 @@ export const calculateRoutes = async (
     viableWaypoints.sort((a, b) => b.score - a.score);
     
     for (const wp of viableWaypoints.slice(0, 8)) {
-      if (distinctPaths.length >= 5) break;
+      if (distinctPaths.length >= 6) break;
       
       const osrmRoute = await getOSRMRoute([source, wp.point, destination]);
       if (osrmRoute && validateRouteQuality(osrmRoute, source, destination)) {
@@ -505,17 +504,19 @@ export const calculateRoutes = async (
     }
   }
 
-  // ===== Step 5: Perpendicular offsets as final fallback =====
+  // ===== Step 5: Perpendicular offsets - try aggressively =====
   if (distinctPaths.length < 3) {
     const offsets = [
-      { km: 0.8, dir: 'left' as const, progress: 0.5 },
-      { km: 0.8, dir: 'right' as const, progress: 0.5 },
-      { km: 1.2, dir: 'left' as const, progress: 0.3 },
-      { km: 1.2, dir: 'right' as const, progress: 0.7 },
+      { km: 1.0, dir: 'left' as const, progress: 0.4 },
+      { km: 1.0, dir: 'right' as const, progress: 0.6 },
       { km: 1.5, dir: 'left' as const, progress: 0.5 },
       { km: 1.5, dir: 'right' as const, progress: 0.5 },
-      { km: 2.0, dir: 'left' as const, progress: 0.4 },
-      { km: 2.0, dir: 'right' as const, progress: 0.6 },
+      { km: 2.0, dir: 'left' as const, progress: 0.3 },
+      { km: 2.0, dir: 'right' as const, progress: 0.7 },
+      { km: 2.5, dir: 'left' as const, progress: 0.5 },
+      { km: 2.5, dir: 'right' as const, progress: 0.5 },
+      { km: 3.0, dir: 'left' as const, progress: 0.4 },
+      { km: 3.0, dir: 'right' as const, progress: 0.6 },
     ];
     
     for (const strategy of offsets) {
@@ -534,9 +535,33 @@ export const calculateRoutes = async (
     }
   }
 
+  // ===== Step 5b: Two-waypoint routes for maximum diversity =====
+  if (distinctPaths.length < 3) {
+    const twoWpStrategies = [
+      { dir1: 'left' as const, dir2: 'right' as const },
+      { dir1: 'right' as const, dir2: 'left' as const },
+    ];
+    
+    for (const strategy of twoWpStrategies) {
+      if (distinctPaths.length >= 3) break;
+      const wp1 = getPerpendicularPoint(source, destination, 1.5, strategy.dir1, 0.33);
+      const wp2 = getPerpendicularPoint(source, destination, 1.5, strategy.dir2, 0.66);
+      const osrmRoute = await getOSRMRoute([source, wp1, wp2, destination]);
+      
+      if (osrmRoute && validateRouteQuality(osrmRoute, source, destination)) {
+        const path = osrmRoute.geometry.coordinates.map(([lng, lat]) => ({ lat, lng }));
+        const isDuplicate = distinctPaths.some(existing => !arePathsDifferent(path, existing.path));
+        if (!isDuplicate) {
+          const analysis = analyzeRouteSafety(path, safetyZones);
+          distinctPaths.push({ path, distance: osrmRoute.distance, duration: osrmRoute.duration, analysis, source: `two-wp` });
+        }
+      }
+    }
+  }
+
   console.log(`Total distinct paths found: ${distinctPaths.length}`);
 
-  // ===== Step 6: Assign routes =====
+  // ===== Step 6: Assign routes - STRICTLY enforce different paths =====
   if (distinctPaths.length === 0) {
     console.error('No routes found');
     return [];
@@ -560,10 +585,36 @@ export const calculateRoutes = async (
     path: fastestData.path,
   };
   
-  // Safest = highest safety score (must be different path from fastest)
+  // Safest = highest safety score BUT MUST have a different path from fastest
   let safestData = bySafety.find(d => 
     d !== fastestData && arePathsDifferent(d.path, fastestData.path)
-  ) || bySafety.find(d => d !== fastestData) || bySafety[0];
+  );
+  
+  // If no path is both safer AND different, pick the most different path with decent safety
+  if (!safestData) {
+    // Find the path most different from fastest
+    let maxDivergence = -1;
+    for (const d of distinctPaths) {
+      if (d === fastestData) continue;
+      let divergence = 0;
+      const sampleCount = 20;
+      for (let i = 1; i < sampleCount - 1; i++) {
+        const idx = Math.floor((i / sampleCount) * d.path.length);
+        let minDist = Infinity;
+        for (let j = 0; j < fastestData.path.length; j += Math.max(1, Math.floor(fastestData.path.length / 50))) {
+          const dist = haversineDistance(d.path[idx], fastestData.path[j]);
+          if (dist < minDist) minDist = dist;
+        }
+        divergence += minDist;
+      }
+      if (divergence > maxDivergence) {
+        maxDivergence = divergence;
+        safestData = d;
+      }
+    }
+  }
+  
+  if (!safestData) safestData = bySafety[0];
   
   const safestDistKm = Math.round(safestData.distance / 100) / 10;
   const safestRoute: RouteInfo = {
@@ -576,14 +627,58 @@ export const calculateRoutes = async (
     path: safestData.path,
   };
   
-  // Optimized = remaining path different from both
+  // Optimized = MUST be different from BOTH fastest and safest
   let optimizedData = distinctPaths.find(d => 
     d !== fastestData && d !== safestData &&
     arePathsDifferent(d.path, fastestData.path) && arePathsDifferent(d.path, safestData.path)
-  ) || distinctPaths.find(d => d !== fastestData && d !== safestData);
+  );
+  
+  // If no triple-distinct path, find the one most different from both
+  if (!optimizedData) {
+    let maxCombinedDivergence = -1;
+    for (const d of distinctPaths) {
+      if (d === fastestData || d === safestData) continue;
+      let divFromFastest = 0;
+      let divFromSafest = 0;
+      const sampleCount = 15;
+      for (let i = 1; i < sampleCount - 1; i++) {
+        const idx = Math.floor((i / sampleCount) * d.path.length);
+        
+        let minDistF = Infinity;
+        for (let j = 0; j < fastestData.path.length; j += Math.max(1, Math.floor(fastestData.path.length / 40))) {
+          const dist = haversineDistance(d.path[idx], fastestData.path[j]);
+          if (dist < minDistF) minDistF = dist;
+        }
+        divFromFastest += minDistF;
+        
+        let minDistS = Infinity;
+        for (let j = 0; j < safestData.path.length; j += Math.max(1, Math.floor(safestData.path.length / 40))) {
+          const dist = haversineDistance(d.path[idx], safestData.path[j]);
+          if (dist < minDistS) minDistS = dist;
+        }
+        divFromSafest += minDistS;
+      }
+      const combined = Math.min(divFromFastest, divFromSafest); // Maximize the minimum divergence
+      if (combined > maxCombinedDivergence) {
+        maxCombinedDivergence = combined;
+        optimizedData = d;
+      }
+    }
+  }
   
   if (!optimizedData) {
-    // Last resort: use safest data but mark it
+    // Absolute last resort: generate a new path via center perpendicular
+    console.warn('Generating emergency 3rd route via large perpendicular offset');
+    const emergencyPoint = getPerpendicularPoint(source, destination, 3.5, 'left', 0.5);
+    const emergencyRoute = await getOSRMRoute([source, emergencyPoint, destination]);
+    if (emergencyRoute && validateRouteQuality(emergencyRoute, source, destination)) {
+      const path = emergencyRoute.geometry.coordinates.map(([lng, lat]) => ({ lat, lng }));
+      const analysis = analyzeRouteSafety(path, safetyZones);
+      optimizedData = { path, distance: emergencyRoute.distance, duration: emergencyRoute.duration, analysis, source: 'emergency' };
+    }
+  }
+  
+  if (!optimizedData) {
     optimizedData = safestData;
     console.warn('Could not find 3rd distinct path, optimized will share safest path');
   }
@@ -600,6 +695,12 @@ export const calculateRoutes = async (
   };
 
   routes.push(fastestRoute, safestRoute, optimizedRoute);
+  
+  // Log path diversity check
+  console.log('=== PATH DIVERSITY CHECK ===');
+  console.log(`Fastest vs Safest different: ${arePathsDifferent(fastestRoute.path, safestRoute.path)}`);
+  console.log(`Fastest vs Optimized different: ${arePathsDifferent(fastestRoute.path, optimizedRoute.path)}`);
+  console.log(`Safest vs Optimized different: ${arePathsDifferent(safestRoute.path, optimizedRoute.path)}`);
   
   validateAndAdjustRoutes(routes, fastestData.path, safestData.path);
 
