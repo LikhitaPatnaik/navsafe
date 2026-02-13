@@ -101,6 +101,26 @@ const MapView = ({ routes = [], sourceCoords, destinationCoords, selectedRoute, 
     }
   }, []);
 
+  // Invalidate map size on scroll/resize to prevent route disappearing
+  useEffect(() => {
+    if (!mapRef.current) return;
+    const map = mapRef.current;
+
+    const handleInvalidate = () => {
+      requestAnimationFrame(() => {
+        map.invalidateSize();
+      });
+    };
+
+    window.addEventListener('scroll', handleInvalidate, { passive: true });
+    window.addEventListener('resize', handleInvalidate, { passive: true });
+
+    return () => {
+      window.removeEventListener('scroll', handleInvalidate);
+      window.removeEventListener('resize', handleInvalidate);
+    };
+  }, [mapReady]);
+
   // Cleanup on unmount
   useEffect(() => {
     return () => {
