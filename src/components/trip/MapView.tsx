@@ -216,11 +216,11 @@ const MapView = ({ routes = [], sourceCoords, destinationCoords, selectedRoute, 
     });
     routeLayersRef.current = [];
 
-    // Clean path: aggressively remove loops, spurs, and backtracking to produce clean road lines
+    // Clean path: only trim dangling tails at endpoints; preserve all OSRM road-snapped points
     const cleanPath = (path: LatLng[]): LatLng[] => {
       if (path.length < 4 || !sourceCoords || !destinationCoords) return path;
       
-      // Step 1: Trim to closest points near source/destination
+      // Trim to closest points near source/destination
       let startIdx = 0;
       let endIdx = path.length - 1;
       let minStartDist = Infinity;
@@ -239,102 +239,21 @@ const MapView = ({ routes = [], sourceCoords, destinationCoords, selectedRoute, 
       let trimmed = path.slice(startIdx, endIdx + 1);
       if (trimmed.length < 3) return trimmed;
 
-      // Step 2: Remove loops - any segment where path returns near a previous point
-      const removeLoops = (pts: LatLng[]): LatLng[] => {
-        if (pts.length < 6) return pts;
-        const cleaned: LatLng[] = [];
-        let i = 0;
-        while (i < pts.length) {
-          // Look ahead for any point that comes back close to current point
-          let bestSkipTo = -1;
-          for (let j = i + 6; j < Math.min(i + 300, pts.length); j++) {
-            const dist = haversineDistance(pts[i], pts[j]);
-            if (dist < 150) {
-              // Check that path actually went away (not just nearby road points)
-              let maxDist = 0;
-              for (let k = i; k <= j; k += Math.max(1, Math.floor((j - i) / 8))) {
-                const d = haversineDistance(pts[i], pts[k]);
-                if (d > maxDist) maxDist = d;
-              }
-              // If it went at least 200m away and came back, it's a loop
-              if (maxDist > 200) {
-                bestSkipTo = j;
-                // Keep looking for even later returns (biggest loop)
-                for (let jj = j + 1; jj < Math.min(j + 50, pts.length); jj++) {
-                  if (haversineDistance(pts[i], pts[jj]) < 150) {
-                    bestSkipTo = jj;
-                  }
-                }
-                break;
-              }
-            }
-          }
-          if (bestSkipTo > 0) {
-            cleaned.push(pts[i]);
-            i = bestSkipTo;
-            continue;
-          }
-          cleaned.push(pts[i]);
-          i++;
-        }
-        return cleaned;
-      };
-      
-      // Run loop removal multiple passes until stable
-      let despurred = trimmed;
-      for (let pass = 0; pass < 3; pass++) {
-        const before = despurred.length;
-        despurred = removeLoops(despurred);
-        if (despurred.length === before) break;
-      }
-
-      // Step 3: Remove backtracking - points that move away from destination then come back
-      const removeBacktracking = (pts: LatLng[]): LatLng[] => {
-        if (pts.length < 10) return pts;
-        const result: LatLng[] = [pts[0]];
-        let furthestProgress = haversineDistance(pts[0], destinationCoords);
-        
-        for (let i = 1; i < pts.length; i++) {
-          const distToDest = haversineDistance(pts[i], destinationCoords);
-          // Allow going further from dest by up to 500m (road curves), but flag major backtracking
-          if (distToDest > furthestProgress + 800) {
-            // Check if this is just a temporary detour that comes back
-            let comesBack = false;
-            for (let j = i + 1; j < Math.min(i + 40, pts.length); j++) {
-              if (haversineDistance(pts[j], destinationCoords) < furthestProgress + 200) {
-                comesBack = true;
-                // Skip to where it comes back
-                i = j - 1;
-                break;
-              }
-            }
-            if (comesBack) continue;
-          }
-          result.push(pts[i]);
-          if (distToDest < furthestProgress) {
-            furthestProgress = distToDest;
-          }
-        }
-        return result;
-      };
-
-      despurred = removeBacktracking(despurred);
-
-      // Step 4: Trim dangling tails at ends
-      while (despurred.length > 3) {
-        if (haversineDistance(despurred[despurred.length - 1], destinationCoords) > 
-            haversineDistance(despurred[despurred.length - 2], destinationCoords) + 100) {
-          despurred.pop();
+      // Only trim dangling tails at ends (points moving away from dest/source)
+      while (trimmed.length > 3) {
+        if (haversineDistance(trimmed[trimmed.length - 1], destinationCoords) > 
+            haversineDistance(trimmed[trimmed.length - 2], destinationCoords) + 100) {
+          trimmed.pop();
         } else break;
       }
-      while (despurred.length > 3) {
-        if (haversineDistance(despurred[0], sourceCoords) > 
-            haversineDistance(despurred[1], sourceCoords) + 100) {
-          despurred.shift();
+      while (trimmed.length > 3) {
+        if (haversineDistance(trimmed[0], sourceCoords) > 
+            haversineDistance(trimmed[1], sourceCoords) + 100) {
+          trimmed.shift();
         } else break;
       }
       
-      return despurred;
+      return trimmed;
     };
 
     // Draw each route
