@@ -579,6 +579,7 @@ const MapView = ({ routes = [], sourceCoords, destinationCoords, selectedRoute, 
                 weight: isCritical ? 2 : 0,
                 fillOpacity: isCritical ? 0.25 : 0.15,
               });
+              areaCircle.bindPopup(popupContent);
               areaCircle.addTo(mapRef.current!);
               safetyZoneLayersRef.current.push(areaCircle as unknown as L.CircleMarker);
             }
@@ -624,7 +625,7 @@ const MapView = ({ routes = [], sourceCoords, destinationCoords, selectedRoute, 
             fillOpacity: isCritical ? 0.7 : isRisky ? 0.5 : 0.4,
           });
 
-          circle.bindPopup(`
+          const localPopupContent = `
             <div style="padding: 12px; min-width: 200px;">
               <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px;">
                 <div style="width: 12px; height: 12px; border-radius: 50%; background: ${color};"></div>
@@ -642,7 +643,8 @@ const MapView = ({ routes = [], sourceCoords, destinationCoords, selectedRoute, 
                 ${riskLabel}
               </div>
             </div>
-          `);
+          `;
+          circle.bindPopup(localPopupContent);
           circle.addTo(mapRef.current!);
           safetyZoneLayersRef.current.push(circle);
 
@@ -655,6 +657,7 @@ const MapView = ({ routes = [], sourceCoords, destinationCoords, selectedRoute, 
               weight: isCritical ? 2 : 0,
               fillOpacity: isCritical ? 0.25 : 0.15,
             });
+            areaCircle.bindPopup(localPopupContent);
             areaCircle.addTo(mapRef.current!);
             safetyZoneLayersRef.current.push(areaCircle as unknown as L.CircleMarker);
           }
@@ -668,33 +671,7 @@ const MapView = ({ routes = [], sourceCoords, destinationCoords, selectedRoute, 
     loadSafetyZones();
   }, [mapReady, showSafetyZones, highlightedCrimeTypes, selectedRoute]);
 
-  // Zoom-based visibility: only show default safety zone markers when zoomed out
-  useEffect(() => {
-    if (!mapRef.current || !mapReady) return;
-    const map = mapRef.current;
-
-    const updateVisibility = () => {
-      const zoom = map.getZoom();
-      const showMarkers = zoom <= 13;
-      // Only affect default (non-route) markers — when no route selected
-      if (selectedRoute) return;
-      
-      safetyZoneLayersRef.current.forEach(layer => {
-        const el = (layer as any)._path || (layer as any)._container;
-        if (el) {
-          el.style.display = showMarkers ? '' : 'none';
-        }
-      });
-    };
-
-    map.on('zoomend', updateVisibility);
-    // Run once on mount
-    updateVisibility();
-
-    return () => {
-      map.off('zoomend', updateVisibility);
-    };
-  }, [mapReady, selectedRoute, showSafetyZones, highlightedCrimeTypes]);
+  // No zoom-based hiding — circles are always visible at all zoom levels
 
 
   // Handle current position marker during monitoring
