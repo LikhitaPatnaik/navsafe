@@ -191,10 +191,10 @@ export const areaStreetCoordinates: Record<string, StreetLocation[]> = {
   
   // Kommadi - 4 crimes
   'Kommadi': [
-    { street: 'Vikalangula Colony', coords: { lat: 17.8440, lng: 83.3230 }, crimeTypes: ['murder'] },
-    { street: 'National Highway 16', coords: { lat: 17.8460, lng: 83.3250 }, crimeTypes: ['accident'] },
-    { street: 'Kommadi Junction', coords: { lat: 17.8420, lng: 83.3210 }, crimeTypes: ['accident'] },
-    { street: 'SwayamKrushiNagar', coords: { lat: 17.8430, lng: 83.3220 }, crimeTypes: ['murder'] },
+    { street: 'Vikalangula Colony', coords: { lat: 17.7480, lng: 83.3450 }, crimeTypes: ['murder'] },
+    { street: 'National Highway 16', coords: { lat: 17.7500, lng: 83.3470 }, crimeTypes: ['accident'] },
+    { street: 'Kommadi Junction', coords: { lat: 17.7468, lng: 83.3441 }, crimeTypes: ['accident'] },
+    { street: 'SwayamKrushiNagar', coords: { lat: 17.7455, lng: 83.3430 }, crimeTypes: ['murder'] },
   ],
   
   // Kurmannapalem - 9 crimes
@@ -293,16 +293,16 @@ export const areaStreetCoordinates: Record<string, StreetLocation[]> = {
   
   // Pendurthi - 20 crimes
   'Pendurthi': [
-    { street: 'Juttada Village', coords: { lat: 17.7800, lng: 83.2600 }, crimeTypes: ['murder'] },
-    { street: 'Chinthalagraham Village', coords: { lat: 17.7820, lng: 83.2620 }, crimeTypes: ['kidnap'] },
-    { street: 'SujathaNagar', coords: { lat: 17.7790, lng: 83.2590 }, crimeTypes: ['kidnap', 'murder'] },
-    { street: '80 Feet Rd', coords: { lat: 17.7810, lng: 83.2610 }, crimeTypes: ['robbery'] },
-    { street: 'Brundavan Gardens', coords: { lat: 17.7780, lng: 83.2580 }, crimeTypes: ['murder'] },
-    { street: 'Vepagunta Junction', coords: { lat: 17.7840, lng: 83.2640 }, crimeTypes: ['accident', 'robbery'] },
-    { street: 'Anakapalli-Anandapuram Highway', coords: { lat: 17.7830, lng: 83.2630 }, crimeTypes: ['accident'] },
-    { street: 'Saripalli Flyover Road', coords: { lat: 17.7770, lng: 83.2570 }, crimeTypes: ['accident'] },
-    { street: 'Appannapalem', coords: { lat: 17.7850, lng: 83.2650 }, crimeTypes: ['murder'] },
-    { street: 'National Highway', coords: { lat: 17.7860, lng: 83.2660 }, crimeTypes: ['accident'] },
+    { street: 'Juttada Village', coords: { lat: 17.7990, lng: 83.1960 }, crimeTypes: ['murder'] },
+    { street: 'Chinthalagraham Village', coords: { lat: 17.8010, lng: 83.1970 }, crimeTypes: ['kidnap'] },
+    { street: 'SujathaNagar', coords: { lat: 17.7970, lng: 83.1930 }, crimeTypes: ['kidnap', 'murder'] },
+    { street: '80 Feet Rd', coords: { lat: 17.7980, lng: 83.1950 }, crimeTypes: ['robbery'] },
+    { street: 'Brundavan Gardens', coords: { lat: 17.7960, lng: 83.1920 }, crimeTypes: ['murder'] },
+    { street: 'Vepagunta Junction', coords: { lat: 17.8020, lng: 83.1980 }, crimeTypes: ['accident', 'robbery'] },
+    { street: 'Anakapalli-Anandapuram Highway', coords: { lat: 17.8030, lng: 83.1990 }, crimeTypes: ['accident'] },
+    { street: 'Saripalli Flyover Road', coords: { lat: 17.7950, lng: 83.1910 }, crimeTypes: ['accident'] },
+    { street: 'Appannapalem', coords: { lat: 17.8000, lng: 83.1965 }, crimeTypes: ['murder'] },
+    { street: 'National Highway', coords: { lat: 17.8040, lng: 83.2000 }, crimeTypes: ['accident'] },
   ],
   
   // PM Palem - 5 crimes
@@ -379,13 +379,13 @@ export const areaStreetCoordinates: Record<string, StreetLocation[]> = {
   
   // Simhachalam - 18 crimes
   'Simhachalam': [
-    { street: 'Simhachalam Ghat Road', coords: { lat: 17.7500, lng: 83.2200 }, crimeTypes: ['assault', 'accident'] },
-    { street: 'Viratnagar Locality', coords: { lat: 17.7520, lng: 83.2220 }, crimeTypes: ['murder'] },
-    { street: 'Simhachalam Road', coords: { lat: 17.7510, lng: 83.2210 }, crimeTypes: ['murder', 'accident'] },
-    { street: 'Adavivaram', coords: { lat: 17.7490, lng: 83.2190 }, crimeTypes: ['murder'] },
-    { street: 'Old Adavivaram', coords: { lat: 17.7480, lng: 83.2180 }, crimeTypes: ['kidnap'] },
-    { street: 'Simhapuri Colony', coords: { lat: 17.7470, lng: 83.2170 }, crimeTypes: ['accident'] },
-    { street: 'Near Appanna, Simhachalam Road', coords: { lat: 17.7530, lng: 83.2230 }, crimeTypes: ['accident'] },
+    { street: 'Simhachalam Ghat Road', coords: { lat: 17.7680, lng: 83.2500 }, crimeTypes: ['assault', 'accident'] },
+    { street: 'Viratnagar Locality', coords: { lat: 17.7700, lng: 83.2510 }, crimeTypes: ['murder'] },
+    { street: 'Simhachalam Road', coords: { lat: 17.7690, lng: 83.2490 }, crimeTypes: ['murder', 'accident'] },
+    { street: 'Adavivaram', coords: { lat: 17.7660, lng: 83.2470 }, crimeTypes: ['murder'] },
+    { street: 'Old Adavivaram', coords: { lat: 17.7650, lng: 83.2460 }, crimeTypes: ['kidnap'] },
+    { street: 'Simhapuri Colony', coords: { lat: 17.7640, lng: 83.2450 }, crimeTypes: ['accident'] },
+    { street: 'Near Appanna, Simhachalam Road', coords: { lat: 17.7710, lng: 83.2520 }, crimeTypes: ['accident'] },
   ],
   
   // Siripuram - 3 crimes
