@@ -32,8 +32,8 @@ export const areaCoordinates: Record<string, LatLng> = {
   'One Town': { lat: 17.7000, lng: 83.2900 },
   'Jagadamba Jct': { lat: 17.7105, lng: 83.2980 },
   'Jagadamba Junction': { lat: 17.7105, lng: 83.2980 },
-  'Pendurthi Vepagunta': { lat: 17.7800, lng: 83.2600 },
-  'Pendurthi': { lat: 17.7800, lng: 83.2600 },
+  'Pendurthi Vepagunta': { lat: 17.7977, lng: 83.1943 },
+  'Pendurthi': { lat: 17.7977, lng: 83.1943 },
 
   // High Risk (SafetyScore 2-4)
   'RK Beach South': { lat: 17.7180, lng: 83.3250 },
@@ -75,8 +75,8 @@ export const areaCoordinates: Record<string, LatLng> = {
   'Bheemunipatnam': { lat: 17.8900, lng: 83.4500 },
   'Sheelanagar': { lat: 17.7190, lng: 83.2020 },
   'Sheela Nagar': { lat: 17.7190, lng: 83.2020 },
-  'Simhachalam Ghat': { lat: 17.7667, lng: 83.3517 },
-  'Simhachalam': { lat: 17.7667, lng: 83.3517 },
+  'Simhachalam Ghat': { lat: 17.7669, lng: 83.2484 },
+  'Simhachalam': { lat: 17.7669, lng: 83.2484 },
   'Steel Plant East': { lat: 17.6100, lng: 83.1900 },
   'Steel Plant': { lat: 17.6100, lng: 83.1900 },
   'PM Palem': { lat: 17.7990, lng: 83.3531 },
@@ -96,8 +96,8 @@ export const areaCoordinates: Record<string, LatLng> = {
   'Waltair': { lat: 17.7280, lng: 83.3200 },
   'Andhra University': { lat: 17.7320, lng: 83.3190 },
   'Port Area': { lat: 17.6950, lng: 83.2850 },
-  'Kommadi': { lat: 17.8428, lng: 83.3215 },
-  'Kommadhi': { lat: 17.8428, lng: 83.3215 }, // alias → Kommadi
+  'Kommadi': { lat: 17.7468, lng: 83.3441 },
+  'Kommadhi': { lat: 17.7468, lng: 83.3441 }, // alias → Kommadi
   'RTC Complex': { lat: 17.7200, lng: 83.3100 },
   'Allipuram': { lat: 17.7193, lng: 83.2971 },
   'Malkapuram': { lat: 17.6880, lng: 83.2450 },
