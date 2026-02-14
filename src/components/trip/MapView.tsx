@@ -499,7 +499,9 @@ const MapView = ({ routes = [], sourceCoords, destinationCoords, selectedRoute, 
             const streets = areaStreetCoordinates[streetKey];
             if (!streets || streets.length === 0) return;
 
-            const centerCoords = streets[0].coords;
+            // Use areaCoordinates for exact named location placement
+            const exactCoords = areaCoordinates[streetKey];
+            const centerCoords = exactCoords || streets[0].coords;
             
             // Accumulate totals from all DB areas that map to this streetKey
             let combinedCrimes = 0;
@@ -588,7 +590,9 @@ const MapView = ({ routes = [], sourceCoords, destinationCoords, selectedRoute, 
           if (renderedKeys.has(areaName) || !streets || streets.length === 0 || !mapRef.current) return;
           renderedKeys.add(areaName);
 
-          const centerCoords = streets[0].coords;
+          // Use areaCoordinates for exact named location placement
+          const exactCoords = areaCoordinates[areaName];
+          const centerCoords = exactCoords || streets[0].coords;
           
           // Count crimes from local street crimeTypes arrays
           let localCrimeCount = 0;
@@ -663,6 +667,34 @@ const MapView = ({ routes = [], sourceCoords, destinationCoords, selectedRoute, 
 
     loadSafetyZones();
   }, [mapReady, showSafetyZones, highlightedCrimeTypes, selectedRoute]);
+
+  // Zoom-based visibility: only show default safety zone markers when zoomed out
+  useEffect(() => {
+    if (!mapRef.current || !mapReady) return;
+    const map = mapRef.current;
+
+    const updateVisibility = () => {
+      const zoom = map.getZoom();
+      const showMarkers = zoom <= 13;
+      // Only affect default (non-route) markers — when no route selected
+      if (selectedRoute) return;
+      
+      safetyZoneLayersRef.current.forEach(layer => {
+        const el = (layer as any)._path || (layer as any)._container;
+        if (el) {
+          el.style.display = showMarkers ? '' : 'none';
+        }
+      });
+    };
+
+    map.on('zoomend', updateVisibility);
+    // Run once on mount
+    updateVisibility();
+
+    return () => {
+      map.off('zoomend', updateVisibility);
+    };
+  }, [mapReady, selectedRoute, showSafetyZones, highlightedCrimeTypes]);
 
 
   // Handle current position marker during monitoring
