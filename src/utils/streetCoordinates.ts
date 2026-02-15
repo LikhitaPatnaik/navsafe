@@ -9,6 +9,8 @@ export interface StreetLocation {
   crimeTypes?: CrimeType[]; // Common crime types at this location
 }
 
+// Complete street-level data from NAVSAFE DATASET (495 rows)
+// Every unique Area+Street combination is represented with all applicable crime types
 export const areaStreetCoordinates: Record<string, StreetLocation[]> = {
   // Akkayapalem - 11 crimes
   'Akkayapalem': [
@@ -18,8 +20,10 @@ export const areaStreetCoordinates: Record<string, StreetLocation[]> = {
     { street: 'Lalitha Nagar', coords: { lat: 17.7335, lng: 83.2950 }, crimeTypes: ['kidnap'] },
     { street: 'Akkayyapalem 80 Feet Rd', coords: { lat: 17.7380, lng: 83.3010 }, crimeTypes: ['robbery'] },
     { street: 'Nandagiri Nagar', coords: { lat: 17.7320, lng: 83.2940 }, crimeTypes: ['murder'] },
+    { street: 'Shantipuram', coords: { lat: 17.7355, lng: 83.2995 }, crimeTypes: ['accident'] },
+    { street: 'Akkayapalem Highway', coords: { lat: 17.7365, lng: 83.3000 }, crimeTypes: ['accident'] },
   ],
-  
+
   // Allipuram - 6 crimes
   'Allipuram': [
     { street: 'Yellamma Temple', coords: { lat: 17.7193, lng: 83.2971 }, crimeTypes: ['accident'] },
@@ -28,11 +32,14 @@ export const areaStreetCoordinates: Record<string, StreetLocation[]> = {
     { street: 'Shankaramatham Road', coords: { lat: 17.7195, lng: 83.2975 }, crimeTypes: ['robbery'] },
     { street: 'National Highway 16', coords: { lat: 17.7210, lng: 83.2990 }, crimeTypes: ['kidnap'] },
   ],
-  
+
   // Anakapalli - 27 crimes
   'Anakapalli': [
     { street: 'NH16, Nutulaguntla Palem', coords: { lat: 17.6890, lng: 83.0035 }, crimeTypes: ['accident'] },
+    { street: 'Makavarapalem Village', coords: { lat: 17.6910, lng: 83.0095 }, crimeTypes: ['accident'] },
+    { street: 'Vijayaramarajupet', coords: { lat: 17.6855, lng: 83.0015 }, crimeTypes: ['robbery'] },
     { street: 'ShankarMuttam Junction', coords: { lat: 17.6946, lng: 83.0086 }, crimeTypes: ['accident'] },
+    { street: 'Sabbavaram', coords: { lat: 17.6820, lng: 83.0100 }, crimeTypes: ['accident', 'murder'] },
     { street: 'Narsipatnam Town', coords: { lat: 17.6860, lng: 83.0010 }, crimeTypes: ['murder', 'assault'] },
     { street: 'Gavarapalem', coords: { lat: 17.6875, lng: 82.9980 }, crimeTypes: ['robbery'] },
     { street: 'Bayyavarm, NH16', coords: { lat: 17.6920, lng: 83.0050 }, crimeTypes: ['accident', 'murder'] },
@@ -40,25 +47,37 @@ export const areaStreetCoordinates: Record<string, StreetLocation[]> = {
     { street: 'Lokavari Peta', coords: { lat: 17.6910, lng: 83.0040 }, crimeTypes: ['kidnap'] },
     { street: 'Lankelapalem Junction', coords: { lat: 17.6850, lng: 83.0000 }, crimeTypes: ['accident'] },
     { street: 'Sunkarpeta', coords: { lat: 17.6880, lng: 83.0060 }, crimeTypes: ['accident'] },
+    { street: 'Kanakamahalakshmi Bank', coords: { lat: 17.6900, lng: 83.0025 }, crimeTypes: ['robbery'] },
+    { street: 'Vooderu', coords: { lat: 17.6870, lng: 83.0055 }, crimeTypes: ['murder'] },
+    { street: 'Madugula', coords: { lat: 17.6845, lng: 83.0075 }, crimeTypes: ['murder'] },
+    { street: 'Koppugondupalem', coords: { lat: 17.6935, lng: 83.0090 }, crimeTypes: ['murder'] },
+    { street: 'Anakapalli-Simhachalam Road', coords: { lat: 17.6925, lng: 83.0065 }, crimeTypes: ['kidnap'] },
+    { street: 'Dharmavaram Agraharam', coords: { lat: 17.6840, lng: 83.0045 }, crimeTypes: ['murder'] },
+    { street: 'Batajangalapalem Village', coords: { lat: 17.6865, lng: 83.0030 }, crimeTypes: ['murder'] },
+    { street: 'Devarapalli-Anandapuram Road', coords: { lat: 17.6895, lng: 83.0080 }, crimeTypes: ['accident'] },
+    { street: 'Anakapalle Express Highway', coords: { lat: 17.6885, lng: 83.0060 }, crimeTypes: ['accident'] },
   ],
-  
+
   // Anandapuram - 19 crimes
   'Anandapuram': [
-    { street: 'Anandapuram National Highway', coords: { lat: 17.9000, lng: 83.3700 }, crimeTypes: ['accident'] },
-    { street: 'Anandapuram Bypass', coords: { lat: 17.8980, lng: 83.3680 }, crimeTypes: ['assault', 'robbery'] },
+    { street: 'Anandapuram National Highway', coords: { lat: 17.9000, lng: 83.3700 }, crimeTypes: ['accident', 'murder'] },
+    { street: 'Anandapuram Bypass', coords: { lat: 17.8980, lng: 83.3680 }, crimeTypes: ['assault', 'robbery', 'murder'] },
     { street: 'Sontyam Junction', coords: { lat: 17.9020, lng: 83.3720 }, crimeTypes: ['murder', 'accident'] },
     { street: 'Kallivani Palem', coords: { lat: 17.8960, lng: 83.3660 }, crimeTypes: ['murder'] },
     { street: 'Gummadi Vanipalem Highway', coords: { lat: 17.9040, lng: 83.3740 }, crimeTypes: ['accident'] },
     { street: 'Gudilova', coords: { lat: 17.9060, lng: 83.3760 }, crimeTypes: ['robbery'] },
     { street: 'AH45 Highway', coords: { lat: 17.9010, lng: 83.3710 }, crimeTypes: ['accident'] },
+    { street: 'Enugulapalem', coords: { lat: 17.8970, lng: 83.3690 }, crimeTypes: ['accident'] },
+    { street: 'Kondapuram', coords: { lat: 17.9030, lng: 83.3730 }, crimeTypes: ['murder'] },
+    { street: 'Ramavaram', coords: { lat: 17.8990, lng: 83.3695 }, crimeTypes: ['murder'] },
   ],
-  
+
   // Andhra University - 2 crimes
   'Andhra University': [
     { street: 'Near AU Samatha Hostel', coords: { lat: 17.7320, lng: 83.3190 }, crimeTypes: ['murder'] },
     { street: 'AU Engineering College Ground', coords: { lat: 17.7300, lng: 83.3170 }, crimeTypes: ['robbery'] },
   ],
-  
+
   // Arilova - 9 crimes
   'Arilova': [
     { street: 'Ambedkar Nagar', coords: { lat: 17.7673, lng: 83.3134 }, crimeTypes: ['murder'] },
@@ -68,14 +87,15 @@ export const areaStreetCoordinates: Record<string, StreetLocation[]> = {
     { street: 'Hanumanthawaka Junction', coords: { lat: 17.7650, lng: 83.3100 }, crimeTypes: ['accident'] },
     { street: 'Darapalem', coords: { lat: 17.7700, lng: 83.3160 }, crimeTypes: ['robbery'] },
     { street: 'Adarsh Nagar', coords: { lat: 17.7640, lng: 83.3110 }, crimeTypes: ['robbery'] },
+    { street: 'Near Mudasarlova Park', coords: { lat: 17.7665, lng: 83.3125 }, crimeTypes: ['assault'] },
   ],
-  
+
   // Balayya Sastri Layout - 1 crime
   'Balayya Sastri Layout': [
     { street: 'Gurudwara Highway', coords: { lat: 17.7250, lng: 83.3050 }, crimeTypes: ['accident'] },
   ],
-  
-  // Beach Road - 10 crimes
+
+  // Beach Road - 11 crimes
   'Beach Road': [
     { street: 'Sagar Nagar Area', coords: { lat: 17.7215, lng: 83.3150 }, crimeTypes: ['kidnap'] },
     { street: 'Appughar Road', coords: { lat: 17.7180, lng: 83.3120 }, crimeTypes: ['accident'] },
@@ -85,8 +105,10 @@ export const areaStreetCoordinates: Record<string, StreetLocation[]> = {
     { street: 'NTR Statue Road', coords: { lat: 17.7190, lng: 83.3130 }, crimeTypes: ['assault'] },
     { street: 'Bhimili Beach Road', coords: { lat: 17.7270, lng: 83.3190 }, crimeTypes: ['accident'] },
     { street: 'Madhavadhara', coords: { lat: 17.7160, lng: 83.3100 }, crimeTypes: ['murder'] },
+    { street: 'RK Beach Children Park', coords: { lat: 17.7240, lng: 83.3165 }, crimeTypes: ['accident'] },
+    { street: 'MARLIN CAY BEACH RESORTS, Bhimili', coords: { lat: 17.7275, lng: 83.3195 }, crimeTypes: ['accident'] },
   ],
-  
+
   // Bheemunipatnam - 14 crimes
   'Bheemunipatnam': [
     { street: 'SOS Junction Beach Road', coords: { lat: 17.8900, lng: 83.4500 }, crimeTypes: ['accident'] },
@@ -99,32 +121,35 @@ export const areaStreetCoordinates: Record<string, StreetLocation[]> = {
     { street: 'Dakkamarri Fortune Layout', coords: { lat: 17.8870, lng: 83.4470 }, crimeTypes: ['murder'] },
     { street: 'Kapuluppada', coords: { lat: 17.8950, lng: 83.4550 }, crimeTypes: ['murder'] },
     { street: 'Thotlakonda', coords: { lat: 17.8840, lng: 83.4440 }, crimeTypes: ['assault'] },
+    { street: 'Satyanarayanapuram, Padmanabham', coords: { lat: 17.8890, lng: 83.4490 }, crimeTypes: ['robbery'] },
+    { street: 'Majjivalasa', coords: { lat: 17.8915, lng: 83.4515 }, crimeTypes: ['robbery'] },
+    { street: 'Mangamaripet-Bhimili Road', coords: { lat: 17.8925, lng: 83.4525 }, crimeTypes: ['accident'] },
   ],
-  
+
   // Bhogapuram - 3 crimes
   'Bhogapuram': [
     { street: 'Ravivalasa', coords: { lat: 18.0300, lng: 83.4900 }, crimeTypes: ['accident'] },
     { street: 'Polipalli', coords: { lat: 18.0280, lng: 83.4880 }, crimeTypes: ['accident'] },
   ],
-  
+
   // Boyapalem - 2 crimes
   'Boyapalem': [
     { street: 'Boyapalem Junction', coords: { lat: 17.7312, lng: 83.2859 }, crimeTypes: ['accident'] },
     { street: 'Boyapalem Signal Junction', coords: { lat: 17.7295, lng: 83.2840 }, crimeTypes: ['accident'] },
   ],
-  
+
   // Dabagardens - 2 crimes
   'Dabagardens': [
     { street: 'Pedagantyada Area', coords: { lat: 17.7150, lng: 83.3050 }, crimeTypes: ['assault'] },
     { street: 'Near Prakashrao Junction', coords: { lat: 17.7170, lng: 83.3070 }, crimeTypes: ['murder'] },
   ],
-  
+
   // Daspalla Hills - 2 crimes
   'Daspalla Hills': [
     { street: '75 Feet Service Road', coords: { lat: 17.7220, lng: 83.3100 }, crimeTypes: ['robbery'] },
     { street: 'Harbour Park, Jagannadha Swamy Temple', coords: { lat: 17.7200, lng: 83.3080 }, crimeTypes: ['kidnap'] },
   ],
-  
+
   // Dwaraka Nagar - 11 crimes
   'Dwaraka Nagar': [
     { street: 'Dwaraka Nagar Road', coords: { lat: 17.7287, lng: 83.3086 }, crimeTypes: ['assault'] },
@@ -137,7 +162,7 @@ export const areaStreetCoordinates: Record<string, StreetLocation[]> = {
     { street: 'Dwarakanagar 5th Lane', coords: { lat: 17.7270, lng: 83.3070 }, crimeTypes: ['accident'] },
     { street: 'Sangam Sarath Theatre Junction', coords: { lat: 17.7300, lng: 83.3100 }, crimeTypes: ['accident'] },
   ],
-  
+
   // Gajuwaka - 27 crimes
   'Gajuwaka': [
     { street: 'Autonagar Signal Junction', coords: { lat: 17.6853, lng: 83.2037 }, crimeTypes: ['accident'] },
@@ -152,32 +177,41 @@ export const areaStreetCoordinates: Record<string, StreetLocation[]> = {
     { street: 'Jaggu Junction', coords: { lat: 17.6880, lng: 83.2070 }, crimeTypes: ['murder', 'accident'] },
     { street: 'Old Gajuwaka Junction', coords: { lat: 17.6850, lng: 83.2040 }, crimeTypes: ['accident'] },
     { street: 'Gangavaram Port Road', coords: { lat: 17.6790, lng: 83.1970 }, crimeTypes: ['robbery'] },
+    { street: 'NAD-Gajuwaka Road', coords: { lat: 17.6845, lng: 83.2030 }, crimeTypes: ['assault', 'murder'] },
+    { street: 'Happy Mobile Store, Scindia Road', coords: { lat: 17.6835, lng: 83.2025 }, crimeTypes: ['robbery'] },
+    { street: 'Yarada Beach', coords: { lat: 17.6780, lng: 83.1960 }, crimeTypes: ['robbery'] },
+    { street: 'Hanuman Koodali, Aganampudi', coords: { lat: 17.6815, lng: 83.1995 }, crimeTypes: ['murder'] },
+    { street: 'Mindi Village', coords: { lat: 17.6795, lng: 83.1975 }, crimeTypes: ['robbery'] },
+    { street: 'Balacheruvu, Pedaganthyada', coords: { lat: 17.6825, lng: 83.2005 }, crimeTypes: ['assault'] },
+    { street: 'Malkapuram', coords: { lat: 17.6855, lng: 83.2045 }, crimeTypes: ['murder'] },
+    { street: 'Sundharayya Colony', coords: { lat: 17.6865, lng: 83.2055 }, crimeTypes: ['accident'] },
+    { street: 'Kurmannapalem', coords: { lat: 17.6875, lng: 83.2065 }, crimeTypes: ['accident'] },
   ],
-  
+
   // Ghat Road - 1 crime
   'Ghat road': [
     { street: 'Kailasagiri Ghat Road', coords: { lat: 17.7650, lng: 83.2380 }, crimeTypes: ['accident'] },
   ],
-  
+
   // Gopalapatnam - 1 crime
   'Gopalapatnam': [
     { street: 'Baji Junction Area', coords: { lat: 17.7550, lng: 83.2700 }, crimeTypes: ['robbery'] },
   ],
-  
+
   // Jagadamba Junction - 15 crimes
   'Jagadamba Junction': [
     { street: 'Karakachettu Polamamba Temple', coords: { lat: 17.7105, lng: 83.2980 }, crimeTypes: ['robbery'] },
     { street: 'Near Public Sector Bank', coords: { lat: 17.7090, lng: 83.2960 }, crimeTypes: ['robbery'] },
-    { street: 'Jagadamba Road', coords: { lat: 17.7120, lng: 83.3000 }, crimeTypes: ['murder', 'kidnap', 'accident'] },
+    { street: 'Jagadamba Road', coords: { lat: 17.7120, lng: 83.3000 }, crimeTypes: ['murder', 'kidnap', 'accident', 'assault'] },
     { street: 'Maharanipeta', coords: { lat: 17.7080, lng: 83.2940 }, crimeTypes: ['murder'] },
     { street: 'Fishing Harbour Area', coords: { lat: 17.7070, lng: 83.2950 }, crimeTypes: ['accident'] },
     { street: 'KGH Hospital', coords: { lat: 17.7100, lng: 83.2990 }, crimeTypes: ['assault'] },
   ],
-  
+
   // Kancharapalem - 22 crimes
   'Kancharapalem': [
     { street: 'Pydimamba Temple', coords: { lat: 17.7354, lng: 83.2738 }, crimeTypes: ['murder'] },
-    { street: 'Kancharapalem Road', coords: { lat: 17.7380, lng: 83.2760 }, crimeTypes: ['murder', 'assault', 'accident'] },
+    { street: 'Kancharapalem Road', coords: { lat: 17.7380, lng: 83.2760 }, crimeTypes: ['murder', 'assault', 'accident', 'kidnap'] },
     { street: 'Gnanapuram', coords: { lat: 17.7340, lng: 83.2720 }, crimeTypes: ['robbery'] },
     { street: 'Ayyappanagar, MuraliNagar', coords: { lat: 17.7360, lng: 83.2750 }, crimeTypes: ['robbery'] },
     { street: 'Burma Colony, Madhavadhara', coords: { lat: 17.7330, lng: 83.2710 }, crimeTypes: ['assault'] },
@@ -187,8 +221,10 @@ export const areaStreetCoordinates: Record<string, StreetLocation[]> = {
     { street: 'Reddi Kancharapalem', coords: { lat: 17.7320, lng: 83.2700 }, crimeTypes: ['murder'] },
     { street: 'Sanjeevayya Colony', coords: { lat: 17.7400, lng: 83.2790 }, crimeTypes: ['murder'] },
     { street: 'Indra Nagar', coords: { lat: 17.7345, lng: 83.2730 }, crimeTypes: ['robbery'] },
+    { street: 'Bowdra Ring Road', coords: { lat: 17.7365, lng: 83.2755 }, crimeTypes: ['accident'] },
+    { street: 'Kancharapalem Mettu', coords: { lat: 17.7375, lng: 83.2765 }, crimeTypes: ['murder'] },
   ],
-  
+
   // Kommadi - 4 crimes
   'Kommadi': [
     { street: 'Vikalangula Colony', coords: { lat: 17.7480, lng: 83.3450 }, crimeTypes: ['murder'] },
@@ -196,7 +232,7 @@ export const areaStreetCoordinates: Record<string, StreetLocation[]> = {
     { street: 'Kommadi Junction', coords: { lat: 17.7468, lng: 83.3441 }, crimeTypes: ['accident'] },
     { street: 'SwayamKrushiNagar', coords: { lat: 17.7455, lng: 83.3430 }, crimeTypes: ['murder'] },
   ],
-  
+
   // Kurmannapalem - 9 crimes
   'Kurmannapalem': [
     { street: 'JNNURM Colony, Duvvada', coords: { lat: 17.6900, lng: 83.1700 }, crimeTypes: ['murder'] },
@@ -205,18 +241,19 @@ export const areaStreetCoordinates: Record<string, StreetLocation[]> = {
     { street: 'Simon Nagar', coords: { lat: 17.6910, lng: 83.1740 }, crimeTypes: ['robbery'] },
     { street: 'Rajivnagar, Duvvada', coords: { lat: 17.6890, lng: 83.1710 }, crimeTypes: ['murder'] },
     { street: 'National Highway 16', coords: { lat: 17.6870, lng: 83.1690 }, crimeTypes: ['accident'] },
+    { street: 'Sector 1, Duvvada', coords: { lat: 17.6895, lng: 83.1715 }, crimeTypes: ['accident'] },
   ],
-  
+
   // Lawsons Bay Colony - 15 crimes
   'Lawsons Bay Colony': [
     { street: 'Lawsons Bay Road', coords: { lat: 17.7300, lng: 83.3300 }, crimeTypes: ['kidnap', 'murder', 'assault', 'accident'] },
     { street: 'Lawsons Bay Main Road', coords: { lat: 17.7320, lng: 83.3320 }, crimeTypes: ['robbery'] },
     { street: 'Bharat Petrol Bunk', coords: { lat: 17.7280, lng: 83.3280 }, crimeTypes: ['assault'] },
   ],
-  
+
   // Maddilapalem - 23 crimes
   'Maddilapalem': [
-    { street: 'Maddilapalem Road', coords: { lat: 17.7382, lng: 83.3230 }, crimeTypes: ['kidnap', 'murder', 'assault', 'accident'] },
+    { street: 'Maddilapalem Road', coords: { lat: 17.7382, lng: 83.3230 }, crimeTypes: ['kidnap', 'murder', 'assault', 'accident', 'robbery'] },
     { street: 'KRM Colony', coords: { lat: 17.7360, lng: 83.3210 }, crimeTypes: ['murder'] },
     { street: 'Kranthi Nagar', coords: { lat: 17.7370, lng: 83.3220 }, crimeTypes: ['murder'] },
     { street: 'CMR Function Hall', coords: { lat: 17.7390, lng: 83.3240 }, crimeTypes: ['murder'] },
@@ -225,17 +262,18 @@ export const areaStreetCoordinates: Record<string, StreetLocation[]> = {
     { street: 'Nakkavanipalem', coords: { lat: 17.7365, lng: 83.3215 }, crimeTypes: ['murder'] },
     { street: 'Maddilapalem Signal Junction', coords: { lat: 17.7395, lng: 83.3245 }, crimeTypes: ['accident'] },
   ],
-  
+
   // Madhurawada - 10 crimes
   'Madhurawada': [
-    { street: 'NH16 Highway', coords: { lat: 17.8017, lng: 83.3533 }, crimeTypes: ['accident'] },
+    { street: 'NH16 Highway', coords: { lat: 17.8017, lng: 83.3533 }, crimeTypes: ['accident', 'murder'] },
     { street: 'NGOs Colony', coords: { lat: 17.8056, lng: 83.3505 }, crimeTypes: ['murder'] },
     { street: 'Chandrampalem High School', coords: { lat: 17.7990, lng: 83.3550 }, crimeTypes: ['accident'] },
     { street: 'Panorama Hills', coords: { lat: 17.8030, lng: 83.3520 }, crimeTypes: ['robbery'] },
     { street: 'PM Palem', coords: { lat: 17.7990, lng: 83.3531 }, crimeTypes: ['assault'] },
     { street: 'IT SEZ Road', coords: { lat: 17.8040, lng: 83.3560 }, crimeTypes: ['accident'] },
+    { street: 'Rickshaw Colony, Srinivasa Nagar', coords: { lat: 17.8025, lng: 83.3515 }, crimeTypes: ['murder'] },
   ],
-  
+
   // Malkapuram - 5 crimes
   'Malkapuram': [
     { street: 'Malkapuram Area', coords: { lat: 17.6880, lng: 83.2450 }, crimeTypes: ['robbery'] },
@@ -244,25 +282,27 @@ export const areaStreetCoordinates: Record<string, StreetLocation[]> = {
     { street: 'Coast Guard Quarters', coords: { lat: 17.6890, lng: 83.2460 }, crimeTypes: ['murder'] },
     { street: 'Malkapuram Road', coords: { lat: 17.6860, lng: 83.2430 }, crimeTypes: ['assault'] },
   ],
-  
+
   // Marikavalasa - 4 crimes
   'Marikavalasa': [
     { street: 'Marikavalasa Road', coords: { lat: 17.8359, lng: 83.3581 }, crimeTypes: ['robbery'] },
     { street: 'Marikavalasa Highway Junction', coords: { lat: 17.8340, lng: 83.3560 }, crimeTypes: ['murder', 'accident'] },
     { street: 'NH16 Highway', coords: { lat: 17.8350, lng: 83.3570 }, crimeTypes: ['accident'] },
   ],
-  
+
   // Marripalem - 15 crimes
   'Marripalem': [
-    { street: 'Airport Road', coords: { lat: 17.7400, lng: 83.2500 }, crimeTypes: ['kidnap', 'murder', 'assault', 'accident'] },
+    { street: 'Airport Road', coords: { lat: 17.7400, lng: 83.2500 }, crimeTypes: ['kidnap', 'murder', 'assault', 'accident', 'robbery'] },
     { street: 'Shyamnagar Colony', coords: { lat: 17.7420, lng: 83.2530 }, crimeTypes: ['robbery'] },
     { street: 'Near Railway Quarters', coords: { lat: 17.7380, lng: 83.2470 }, crimeTypes: ['murder'] },
     { street: 'Marripalem VUDA Colony', coords: { lat: 17.7410, lng: 83.2520 }, crimeTypes: ['robbery'] },
+    { street: 'Devi Residents', coords: { lat: 17.7415, lng: 83.2515 }, crimeTypes: ['robbery'] },
+    { street: 'Railway Station', coords: { lat: 17.7385, lng: 83.2480 }, crimeTypes: ['murder'] },
   ],
-  
+
   // MVP Colony - 20 crimes
   'MVP Colony': [
-    { street: 'MVP Double Road', coords: { lat: 17.7407, lng: 83.3367 }, crimeTypes: ['robbery', 'assault', 'accident'] },
+    { street: 'MVP Double Road', coords: { lat: 17.7407, lng: 83.3367 }, crimeTypes: ['robbery', 'assault', 'accident', 'murder'] },
     { street: 'Ushodaya Junction', coords: { lat: 17.7420, lng: 83.3340 }, crimeTypes: ['murder'] },
     { street: 'MVP Sector 2', coords: { lat: 17.7390, lng: 83.3390 }, crimeTypes: ['robbery'] },
     { street: 'MVP Sector 6', coords: { lat: 17.7395, lng: 83.3380 }, crimeTypes: ['robbery', 'accident'] },
@@ -270,8 +310,10 @@ export const areaStreetCoordinates: Record<string, StreetLocation[]> = {
     { street: 'Sivajipalem Road', coords: { lat: 17.7415, lng: 83.3360 }, crimeTypes: ['murder', 'accident'] },
     { street: 'Nakkavanipalem Area', coords: { lat: 17.7400, lng: 83.3370 }, crimeTypes: ['murder'] },
     { street: 'Samatha College', coords: { lat: 17.7385, lng: 83.3355 }, crimeTypes: ['assault'] },
+    { street: 'Near Venkojipalem Junction', coords: { lat: 17.7410, lng: 83.3375 }, crimeTypes: ['accident'] },
+    { street: 'MVP Colony Sector 1', coords: { lat: 17.7392, lng: 83.3385 }, crimeTypes: ['robbery'] },
   ],
-  
+
   // NAD Junction - 7 crimes
   'NAD Junction': [
     { street: 'NAD Junction', coords: { lat: 17.7400, lng: 83.2300 }, crimeTypes: ['accident'] },
@@ -280,7 +322,7 @@ export const areaStreetCoordinates: Record<string, StreetLocation[]> = {
     { street: 'Vasavi Apartments, Ganesh Nagar', coords: { lat: 17.7390, lng: 83.2290 }, crimeTypes: ['robbery'] },
     { street: 'Viman Nagar', coords: { lat: 17.7430, lng: 83.2330 }, crimeTypes: ['murder'] },
   ],
-  
+
   // One Town - 15 crimes
   'One Town': [
     { street: 'Town Kotha Road', coords: { lat: 17.7000, lng: 83.2900 }, crimeTypes: ['assault', 'kidnap'] },
@@ -290,7 +332,7 @@ export const areaStreetCoordinates: Record<string, StreetLocation[]> = {
     { street: 'Fishing Harbour Area', coords: { lat: 17.6980, lng: 83.2880 }, crimeTypes: ['murder'] },
     { street: 'Chilakapeta', coords: { lat: 17.7030, lng: 83.2930 }, crimeTypes: ['murder'] },
   ],
-  
+
   // Pendurthi - 20 crimes
   'Pendurthi': [
     { street: 'Juttada Village', coords: { lat: 17.7990, lng: 83.1960 }, crimeTypes: ['murder'] },
@@ -303,8 +345,16 @@ export const areaStreetCoordinates: Record<string, StreetLocation[]> = {
     { street: 'Saripalli Flyover Road', coords: { lat: 17.7950, lng: 83.1910 }, crimeTypes: ['accident'] },
     { street: 'Appannapalem', coords: { lat: 17.8000, lng: 83.1965 }, crimeTypes: ['murder'] },
     { street: 'National Highway', coords: { lat: 17.8040, lng: 83.2000 }, crimeTypes: ['accident'] },
+    { street: 'Rajayyapeta Area', coords: { lat: 17.7985, lng: 83.1955 }, crimeTypes: ['murder'] },
+    { street: 'Chinnamushidiwada, SaptagiriNagar', coords: { lat: 17.7995, lng: 83.1940 }, crimeTypes: ['murder'] },
+    { street: 'Cheemalapalli', coords: { lat: 17.8005, lng: 83.1975 }, crimeTypes: ['robbery'] },
+    { street: 'Mutyamamba Colony, Vepagunta', coords: { lat: 17.8015, lng: 83.1985 }, crimeTypes: ['robbery'] },
+    { street: 'Araku-Visakhapatnam Rd', coords: { lat: 17.8025, lng: 83.1995 }, crimeTypes: ['accident'] },
+    { street: 'Akkireddypalem', coords: { lat: 17.7975, lng: 83.1945 }, crimeTypes: ['accident'] },
+    { street: 'SBI ATM near Nataraj Cinema Hall', coords: { lat: 17.7965, lng: 83.1935 }, crimeTypes: ['robbery'] },
+    { street: 'Pinagadi Village', coords: { lat: 17.8035, lng: 83.1998 }, crimeTypes: ['robbery'] },
   ],
-  
+
   // PM Palem - 5 crimes
   'PM Palem': [
     { street: 'Vizag Conventions, Near Stadium', coords: { lat: 17.7996, lng: 83.3531 }, crimeTypes: ['accident'] },
@@ -312,19 +362,19 @@ export const areaStreetCoordinates: Record<string, StreetLocation[]> = {
     { street: 'Midhilapuri VUDA Colony', coords: { lat: 17.8000, lng: 83.3540 }, crimeTypes: ['murder', 'assault'] },
     { street: 'PM Palem Road', coords: { lat: 17.7990, lng: 83.3520 }, crimeTypes: ['kidnap'] },
   ],
-  
+
   // Poorna Market - 12 crimes
   'Poorna Market': [
     { street: 'Panda Street', coords: { lat: 17.7064, lng: 83.2982 }, crimeTypes: ['murder'] },
     { street: 'Market Road', coords: { lat: 17.7050, lng: 83.2960 }, crimeTypes: ['murder', 'kidnap', 'assault'] },
     { street: 'Shopping Area', coords: { lat: 17.7080, lng: 83.3000 }, crimeTypes: ['accident'] },
   ],
-  
+
   // Port Area - 1 crime
   'Port Area': [
     { street: 'Gosha Hospitals, ChengalRaoPet', coords: { lat: 17.6950, lng: 83.2850 }, crimeTypes: ['kidnap'] },
   ],
-  
+
   // Railway new Colony - 6 crimes
   'Railway new Colony': [
     { street: 'Railway Station', coords: { lat: 17.7245, lng: 83.2956 }, crimeTypes: ['kidnap'] },
@@ -332,33 +382,33 @@ export const areaStreetCoordinates: Record<string, StreetLocation[]> = {
     { street: 'Balaji Metro Residency, Dondaparthy', coords: { lat: 17.7260, lng: 83.2970 }, crimeTypes: ['robbery'] },
     { street: 'Railway Station Junction', coords: { lat: 17.7250, lng: 83.2950 }, crimeTypes: ['kidnap'] },
   ],
-  
+
   // RK Beach - 19 crimes
   'RK Beach': [
-    { street: 'Beach Road', coords: { lat: 17.7180, lng: 83.3250 }, crimeTypes: ['murder', 'robbery', 'accident', 'assault'] },
+    { street: 'Beach Road', coords: { lat: 17.7180, lng: 83.3250 }, crimeTypes: ['murder', 'robbery', 'accident', 'assault', 'kidnap'] },
     { street: 'Gokul Park', coords: { lat: 17.7160, lng: 83.3230 }, crimeTypes: ['murder'] },
     { street: 'Children Park', coords: { lat: 17.7200, lng: 83.3270 }, crimeTypes: ['kidnap'] },
   ],
-  
+
   // RTC Complex - 4 crimes
   'RTC Complex': [
     { street: 'Telugu Thalli Flyover', coords: { lat: 17.7200, lng: 83.3100 }, crimeTypes: ['accident'] },
     { street: 'Rama Talkies Road', coords: { lat: 17.7180, lng: 83.3080 }, crimeTypes: ['robbery'] },
     { street: 'Dwaraka Bus Stop', coords: { lat: 17.7190, lng: 83.3090 }, crimeTypes: ['accident'] },
   ],
-  
+
   // Rushikonda - 19 crimes
   'Rushikonda': [
-    { street: 'Rushikonda Beach Road', coords: { lat: 17.7920, lng: 83.3850 }, crimeTypes: ['assault', 'murder', 'robbery', 'accident'] },
+    { street: 'Rushikonda Beach Road', coords: { lat: 17.7920, lng: 83.3850 }, crimeTypes: ['assault', 'murder', 'robbery', 'accident', 'kidnap'] },
     { street: 'Balaji Bay Mount Road', coords: { lat: 17.7900, lng: 83.3830 }, crimeTypes: ['kidnap'] },
     { street: 'Radisson Blue Junction', coords: { lat: 17.7940, lng: 83.3870 }, crimeTypes: ['accident'] },
   ],
-  
+
   // Scindia - 1 crime
   'Scindia': [
     { street: 'Essar Junction, Port Area', coords: { lat: 17.7150, lng: 83.2900 }, crimeTypes: ['accident'] },
   ],
-  
+
   // Seethammadhara - 5 crimes
   'Seethammadhara': [
     { street: 'ASR Nagar', coords: { lat: 17.7425, lng: 83.3124 }, crimeTypes: ['murder'] },
@@ -367,7 +417,7 @@ export const areaStreetCoordinates: Record<string, StreetLocation[]> = {
     { street: 'Main Road, Near AMG Hospital', coords: { lat: 17.7435, lng: 83.3130 }, crimeTypes: ['accident'] },
     { street: 'SR Nagar', coords: { lat: 17.7420, lng: 83.3120 }, crimeTypes: ['assault'] },
   ],
-  
+
   // Sheela Nagar (combined with Sheelanagar) - 6 crimes
   'Sheela Nagar': [
     { street: 'Kakani Nagar', coords: { lat: 17.7190, lng: 83.2020 }, crimeTypes: ['robbery'] },
@@ -376,10 +426,10 @@ export const areaStreetCoordinates: Record<string, StreetLocation[]> = {
     { street: 'Venkateshwara Colony', coords: { lat: 17.7210, lng: 83.2040 }, crimeTypes: ['murder'] },
     { street: 'NH16 Signal Point', coords: { lat: 17.7170, lng: 83.2000 }, crimeTypes: ['accident'] },
   ],
-  
+
   // Simhachalam - 18 crimes
   'Simhachalam': [
-    { street: 'Simhachalam Ghat Road', coords: { lat: 17.7680, lng: 83.2500 }, crimeTypes: ['assault', 'accident'] },
+    { street: 'Simhachalam Ghat Road', coords: { lat: 17.7680, lng: 83.2500 }, crimeTypes: ['assault', 'accident', 'murder'] },
     { street: 'Viratnagar Locality', coords: { lat: 17.7700, lng: 83.2510 }, crimeTypes: ['murder'] },
     { street: 'Simhachalam Road', coords: { lat: 17.7690, lng: 83.2490 }, crimeTypes: ['murder', 'accident'] },
     { street: 'Adavivaram', coords: { lat: 17.7660, lng: 83.2470 }, crimeTypes: ['murder'] },
@@ -387,14 +437,14 @@ export const areaStreetCoordinates: Record<string, StreetLocation[]> = {
     { street: 'Simhapuri Colony', coords: { lat: 17.7640, lng: 83.2450 }, crimeTypes: ['accident'] },
     { street: 'Near Appanna, Simhachalam Road', coords: { lat: 17.7710, lng: 83.2520 }, crimeTypes: ['accident'] },
   ],
-  
+
   // Siripuram - 3 crimes
   'Siripuram': [
     { street: 'Soma Restobar, VIP Road', coords: { lat: 17.7198, lng: 83.3163 }, crimeTypes: ['accident'] },
     { street: 'Siripuram Junction', coords: { lat: 17.7210, lng: 83.3175 }, crimeTypes: ['accident'] },
     { street: 'Siripuram Dutt Island', coords: { lat: 17.7190, lng: 83.3155 }, crimeTypes: ['accident'] },
   ],
-  
+
   // Steel Plant Township - 10 crimes
   'Steel Plant Township': [
     { street: 'Ukkunagaram Road', coords: { lat: 17.6100, lng: 83.1900 }, crimeTypes: ['assault'] },
@@ -406,7 +456,7 @@ export const areaStreetCoordinates: Record<string, StreetLocation[]> = {
     { street: 'Quarter 149-D, Sector 1', coords: { lat: 17.6105, lng: 83.1905 }, crimeTypes: ['robbery'] },
     { street: 'Pragati Maidan (RINL)', coords: { lat: 17.6095, lng: 83.1895 }, crimeTypes: ['murder'] },
   ],
-  
+
   // Tagarapuvalasa - 9 crimes
   'Tagarapuvalasa': [
     { street: 'Tagarapuvalasa Main Road', coords: { lat: 17.9301, lng: 83.4257 }, crimeTypes: ['robbery', 'murder'] },
@@ -416,18 +466,18 @@ export const areaStreetCoordinates: Record<string, StreetLocation[]> = {
     { street: 'SBI ATM, Avanti Engineering College', coords: { lat: 17.9310, lng: 83.4260 }, crimeTypes: ['robbery'] },
     { street: 'Gostani Bridge', coords: { lat: 17.9270, lng: 83.4220 }, crimeTypes: ['accident'] },
   ],
-  
+
   // Venkojipalem - 2 crimes
   'Venkojipalem': [
     { street: 'Venkojipalem Junction', coords: { lat: 17.7456, lng: 83.3289 }, crimeTypes: ['accident'] },
     { street: 'Near Seethammadhara Road', coords: { lat: 17.7445, lng: 83.3275 }, crimeTypes: ['assault'] },
   ],
-  
+
   // Vishalakshinagar - 1 crime
   'Vishalakshinagar': [
     { street: 'NH16, Near Visakha Valley School', coords: { lat: 17.7350, lng: 83.3200 }, crimeTypes: ['accident'] },
   ],
-  
+
   // Vizianagaram - 24 crimes
   'Vizianagaram': [
     { street: 'Ravada Village', coords: { lat: 18.1067, lng: 83.3956 }, crimeTypes: ['assault'] },
@@ -442,23 +492,30 @@ export const areaStreetCoordinates: Record<string, StreetLocation[]> = {
     { street: 'RTC Complex', coords: { lat: 18.1110, lng: 83.3910 }, crimeTypes: ['accident'] },
     { street: 'YSR Nagar', coords: { lat: 18.1045, lng: 83.3975 }, crimeTypes: ['accident'] },
     { street: 'Vizianagaram Town', coords: { lat: 18.1055, lng: 83.3965 }, crimeTypes: ['robbery', 'assault', 'accident'] },
+    { street: 'Donkinivalasa Village', coords: { lat: 18.1095, lng: 83.3935 }, crimeTypes: ['kidnap'] },
+    { street: 'Gudivada', coords: { lat: 18.1075, lng: 83.3942 }, crimeTypes: ['assault'] },
+    { street: 'Dwarapudi', coords: { lat: 18.1085, lng: 83.3948 }, crimeTypes: ['accident'] },
+    { street: 'Venkataramanapeta Village', coords: { lat: 18.1065, lng: 83.3958 }, crimeTypes: ['murder'] },
+    { street: 'Madhipadu', coords: { lat: 18.1048, lng: 83.3972 }, crimeTypes: ['accident'] },
+    { street: 'Bondapalli', coords: { lat: 18.1035, lng: 83.3985 }, crimeTypes: ['accident'] },
+    { street: 'Chelluru', coords: { lat: 18.1025, lng: 83.3978 }, crimeTypes: ['accident'] },
   ],
-  
+
   // Waltair - 3 crimes
   'Waltair': [
     { street: 'Pedda Waltair', coords: { lat: 17.7280, lng: 83.3200 }, crimeTypes: ['murder'] },
     { street: 'AU Out Gate, Chinna Waltair', coords: { lat: 17.7260, lng: 83.3180 }, crimeTypes: ['accident'] },
     { street: 'CBM Compound Road', coords: { lat: 17.7270, lng: 83.3190 }, crimeTypes: ['robbery'] },
   ],
-  
+
   // Yendada - 9 crimes
   'Yendada': [
     { street: 'Yendada Junction', coords: { lat: 17.7700, lng: 83.3600 }, crimeTypes: ['accident'] },
     { street: 'Vikalangula Colony', coords: { lat: 17.7690, lng: 83.3590 }, crimeTypes: ['kidnap'] },
     { street: 'Near Dairy Farm, Zoo Park', coords: { lat: 17.7710, lng: 83.3610 }, crimeTypes: ['accident'] },
-    { street: 'National Highway 16', coords: { lat: 17.7720, lng: 83.3620 }, crimeTypes: ['accident'] },
+    { street: 'National Highway 16', coords: { lat: 17.7720, lng: 83.3620 }, crimeTypes: ['accident', 'robbery'] },
     { street: 'Yendada Double Road', coords: { lat: 17.7680, lng: 83.3580 }, crimeTypes: ['murder'] },
-    { street: 'Zoo Park Road', coords: { lat: 17.7730, lng: 83.3630 }, crimeTypes: ['accident', 'robbery'] },
+    { street: 'Zoo Park Road', coords: { lat: 17.7730, lng: 83.3630 }, crimeTypes: ['accident'] },
     { street: 'NH5, Mahila Police Station Road', coords: { lat: 17.7740, lng: 83.3640 }, crimeTypes: ['accident'] },
   ],
 };
