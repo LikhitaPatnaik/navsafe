@@ -195,7 +195,7 @@ export const areaStreetCoordinates: Record<string, StreetLocation[]> = {
 
   // Gopalapatnam - 1 crime
   'Gopalapatnam': [
-    { street: 'Baji Junction Area', coords: { lat: 17.7550, lng: 83.2700 }, crimeTypes: ['robbery'] },
+    { street: 'Baji Junction Area', coords: { lat: 17.7481, lng: 83.2187 }, crimeTypes: ['robbery'] },
   ],
 
   // Jagadamba Junction - 15 crimes

@@ -92,7 +92,7 @@ export const areaCoordinates: Record<string, LatLng> = {
   // Additional aliases for routing
   'Siripuram': { lat: 17.7198, lng: 83.3163 },
   'Dabagardens': { lat: 17.7150, lng: 83.3050 },
-  'Gopalapatnam': { lat: 17.7550, lng: 83.2700 },
+  'Gopalapatnam': { lat: 17.7481, lng: 83.2187 },
   'Waltair': { lat: 17.7280, lng: 83.3200 },
   'Andhra University': { lat: 17.7320, lng: 83.3190 },
   'Port Area': { lat: 17.6950, lng: 83.2850 },
