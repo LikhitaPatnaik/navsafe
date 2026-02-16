@@ -227,10 +227,10 @@ export const areaStreetCoordinates: Record<string, StreetLocation[]> = {
 
   // Kommadi - 4 crimes
   'Kommadi': [
-    { street: 'Vikalangula Colony', coords: { lat: 17.7480, lng: 83.3450 }, crimeTypes: ['murder'] },
-    { street: 'National Highway 16', coords: { lat: 17.7500, lng: 83.3470 }, crimeTypes: ['accident'] },
-    { street: 'Kommadi Junction', coords: { lat: 17.7468, lng: 83.3441 }, crimeTypes: ['accident'] },
-    { street: 'SwayamKrushiNagar', coords: { lat: 17.7455, lng: 83.3430 }, crimeTypes: ['murder'] },
+    { street: 'Vikalangula Colony', coords: { lat: 17.8440, lng: 83.3225 }, crimeTypes: ['murder'] },
+    { street: 'National Highway 16', coords: { lat: 17.8450, lng: 83.3240 }, crimeTypes: ['accident'] },
+    { street: 'Kommadi Junction', coords: { lat: 17.8428, lng: 83.3215 }, crimeTypes: ['accident'] },
+    { street: 'SwayamKrushiNagar', coords: { lat: 17.8415, lng: 83.3200 }, crimeTypes: ['murder'] },
   ],
 
   // Kurmannapalem - 9 crimes
@@ -420,11 +420,11 @@ export const areaStreetCoordinates: Record<string, StreetLocation[]> = {
 
   // Sheela Nagar (combined with Sheelanagar) - 6 crimes
   'Sheela Nagar': [
-    { street: 'Kakani Nagar', coords: { lat: 17.7190, lng: 83.2020 }, crimeTypes: ['robbery'] },
-    { street: 'Sheelanagar-Harbour City Road Flyover', coords: { lat: 17.7200, lng: 83.2030 }, crimeTypes: ['murder', 'accident'] },
-    { street: 'Y Junction', coords: { lat: 17.7180, lng: 83.2010 }, crimeTypes: ['accident'] },
-    { street: 'Venkateshwara Colony', coords: { lat: 17.7210, lng: 83.2040 }, crimeTypes: ['murder'] },
-    { street: 'NH16 Signal Point', coords: { lat: 17.7170, lng: 83.2000 }, crimeTypes: ['accident'] },
+    { street: 'Kakani Nagar', coords: { lat: 17.7185, lng: 83.1984 }, crimeTypes: ['robbery'] },
+    { street: 'Sheelanagar-Harbour City Road Flyover', coords: { lat: 17.7195, lng: 83.1994 }, crimeTypes: ['murder', 'accident'] },
+    { street: 'Y Junction', coords: { lat: 17.7175, lng: 83.1974 }, crimeTypes: ['accident'] },
+    { street: 'Venkateshwara Colony', coords: { lat: 17.7200, lng: 83.2000 }, crimeTypes: ['murder'] },
+    { street: 'NH16 Signal Point', coords: { lat: 17.7170, lng: 83.1968 }, crimeTypes: ['accident'] },
   ],
 
   // Simhachalam - 18 crimes
@@ -510,13 +510,13 @@ export const areaStreetCoordinates: Record<string, StreetLocation[]> = {
 
   // Yendada - 9 crimes
   'Yendada': [
-    { street: 'Yendada Junction', coords: { lat: 17.7700, lng: 83.3600 }, crimeTypes: ['accident'] },
-    { street: 'Vikalangula Colony', coords: { lat: 17.7690, lng: 83.3590 }, crimeTypes: ['kidnap'] },
-    { street: 'Near Dairy Farm, Zoo Park', coords: { lat: 17.7710, lng: 83.3610 }, crimeTypes: ['accident'] },
-    { street: 'National Highway 16', coords: { lat: 17.7720, lng: 83.3620 }, crimeTypes: ['accident', 'robbery'] },
-    { street: 'Yendada Double Road', coords: { lat: 17.7680, lng: 83.3580 }, crimeTypes: ['murder'] },
-    { street: 'Zoo Park Road', coords: { lat: 17.7730, lng: 83.3630 }, crimeTypes: ['accident'] },
-    { street: 'NH5, Mahila Police Station Road', coords: { lat: 17.7740, lng: 83.3640 }, crimeTypes: ['accident'] },
+    { street: 'Yendada Junction', coords: { lat: 17.7772, lng: 83.3628 }, crimeTypes: ['accident'] },
+    { street: 'Vikalangula Colony', coords: { lat: 17.7760, lng: 83.3615 }, crimeTypes: ['kidnap'] },
+    { street: 'Near Dairy Farm, Zoo Park', coords: { lat: 17.7780, lng: 83.3640 }, crimeTypes: ['accident'] },
+    { street: 'National Highway 16', coords: { lat: 17.7790, lng: 83.3650 }, crimeTypes: ['accident', 'robbery'] },
+    { street: 'Yendada Double Road', coords: { lat: 17.7755, lng: 83.3605 }, crimeTypes: ['murder'] },
+    { street: 'Zoo Park Road', coords: { lat: 17.7800, lng: 83.3660 }, crimeTypes: ['accident'] },
+    { street: 'NH5, Mahila Police Station Road', coords: { lat: 17.7810, lng: 83.3670 }, crimeTypes: ['accident'] },
   ],
 };
 
