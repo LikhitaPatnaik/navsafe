@@ -451,6 +451,75 @@ export const calculateRoutes = async (
 
   console.log(`Distinct paths from OSRM: ${distinctPaths.length}`);
 
+  // ===== Step 2b: Generate dedicated SAFE routes through highest-safety areas =====
+  // Aggressively route through areas with best safety scores to ensure a genuinely safe option
+  const highSafetyAreas = getSafeAreasWithCoords(safetyZones, 65)
+    .sort((a, b) => b.score - a.score);
+  
+  // Also identify danger zones to avoid
+  const dangerZones: { point: LatLng; score: number; name: string }[] = [];
+  for (const zone of safetyZones) {
+    if (zone.safety_score < 40) {
+      const normalizedArea = zone.area.toLowerCase().trim();
+      for (const [key, coords] of Object.entries(areaCoordinates)) {
+        if (key.toLowerCase() === normalizedArea || 
+            normalizedArea.includes(key.toLowerCase()) ||
+            key.toLowerCase().includes(normalizedArea)) {
+          dangerZones.push({ point: coords, score: zone.safety_score, name: zone.area });
+          break;
+        }
+      }
+    }
+  }
+
+  // Try routing through 1 or 2 safe waypoints that are along the route
+  const directDist = haversineDistance(source, destination);
+  const safeCandidateWaypoints = highSafetyAreas.filter(area => {
+    const distVia = haversineDistance(source, area.point) + haversineDistance(area.point, destination);
+    return distVia <= directDist * 2.5 && 
+           haversineDistance(source, area.point) > directDist * 0.1 &&
+           haversineDistance(area.point, destination) > directDist * 0.1;
+  });
+
+  // Try single safe waypoints
+  for (const wp of safeCandidateWaypoints.slice(0, 5)) {
+    if (distinctPaths.length >= 8) break;
+    const osrmRoute = await getOSRMRoute([source, wp.point, destination]);
+    if (osrmRoute && validateRouteQuality(osrmRoute, source, destination)) {
+      const path = osrmRoute.geometry.coordinates.map(([lng, lat]) => ({ lat, lng }));
+      const isDuplicate = distinctPaths.some(existing => !arePathsDifferent(path, existing.path));
+      if (!isDuplicate) {
+        const analysis = analyzeRouteSafety(path, safetyZones);
+        distinctPaths.push({ path, distance: osrmRoute.distance, duration: osrmRoute.duration, analysis, source: `safe-dedicated-${wp.name}` });
+        console.log(`Found safe-dedicated route via ${wp.name} (safety: ${wp.score})`);
+      }
+    }
+  }
+
+  // Try pairs of safe waypoints for even safer routes
+  for (let i = 0; i < Math.min(3, safeCandidateWaypoints.length); i++) {
+    for (let j = i + 1; j < Math.min(5, safeCandidateWaypoints.length); j++) {
+      if (distinctPaths.length >= 8) break;
+      const wp1 = safeCandidateWaypoints[i];
+      const wp2 = safeCandidateWaypoints[j];
+      // Order waypoints by distance from source
+      const d1 = haversineDistance(source, wp1.point);
+      const d2 = haversineDistance(source, wp2.point);
+      const ordered = d1 < d2 ? [wp1.point, wp2.point] : [wp2.point, wp1.point];
+      
+      const osrmRoute = await getOSRMRoute([source, ...ordered, destination]);
+      if (osrmRoute && validateRouteQuality(osrmRoute, source, destination)) {
+        const path = osrmRoute.geometry.coordinates.map(([lng, lat]) => ({ lat, lng }));
+        const isDuplicate = distinctPaths.some(existing => !arePathsDifferent(path, existing.path));
+        if (!isDuplicate) {
+          const analysis = analyzeRouteSafety(path, safetyZones);
+          distinctPaths.push({ path, distance: osrmRoute.distance, duration: osrmRoute.duration, analysis, source: `safe-pair-${wp1.name}-${wp2.name}` });
+          console.log(`Found safe-pair route via ${wp1.name} + ${wp2.name}`);
+        }
+      }
+    }
+  }
+
   // ===== Step 3: Generate alternatives via known area waypoints (real road locations) =====
   // Try ALL directions multiple times with different waypoints - be aggressive
   const usedWaypoints: LatLng[] = [];
@@ -569,8 +638,31 @@ export const calculateRoutes = async (
 
   // Sort by distance to find fastest
   const byDistance = [...distinctPaths].sort((a, b) => a.distance - b.distance);
-  // Sort by safety to find safest
-  const bySafety = [...distinctPaths].sort((a, b) => b.analysis.overallScore - a.analysis.overallScore);
+  
+  // Calculate a composite safety score for each path that also considers
+  // proximity to danger zones and number of dangerous areas traversed
+  const scoredPaths = distinctPaths.map(d => {
+    let dangerPenalty = 0;
+    // Penalize routes that pass near danger zones
+    const sampleRate = Math.max(1, Math.floor(d.path.length / 30));
+    for (let i = 0; i < d.path.length; i += sampleRate) {
+      for (const dz of dangerZones) {
+        const dist = haversineDistance(d.path[i], dz.point);
+        if (dist < 1500) {
+          // Closer to danger zone = bigger penalty; lower score zone = bigger penalty
+          dangerPenalty += (1500 - dist) / 1500 * (40 - dz.score) / 40 * 3;
+        }
+      }
+    }
+    const dangerAreaCount = d.analysis.dangerousAreas.length;
+    const safeAreaCount = d.analysis.safeAreas.length;
+    // Composite: base safety + bonus for safe areas - penalty for danger proximity and dangerous areas
+    const compositeScore = d.analysis.overallScore + safeAreaCount * 3 - dangerAreaCount * 5 - dangerPenalty;
+    return { ...d, compositeScore };
+  });
+
+  // Sort by composite safety score to find safest
+  const bySafety = [...scoredPaths].sort((a, b) => b.compositeScore - a.compositeScore);
   
   // Fastest = shortest distance
   const fastestData = byDistance[0];
@@ -585,17 +677,17 @@ export const calculateRoutes = async (
     path: fastestData.path,
   };
   
-  // Safest = highest safety score BUT MUST have a different path from fastest
+  // Safest = highest composite safety score that has a DIFFERENT path from fastest
   let safestData = bySafety.find(d => 
     d !== fastestData && arePathsDifferent(d.path, fastestData.path)
   );
   
-  // If no path is both safer AND different, pick the most different path with decent safety
+  // If no path is both safer AND different, find the safest path with maximum safety-weighted divergence
   if (!safestData) {
-    // Find the path most different from fastest
-    let maxDivergence = -1;
-    for (const d of distinctPaths) {
+    let bestScore = -Infinity;
+    for (const d of scoredPaths) {
       if (d === fastestData) continue;
+      // Weight safety heavily (70%) and divergence (30%)
       let divergence = 0;
       const sampleCount = 20;
       for (let i = 1; i < sampleCount - 1; i++) {
@@ -607,8 +699,11 @@ export const calculateRoutes = async (
         }
         divergence += minDist;
       }
-      if (divergence > maxDivergence) {
-        maxDivergence = divergence;
+      // Normalize divergence to 0-100 range (assuming max ~50km total divergence)
+      const normalizedDiv = Math.min(100, divergence / 500);
+      const combined = d.compositeScore * 0.7 + normalizedDiv * 0.3;
+      if (combined > bestScore) {
+        bestScore = combined;
         safestData = d;
       }
     }
@@ -710,7 +805,8 @@ export const calculateRoutes = async (
   });
 
   console.log('=== FINAL ROUTES ===');
-  routes.forEach(r => console.log(`${r.type}: ${r.distance}km, ${r.duration}min, safety=${r.safetyScore}, pathPoints=${r.path.length}`));
+  routes.forEach(r => console.log(`${r.type}: ${r.distance}km, ${r.duration}min, safety=${r.safetyScore}, risk=${r.riskLevel}, pathPoints=${r.path.length}`));
+  console.log(`Safest route source: ${safestData.source}, dangerAreas avoided: ${safestData.analysis.dangerousAreas.length === 0 ? 'all' : safestData.analysis.dangerousAreas.join(',')}`);
 
   return routes;
 };
