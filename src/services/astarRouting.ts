@@ -96,8 +96,8 @@ export const areaCoordinates: Record<string, LatLng> = {
   'Waltair': { lat: 17.7280, lng: 83.3200 },
   'Andhra University': { lat: 17.7320, lng: 83.3190 },
   'Port Area': { lat: 17.6950, lng: 83.2850 },
-  'Kommadi': { lat: 17.8428, lng: 83.3215 },
-  'Kommadhi': { lat: 17.8428, lng: 83.3215 }, // alias → Kommadi
+  'Kommadi': { lat: 17.8306, lng: 83.3358 },
+  'Kommadhi': { lat: 17.8306, lng: 83.3358 }, // alias → Kommadi
   'RTC Complex': { lat: 17.7200, lng: 83.3100 },
   'Allipuram': { lat: 17.7193, lng: 83.2971 },
   'Malkapuram': { lat: 17.6880, lng: 83.2450 },
