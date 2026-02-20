@@ -159,25 +159,50 @@ const hasUTurnsOrLoops = (path: LatLng[], source: LatLng, destination: LatLng): 
 };
 
 // Check if route makes consistent progress towards destination
-const hasConsistentProgress = (path: LatLng[], destination: LatLng): boolean => {
+const hasConsistentProgress = (path: LatLng[], source: LatLng, destination: LatLng): boolean => {
   if (path.length < 5) return true;
   
+  const directDist = haversineDistance(source, destination);
   let lastDistance = haversineDistance(path[0], destination);
   let regressionCount = 0;
-  const sampleRate = Math.max(1, Math.floor(path.length / 15));
+  let maxRegression = 0;
+  const sampleRate = Math.max(1, Math.floor(path.length / 20));
   
   for (let i = sampleRate; i < path.length; i += sampleRate) {
     const currentDistance = haversineDistance(path[i], destination);
     
-    // Allow small regressions (up to 300m) but track larger ones
-    if (currentDistance > lastDistance + 300) {
+    // Track regressions (moving away from destination)
+    if (currentDistance > lastDistance + 200) {
       regressionCount++;
+      const regression = currentDistance - lastDistance;
+      if (regression > maxRegression) maxRegression = regression;
     }
     lastDistance = currentDistance;
   }
   
-  // Allow max 2 regression points (for minor detours around obstacles)
-  return regressionCount <= 2;
+  // Reject if too many regressions or a single large one
+  if (regressionCount > 2) return false;
+  if (maxRegression > directDist * 0.3) return false; // Single regression > 30% of trip distance
+  
+  // Check for loops: if path revisits a point within 100m
+  for (let i = 0; i < path.length - 10; i += sampleRate) {
+    for (let j = i + Math.max(10, sampleRate * 3); j < path.length; j += sampleRate) {
+      if (haversineDistance(path[i], path[j]) < 100) {
+        // Check the loop went at least 300m away
+        let maxDist = 0;
+        for (let k = i; k < j; k += Math.max(1, Math.floor((j - i) / 5))) {
+          const d = haversineDistance(path[i], path[k]);
+          if (d > maxDist) maxDist = d;
+        }
+        if (maxDist > 300) {
+          console.warn(`Loop detected: points ${i}-${j}, max loop extent ${maxDist.toFixed(0)}m`);
+          return false;
+        }
+      }
+    }
+  }
+  
+  return true;
 };
 
 // Find safe areas with coordinates
@@ -343,7 +368,7 @@ const validateRouteQuality = (osrmRoute: OSRMRoute, source: LatLng, destination:
   }
   
   // Check for consistent progress
-  if (!hasConsistentProgress(path, destination)) {
+  if (!hasConsistentProgress(path, source, destination)) {
     return false;
   }
   
