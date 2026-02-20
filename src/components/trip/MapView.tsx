@@ -216,7 +216,7 @@ const MapView = ({ routes = [], sourceCoords, destinationCoords, selectedRoute, 
     });
     routeLayersRef.current = [];
 
-    // Clean path: only trim dangling tails at endpoints; preserve all OSRM road-snapped points
+    // Clean path: trim dangling tails AND remove loops/detours
     const cleanPath = (path: LatLng[]): LatLng[] => {
       if (path.length < 4 || !sourceCoords || !destinationCoords) return path;
       
@@ -239,7 +239,7 @@ const MapView = ({ routes = [], sourceCoords, destinationCoords, selectedRoute, 
       let trimmed = path.slice(startIdx, endIdx + 1);
       if (trimmed.length < 3) return trimmed;
 
-      // Only trim dangling tails at ends (points moving away from dest/source)
+      // Trim dangling tails at ends
       while (trimmed.length > 3) {
         if (haversineDistance(trimmed[trimmed.length - 1], destinationCoords) > 
             haversineDistance(trimmed[trimmed.length - 2], destinationCoords) + 100) {
@@ -252,6 +252,45 @@ const MapView = ({ routes = [], sourceCoords, destinationCoords, selectedRoute, 
           trimmed.shift();
         } else break;
       }
+
+      // Remove loops: if the path revisits a point it was near before,
+      // cut out the loop segment
+      const removeLoops = (pts: LatLng[]): LatLng[] => {
+        if (pts.length < 10) return pts;
+        let result = [...pts];
+        let changed = true;
+        let passes = 0;
+        
+        while (changed && passes < 3) {
+          changed = false;
+          passes++;
+          
+          for (let i = 0; i < result.length - 5; i++) {
+            // Look ahead for a point that comes back near point i
+            for (let j = i + 5; j < result.length; j++) {
+              const dist = haversineDistance(result[i], result[j]);
+              if (dist < 150) {
+                // Check if the loop goes at least 200m away
+                let maxLoopDist = 0;
+                for (let k = i + 1; k < j; k++) {
+                  const d = haversineDistance(result[i], result[k]);
+                  if (d > maxLoopDist) maxLoopDist = d;
+                }
+                if (maxLoopDist > 200) {
+                  // Remove the loop: keep point i, skip to j
+                  result = [...result.slice(0, i + 1), ...result.slice(j)];
+                  changed = true;
+                  break;
+                }
+              }
+            }
+            if (changed) break;
+          }
+        }
+        return result;
+      };
+      
+      trimmed = removeLoops(trimmed);
       
       return trimmed;
     };
