@@ -358,54 +358,51 @@ const TripApp = () => {
 
       {/* Main Content */}
       <div className="flex flex-col lg:flex-row min-h-screen pt-16 sm:pt-20 pb-24 sm:pb-6 px-3 sm:px-4 gap-4 sm:gap-6">
-        {/* Left Panel - Full width on mobile, fixed width on desktop */}
-        <div className="w-full lg:w-96 flex-shrink-0 space-y-3 sm:space-y-4 order-1 lg:order-1">
+        {/* Trip Input - Above map on mobile, in sidebar area on desktop */}
+        <div className="w-full lg:w-96 flex-shrink-0 order-1 lg:order-1">
           {(trip.status === 'idle' || (trip.status === 'planning' && trip.routes.length === 0)) && (
             <TripInputPanel onFindRoutes={handleFindRoutes} isLoading={isCalculatingRoutes} />
           )}
 
-          {/* Crime Type Filter - Show when routes are available */}
-          {trip.routes.length > 0 && !trip.isMonitoring && (
-            <CrimeTypeFilter 
+          {/* Desktop only: show sidebar content inline */}
+          <div className="hidden lg:block mt-4">
+            <RouteSidebar
+              routes={trip.routes}
+              selectedRoute={trip.selectedRoute}
+              isMonitoring={trip.isMonitoring}
               selectedCrimeTypes={selectedCrimeTypes}
-              onToggle={handleToggleCrimeType}
-              onClearAll={handleClearAllFilters}
+              safetyZones={safetyZones}
+              onToggleCrimeType={handleToggleCrimeType}
+              onClearAllFilters={handleClearAllFilters}
+              onSelectRoute={(route) => selectRoute(route)}
+              onStartMonitoring={handleStartMonitoring}
             />
-          )}
+          </div>
 
-          {/* Route Cards */}
-          {trip.routes.length > 0 && !trip.isMonitoring && (
-            <div className="space-y-2 sm:space-y-3 animate-slide-up">
-              <div className="flex items-center justify-between px-1">
-                <h2 className="text-base sm:text-lg font-semibold text-foreground">Available Routes</h2>
-              </div>
-              {trip.routes.map((route) => (
-                <RouteCard
-                  key={route.id}
-                  route={route}
-                  isSelected={trip.selectedRoute?.id === route.id}
-                  onSelect={() => selectRoute(route)}
-                  onStartMonitoring={handleStartMonitoring}
-                  safetyZones={safetyZones}
-                />
-              ))}
-            </div>
-          )}
-
-          {/* Selected Route Info During Monitoring */}
+          {/* Selected Route Info During Monitoring - Desktop only */}
           {trip.isMonitoring && trip.selectedRoute && (
-            <div className="hidden sm:block glass-strong rounded-2xl p-4 sm:p-6 animate-slide-up">
+            <div className="hidden sm:block glass-strong rounded-2xl p-4 sm:p-6 animate-slide-up mt-4">
               <h3 className="font-semibold text-foreground mb-3 sm:mb-4">Active Route</h3>
-              <RouteCard
-                route={trip.selectedRoute}
-                isSelected={true}
-                onSelect={() => {}}
-                onStartMonitoring={() => {}}
-              />
+              <div className="glass rounded-xl p-3 sm:p-5 border-2 border-transparent">
+                <div className="flex items-start justify-between mb-3 gap-2">
+                  <div>
+                    <h3 className="font-semibold text-foreground text-sm sm:text-base capitalize">
+                      {trip.selectedRoute.type === 'fastest' ? '🟦' : trip.selectedRoute.type === 'safest' ? '🟩' : '🟨'} {trip.selectedRoute.type} Route
+                    </h3>
+                    <p className="text-xs sm:text-sm text-muted-foreground capitalize">{trip.selectedRoute.type} option</p>
+                  </div>
+                </div>
+                <div className="grid grid-cols-3 gap-2 text-center">
+                  <div><p className="text-xs font-medium text-foreground">{trip.selectedRoute.distance} km</p><p className="text-[10px] text-muted-foreground">Distance</p></div>
+                  <div><p className="text-xs font-medium text-foreground">{trip.selectedRoute.duration} min</p><p className="text-[10px] text-muted-foreground">Duration</p></div>
+                  <div><p className="text-xs font-medium text-foreground">{trip.selectedRoute.safetyScore}/100</p><p className="text-[10px] text-muted-foreground">Safety</p></div>
+                </div>
+              </div>
             </div>
           )}
         </div>
 
+        {/* Map - Full width, below trip input on mobile */}
         <div className="flex-1 min-h-[50vh] sm:min-h-[400px] lg:min-h-0 lg:h-auto lg:self-stretch order-2 lg:order-2 lg:sticky lg:top-20" style={{ minHeight: 'calc(100vh - 6rem)' }}>
           <MapView 
             routes={trip.routes} 
@@ -419,6 +416,21 @@ const TripApp = () => {
             highlightedCrimeTypes={selectedCrimeTypes}
           />
         </div>
+      </div>
+
+      {/* Mobile: Slide-out sidebar for routes & crime zones */}
+      <div className="lg:hidden">
+        <RouteSidebar
+          routes={trip.routes}
+          selectedRoute={trip.selectedRoute}
+          isMonitoring={trip.isMonitoring}
+          selectedCrimeTypes={selectedCrimeTypes}
+          safetyZones={safetyZones}
+          onToggleCrimeType={handleToggleCrimeType}
+          onClearAllFilters={handleClearAllFilters}
+          onSelectRoute={(route) => selectRoute(route)}
+          onStartMonitoring={handleStartMonitoring}
+        />
       </div>
 
       {/* Safety Actions Panel */}
