@@ -4,6 +4,7 @@ import { TripProvider, useTrip } from '@/context/TripContext';
 import { useAuth } from '@/contexts/AuthContext';
 import HeroSection from '@/components/landing/HeroSection';
 import TripInputPanel from '@/components/trip/TripInputPanel';
+import RouteSidebar from '@/components/trip/RouteSidebar';
 import MapView from '@/components/trip/MapView';
 import RouteCard from '@/components/trip/RouteCard';
 import LiveStatusBanner from '@/components/trip/LiveStatusBanner';
