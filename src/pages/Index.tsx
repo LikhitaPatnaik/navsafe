@@ -360,11 +360,10 @@ const TripApp = () => {
       {/* Main Content */}
       <div className="flex flex-col lg:flex-row min-h-screen pt-16 sm:pt-20 pb-24 sm:pb-6 px-3 sm:px-4 gap-4 sm:gap-6">
         {/* Left Panel - Full width on mobile, fixed width on desktop */}
-        <div className="w-full lg:w-96 flex-shrink-0 space-y-3 sm:space-y-4 order-2 lg:order-1">
+        <div className="w-full lg:w-96 flex-shrink-0 space-y-3 sm:space-y-4 order-1 lg:order-1">
           {(trip.status === 'idle' || (trip.status === 'planning' && trip.routes.length === 0)) && (
             <TripInputPanel onFindRoutes={handleFindRoutes} isLoading={isCalculatingRoutes} />
           )}
-
 
           {/* Crime Type Filter - Show when routes are available */}
           {trip.routes.length > 0 && !trip.isMonitoring && (
@@ -394,7 +393,7 @@ const TripApp = () => {
             </div>
           )}
 
-          {/* Selected Route Info During Monitoring - Hidden on mobile during monitoring to save space */}
+          {/* Selected Route Info During Monitoring */}
           {trip.isMonitoring && trip.selectedRoute && (
             <div className="hidden sm:block glass-strong rounded-2xl p-4 sm:p-6 animate-slide-up">
               <h3 className="font-semibold text-foreground mb-3 sm:mb-4">Active Route</h3>
@@ -408,7 +407,7 @@ const TripApp = () => {
           )}
         </div>
 
-        <div className="flex-1 min-h-[50vh] sm:min-h-[400px] lg:min-h-0 lg:h-auto lg:self-stretch order-1 lg:order-2 lg:sticky lg:top-20" style={{ minHeight: 'calc(100vh - 6rem)' }}>
+        <div className="flex-1 min-h-[50vh] sm:min-h-[400px] lg:min-h-0 lg:h-auto lg:self-stretch order-2 lg:order-2 lg:sticky lg:top-20" style={{ minHeight: 'calc(100vh - 6rem)' }}>
           <MapView 
             routes={trip.routes} 
             sourceCoords={trip.sourceCoords}
