@@ -1,6 +1,6 @@
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
 import { Button } from '@/components/ui/button';
-import { Layers, X } from 'lucide-react';
+import { Layers } from 'lucide-react';
 import CrimeTypeFilter from './CrimeTypeFilter';
 import RouteCard from './RouteCard';
 import { RouteInfo } from '@/types/route';
