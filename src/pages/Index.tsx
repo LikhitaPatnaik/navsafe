@@ -366,20 +366,31 @@ const TripApp = () => {
             <TripInputPanel onFindRoutes={handleFindRoutes} isLoading={isCalculatingRoutes} />
           )}
 
-          {/* Desktop only: show sidebar content inline */}
-          <div className="hidden lg:block mt-4">
-            <RouteSidebar
-              routes={trip.routes}
-              selectedRoute={trip.selectedRoute}
-              isMonitoring={trip.isMonitoring}
-              selectedCrimeTypes={selectedCrimeTypes}
-              safetyZones={safetyZones}
-              onToggleCrimeType={handleToggleCrimeType}
-              onClearAllFilters={handleClearAllFilters}
-              onSelectRoute={(route) => selectRoute(route)}
-              onStartMonitoring={handleStartMonitoring}
-            />
-          </div>
+          {/* Desktop only: show filters & routes inline */}
+          {trip.routes.length > 0 && !trip.isMonitoring && (
+            <div className="hidden lg:block mt-4 space-y-4">
+              <CrimeTypeFilter
+                selectedCrimeTypes={selectedCrimeTypes}
+                onToggle={handleToggleCrimeType}
+                onClearAll={handleClearAllFilters}
+              />
+              <div className="space-y-3">
+                <div className="flex items-center justify-between px-1">
+                  <h2 className="text-lg font-semibold text-foreground">Available Routes</h2>
+                </div>
+                {trip.routes.map((route) => (
+                  <RouteCard
+                    key={route.id}
+                    route={route}
+                    isSelected={trip.selectedRoute?.id === route.id}
+                    onSelect={() => selectRoute(route)}
+                    onStartMonitoring={handleStartMonitoring}
+                    safetyZones={safetyZones}
+                  />
+                ))}
+              </div>
+            </div>
+          )}
 
           {/* Selected Route Info During Monitoring - Desktop only */}
           {trip.isMonitoring && trip.selectedRoute && (
