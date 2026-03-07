@@ -87,10 +87,7 @@ const RouteSidebar = ({
         </Sheet>
       </div>
 
-      {/* Desktop: Fixed side panel */}
-      <div className="hidden lg:block w-96 flex-shrink-0 space-y-4 overflow-y-auto max-h-[calc(100vh-6rem)]">
-        {sidebarContent}
-      </div>
+      {/* Desktop: rendered inline by parent - this component only handles mobile sheet */}
     </>
   );
 };
