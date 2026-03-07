@@ -5,6 +5,8 @@ import { useAuth } from '@/contexts/AuthContext';
 import HeroSection from '@/components/landing/HeroSection';
 import TripInputPanel from '@/components/trip/TripInputPanel';
 import RouteSidebar from '@/components/trip/RouteSidebar';
+import RouteCard from '@/components/trip/RouteCard';
+import CrimeTypeFilter from '@/components/trip/CrimeTypeFilter';
 import MapView from '@/components/trip/MapView';
 import LiveStatusBanner from '@/components/trip/LiveStatusBanner';
 import AlertPopup from '@/components/trip/AlertPopup';
