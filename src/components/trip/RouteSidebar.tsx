@@ -64,31 +64,24 @@ const RouteSidebar = ({
   );
 
   return (
-    <>
-      {/* Mobile: Sheet slide-out from left */}
-      <div className="lg:hidden">
-        <Sheet open={open} onOpenChange={setOpen}>
-          <SheetTrigger asChild>
-            <Button
-              variant="glass"
-              size="sm"
-              className="fixed bottom-28 left-3 z-30 shadow-elevated gap-2"
-            >
-              <Layers className="w-4 h-4" />
-              <span className="text-xs">Routes & Zones</span>
-            </Button>
-          </SheetTrigger>
-          <SheetContent side="left" className="w-[85vw] max-w-sm bg-background border-border overflow-y-auto p-4">
-            <SheetHeader className="mb-4">
-              <SheetTitle className="text-foreground">Routes & Crime Zones</SheetTitle>
-            </SheetHeader>
-            {sidebarContent}
-          </SheetContent>
-        </Sheet>
-      </div>
-
-      {/* Desktop: rendered inline by parent - this component only handles mobile sheet */}
-    </>
+    <Sheet open={open} onOpenChange={setOpen}>
+      <SheetTrigger asChild>
+        <Button
+          variant="glass"
+          size="sm"
+          className="fixed bottom-28 left-3 z-30 shadow-elevated gap-2"
+        >
+          <Layers className="w-4 h-4" />
+          <span className="text-xs">Routes & Zones</span>
+        </Button>
+      </SheetTrigger>
+      <SheetContent side="left" className="w-[85vw] max-w-sm bg-background border-border overflow-y-auto p-4">
+        <SheetHeader className="mb-4">
+          <SheetTitle className="text-foreground">Routes & Crime Zones</SheetTitle>
+        </SheetHeader>
+        {sidebarContent}
+      </SheetContent>
+    </Sheet>
   );
 };
 
