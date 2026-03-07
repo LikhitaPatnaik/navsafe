@@ -5,7 +5,7 @@ import CrimeTypeFilter from './CrimeTypeFilter';
 import RouteCard from './RouteCard';
 import { RouteInfo } from '@/types/route';
 import { CrimeType } from '@/utils/crimeTypeMapping';
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 
 interface RouteSidebarProps {
   routes: RouteInfo[];
@@ -31,12 +31,20 @@ const RouteSidebar = ({
   onStartMonitoring,
 }: RouteSidebarProps) => {
   const [open, setOpen] = useState(false);
+  const prevRoutesLength = useRef(0);
 
   const hasRoutes = routes.length > 0 && !isMonitoring;
 
+  // Auto-open sidebar when routes first appear
+  useEffect(() => {
+    if (routes.length > 0 && prevRoutesLength.current === 0 && !isMonitoring) {
+      setOpen(true);
+    }
+    prevRoutesLength.current = routes.length;
+  }, [routes.length, isMonitoring]);
+
   if (!hasRoutes) return null;
 
-  // Desktop: always-visible sidebar panel
   const sidebarContent = (
     <div className="space-y-4">
       <CrimeTypeFilter
@@ -54,8 +62,13 @@ const RouteSidebar = ({
             key={route.id}
             route={route}
             isSelected={selectedRoute?.id === route.id}
-            onSelect={() => onSelectRoute(route)}
-            onStartMonitoring={onStartMonitoring}
+            onSelect={() => {
+              onSelectRoute(route);
+            }}
+            onStartMonitoring={() => {
+              onStartMonitoring();
+              setOpen(false);
+            }}
             safetyZones={safetyZones}
           />
         ))}
@@ -69,10 +82,10 @@ const RouteSidebar = ({
         <Button
           variant="glass"
           size="sm"
-          className="fixed bottom-28 left-3 z-30 shadow-elevated gap-2"
+          className="fixed bottom-28 left-3 z-30 shadow-elevated gap-2 animate-pulse border-2 border-primary/50"
         >
-          <Layers className="w-4 h-4" />
-          <span className="text-xs">Routes & Zones</span>
+          <Layers className="w-4 h-4 text-primary" />
+          <span className="text-xs font-semibold">Routes & Zones</span>
         </Button>
       </SheetTrigger>
       <SheetContent side="left" className="w-[85vw] max-w-sm bg-background border-border overflow-y-auto p-4">
