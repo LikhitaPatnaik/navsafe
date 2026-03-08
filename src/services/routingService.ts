@@ -605,7 +605,7 @@ export const calculateRoutes = async (
   }
 
   // ===== Step 5: Perpendicular offsets - try aggressively =====
-  if (distinctPaths.length < 5) {
+  if (distinctPaths.length < 3) {
     const offsets = [
       { km: 1.5, dir: 'left' as const, progress: 0.4 },
       { km: 1.5, dir: 'right' as const, progress: 0.6 },
