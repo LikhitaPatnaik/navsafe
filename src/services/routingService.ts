@@ -580,7 +580,7 @@ export const calculateRoutes = async (
   }
 
   // ===== Step 4: Try safe-area waypoints =====
-  if (distinctPaths.length < 5) {
+  if (distinctPaths.length < 4) {
     const safeAreas = getSafeAreasWithCoords(safetyZones, 50);
     const viableWaypoints = safeAreas.filter(area => {
       const tooClose = usedWaypoints.some(uw => haversineDistance(uw, area.point) < 500);
