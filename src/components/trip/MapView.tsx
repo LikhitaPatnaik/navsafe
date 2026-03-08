@@ -708,7 +708,7 @@ const MapView = ({ routes = [], sourceCoords, destinationCoords, selectedRoute, 
     };
 
     loadSafetyZones();
-  }, [mapReady, showSafetyZones, highlightedCrimeTypes, selectedRoute]);
+  }, [mapReady, showSafetyZones, highlightedCrimeTypes, selectedRoute?.id]);
 
   // No zoom-based hiding — circles are always visible at all zoom levels
 
