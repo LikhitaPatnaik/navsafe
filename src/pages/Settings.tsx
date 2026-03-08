@@ -12,7 +12,7 @@ import { ArrowLeft, Bell, MapPin, Shield, Volume2, Palette, Sun, Moon, Mic } fro
 const Settings = () => {
   const { user, loading } = useAuth();
   const { theme, setTheme } = useTheme();
-  const { voiceSosEnabled, setVoiceSosEnabled } = useSettings();
+  const { voiceSosEnabled, setVoiceSosEnabled, whatsappSosEnabled, setWhatsappSosEnabled } = useSettings();
   const navigate = useNavigate();
 
   React.useEffect(() => {
@@ -85,10 +85,10 @@ const Settings = () => {
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Mic className="w-5 h-5" />
-              Voice SOS
+              SOS Options
             </CardTitle>
             <CardDescription>
-              Enable voice-activated emergency alerts
+              Configure how emergency alerts are sent
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
@@ -105,6 +105,21 @@ const Settings = () => {
                 id="voice-sos" 
                 checked={voiceSosEnabled}
                 onCheckedChange={setVoiceSosEnabled}
+              />
+            </div>
+            <div className="flex items-center justify-between">
+              <div className="flex-1">
+                <Label htmlFor="whatsapp-sos" className="cursor-pointer">
+                  Enable WhatsApp SOS
+                </Label>
+                <p className="text-sm text-muted-foreground mt-1">
+                  Show WhatsApp SOS button on the map to send alerts via WhatsApp
+                </p>
+              </div>
+              <Switch 
+                id="whatsapp-sos" 
+                checked={whatsappSosEnabled}
+                onCheckedChange={setWhatsappSosEnabled}
               />
             </div>
           </CardContent>

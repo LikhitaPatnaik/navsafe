@@ -14,6 +14,7 @@ interface SOSRequest {
   landmark?: string;
   message?: string;
   contactIds?: string[];
+  channels?: ('sms' | 'whatsapp')[];
 }
 
 const formatOSMUrl = (lat: number, lng: number): string => {
@@ -71,7 +72,8 @@ const handler = async (req: Request): Promise<Response> => {
   }
 
   try {
-    const { location, landmark, message, contactIds }: SOSRequest = await req.json();
+    const { location, landmark, message, contactIds, channels }: SOSRequest = await req.json();
+    const activeChannels: ('sms' | 'whatsapp')[] = channels && channels.length > 0 ? channels : ['sms', 'whatsapp'];
 
     if (!location || typeof location.lat !== 'number' || typeof location.lng !== 'number') {
       return new Response(
@@ -119,11 +121,10 @@ const handler = async (req: Request): Promise<Response> => {
 
     console.log(`Sending SOS to ${contacts.length} contacts`);
 
-    // Send SMS + WhatsApp to all contacts in parallel
-    const sendPromises = contacts.flatMap(contact => [
-      sendTwilioMessage(contact.phone, sosMessage, 'sms'),
-      sendTwilioMessage(contact.phone, sosMessage, 'whatsapp'),
-    ]);
+    // Send to all contacts via selected channels in parallel
+    const sendPromises = contacts.flatMap(contact =>
+      activeChannels.map(channel => sendTwilioMessage(contact.phone, sosMessage, channel))
+    );
 
     const results = await Promise.all(sendPromises);
     const smsResults = results.filter(r => r.channel === 'sms');

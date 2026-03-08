@@ -1,7 +1,7 @@
 import { useState, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { RefreshCw, Flag, AlertOctagon, Loader2, Mic, MicOff, MapPin } from 'lucide-react';
+import { RefreshCw, Flag, AlertOctagon, Loader2, Mic, MicOff, MapPin, MessageSquare, MessageCircle } from 'lucide-react';
 import { useTrip } from '@/context/TripContext';
 import { useSettings } from '@/contexts/SettingsContext';
 import { supabase } from '@/integrations/supabase/client';
@@ -101,17 +101,18 @@ const findNearestStreet = (lat: number, lng: number, areaName: string): string |
 
 const SafetyActionsPanel = () => {
   const { trip } = useTrip();
-  const { voiceSosEnabled } = useSettings();
+  const { voiceSosEnabled, whatsappSosEnabled } = useSettings();
   const [showReportModal, setShowReportModal] = useState(false);
   const [showSosModal, setShowSosModal] = useState(false);
+  const [sosChannel, setSosChannel] = useState<('sms' | 'whatsapp')[]>(['sms']);
   const [reportReason, setReportReason] = useState<string>('');
   const [reportSeverity, setReportSeverity] = useState<'low' | 'medium' | 'high'>('medium');
   const [isSending, setIsSending] = useState(false);
   const [isReporting, setIsReporting] = useState(false);
   const [reportLocation, setReportLocation] = useState<{ lat: number; lng: number; area: string; street: string | null } | null>(null);
 
-  // Send SOS alert function
-  const sendSosAlert = useCallback(async () => {
+  // Send SOS alert function with channel selection
+  const sendSosAlert = useCallback(async (channels: ('sms' | 'whatsapp')[] = ['sms', 'whatsapp']) => {
     try {
       let location = trip.currentPosition;
       
@@ -133,12 +134,13 @@ const SafetyActionsPanel = () => {
       }
 
       const landmark = findNearestLandmark(location.lat, location.lng);
-      console.log('[SOS] Sending with location:', location, 'Landmark:', landmark);
+      console.log('[SOS] Sending via', channels.join(' + '), 'with location:', location, 'Landmark:', landmark);
       
       const { data, error } = await supabase.functions.invoke('send-sos', {
         body: {
           landmark,
           location: { lat: location.lat, lng: location.lng },
+          channels,
         },
       });
 
@@ -153,7 +155,8 @@ const SafetyActionsPanel = () => {
         return false;
       }
 
-      toast.success(`SOS sent to ${data?.sent || 0} contacts!`);
+      const channelLabel = channels.join(' & ').toUpperCase();
+      toast.success(`SOS sent via ${channelLabel}!`);
       return true;
     } catch (err) {
       console.error('[SOS] Error:', err);
@@ -164,9 +167,9 @@ const SafetyActionsPanel = () => {
 
   // Voice command handler - auto-sends SOS immediately
   const handleVoiceTrigger = useCallback(async () => {
-    console.log('[Voice] SOS trigger detected! Auto-sending...');
-    toast.info('Voice SOS detected! Sending alert...');
-    await sendSosAlert();
+    console.log('[Voice] SOS trigger detected! Auto-sending via SMS...');
+    toast.info('Voice SOS detected! Sending SMS alert...');
+    await sendSosAlert(['sms']);
   }, [sendSosAlert]);
 
   const { isListening, isSupported, toggleListening } = useVoiceCommand({
@@ -299,11 +302,16 @@ const SafetyActionsPanel = () => {
 
   const handleSos = async () => {
     setIsSending(true);
-    const success = await sendSosAlert();
+    const success = await sendSosAlert(sosChannel);
     if (success) {
       setShowSosModal(false);
     }
     setIsSending(false);
+  };
+
+  const openSosModal = (channels: ('sms' | 'whatsapp')[]) => {
+    setSosChannel(channels);
+    setShowSosModal(true);
   };
 
   return (
@@ -349,16 +357,29 @@ const SafetyActionsPanel = () => {
           <span className="hidden sm:inline">Report Area</span>
         </Button>
 
-        {/* SOS Button */}
+        {/* SMS SOS Button */}
         <Button
           variant="sos"
           size="default"
           className="flex-1 sm:flex-none shadow-lg text-xs sm:text-sm py-3 sm:py-2"
-          onClick={() => setShowSosModal(true)}
+          onClick={() => openSosModal(['sms'])}
         >
-          <AlertOctagon className="w-4 h-4 sm:w-5 sm:h-5 sm:mr-2" />
-          <span className="hidden sm:inline">SOS</span>
+          <MessageSquare className="w-4 h-4 sm:w-5 sm:h-5 sm:mr-2" />
+          <span className="hidden sm:inline">SMS SOS</span>
         </Button>
+
+        {/* WhatsApp SOS Button - Only shown when enabled in settings */}
+        {whatsappSosEnabled && (
+          <Button
+            variant="sos"
+            size="default"
+            className="flex-1 sm:flex-none shadow-lg text-xs sm:text-sm py-3 sm:py-2 bg-green-600 hover:bg-green-700"
+            onClick={() => openSosModal(['whatsapp'])}
+          >
+            <MessageCircle className="w-4 h-4 sm:w-5 sm:h-5 sm:mr-2" />
+            <span className="hidden sm:inline">WhatsApp SOS</span>
+          </Button>
+        )}
       </div>
 
       {/* Report Modal */}
@@ -380,7 +401,6 @@ const SafetyActionsPanel = () => {
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4 mt-4">
-            {/* Location Display */}
             {reportLocation && (
               <div className="p-3 rounded-lg bg-muted/50 border border-border">
                 <div className="flex items-center gap-2 text-sm text-foreground">
@@ -396,30 +416,22 @@ const SafetyActionsPanel = () => {
               </div>
             )}
 
-            {/* Reason Selection */}
             <div>
-              <label className="text-sm font-medium text-foreground mb-2 block">
-                Reason
-              </label>
+              <label className="text-sm font-medium text-foreground mb-2 block">Reason</label>
               <Select value={reportReason} onValueChange={setReportReason}>
                 <SelectTrigger className="w-full">
                   <SelectValue placeholder="Select a reason..." />
                 </SelectTrigger>
                 <SelectContent>
                   {REPORT_REASONS.map((reason) => (
-                    <SelectItem key={reason} value={reason}>
-                      {reason}
-                    </SelectItem>
+                    <SelectItem key={reason} value={reason}>{reason}</SelectItem>
                   ))}
                 </SelectContent>
               </Select>
             </div>
 
-            {/* Severity Selection */}
             <div>
-              <label className="text-sm font-medium text-foreground mb-2 block">
-                Severity
-              </label>
+              <label className="text-sm font-medium text-foreground mb-2 block">Severity</label>
               <div className="flex gap-2">
                 {(['low', 'medium', 'high'] as const).map((level) => (
                   <Button
@@ -440,7 +452,6 @@ const SafetyActionsPanel = () => {
               </div>
             </div>
 
-            {/* Submit Button */}
             <Button 
               variant="hero" 
               className="w-full" 
@@ -460,16 +471,16 @@ const SafetyActionsPanel = () => {
         </DialogContent>
       </Dialog>
 
-      {/* SOS Modal */}
+      {/* SOS Confirmation Modal */}
       <Dialog open={showSosModal} onOpenChange={setShowSosModal}>
         <DialogContent className="glass-strong border-destructive/30">
           <DialogHeader>
             <DialogTitle className="text-destructive flex items-center gap-2">
               <AlertOctagon className="w-5 h-5" />
-              Emergency SOS
+              Emergency SOS — {sosChannel.includes('whatsapp') ? 'WhatsApp' : 'SMS'}
             </DialogTitle>
             <DialogDescription className="text-muted-foreground">
-              This will send your live location to emergency contacts via SMS
+              This will send your live location to emergency contacts via {sosChannel.includes('whatsapp') ? 'WhatsApp' : 'SMS'}
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4 mt-4">
@@ -486,7 +497,7 @@ const SafetyActionsPanel = () => {
               </Button>
               <Button
                 variant="sos"
-                className="flex-1"
+                className={`flex-1 ${sosChannel.includes('whatsapp') ? 'bg-green-600 hover:bg-green-700' : ''}`}
                 onClick={handleSos}
                 disabled={isSending}
               >
@@ -496,7 +507,7 @@ const SafetyActionsPanel = () => {
                     Sending...
                   </>
                 ) : (
-                  'Send SOS Alert'
+                  `Send ${sosChannel.includes('whatsapp') ? 'WhatsApp' : 'SMS'} SOS`
                 )}
               </Button>
             </div>
