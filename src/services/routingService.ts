@@ -554,10 +554,10 @@ export const calculateRoutes = async (
 
   // ===== Step 3: Generate alternatives via known area waypoints (real road locations) =====
   const usedWaypoints: LatLng[] = [];
-  const allDirections: ('left' | 'right' | 'center')[] = ['left', 'right', 'center', 'left', 'right', 'center', 'right', 'left'];
+  const allDirections: ('left' | 'right' | 'center')[] = ['left', 'right', 'center', 'left'];
   
   for (const dir of allDirections) {
-    if (distinctPaths.length >= 8) break;
+    if (distinctPaths.length >= 6) break;
     
     const waypoints = findIntermediateAreaWaypoints(source, destination, dir, usedWaypoints);
     if (waypoints.length === 0) continue;
