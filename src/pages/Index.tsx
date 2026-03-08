@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { MapPin, Navigation } from 'lucide-react';
 import { TripProvider, useTrip } from '@/context/TripContext';
 import { useAuth } from '@/contexts/AuthContext';
 import HeroSection from '@/components/landing/HeroSection';
