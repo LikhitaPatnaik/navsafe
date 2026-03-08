@@ -1,11 +1,9 @@
-import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
-import { Button } from '@/components/ui/button';
-import { Layers } from 'lucide-react';
+import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 import CrimeTypeFilter from './CrimeTypeFilter';
 import RouteCard from './RouteCard';
 import { RouteInfo } from '@/types/route';
 import { CrimeType } from '@/utils/crimeTypeMapping';
-import { useState, useEffect, useRef } from 'react';
+import { useEffect, useRef } from 'react';
 
 interface RouteSidebarProps {
   routes: RouteInfo[];
@@ -17,6 +15,8 @@ interface RouteSidebarProps {
   onClearAllFilters: () => void;
   onSelectRoute: (route: RouteInfo) => void;
   onStartMonitoring: () => void;
+  externalOpen?: boolean;
+  onExternalOpenChange?: (open: boolean) => void;
 }
 
 const RouteSidebar = ({
@@ -29,11 +29,16 @@ const RouteSidebar = ({
   onClearAllFilters,
   onSelectRoute,
   onStartMonitoring,
+  externalOpen,
+  onExternalOpenChange,
 }: RouteSidebarProps) => {
-  const [open, setOpen] = useState(false);
   const prevRoutesLength = useRef(0);
 
   const hasRoutes = routes.length > 0 && !isMonitoring;
+
+  // Derive open state from external control
+  const open = externalOpen ?? false;
+  const setOpen = onExternalOpenChange ?? (() => {});
 
   // Auto-open sidebar when routes first appear
   useEffect(() => {
@@ -78,16 +83,6 @@ const RouteSidebar = ({
 
   return (
     <Sheet open={open} onOpenChange={setOpen}>
-      <SheetTrigger asChild>
-        <Button
-          variant="glass"
-          size="sm"
-          className="fixed bottom-28 left-3 z-30 shadow-elevated gap-2 animate-pulse border-2 border-primary/50"
-        >
-          <Layers className="w-4 h-4 text-primary" />
-          <span className="text-xs font-semibold">Routes & Zones</span>
-        </Button>
-      </SheetTrigger>
       <SheetContent side="left" className="w-[85vw] max-w-sm bg-background border-border overflow-y-auto p-4">
         <SheetHeader className="mb-4">
           <SheetTitle className="text-foreground">Routes & Crime Zones</SheetTitle>

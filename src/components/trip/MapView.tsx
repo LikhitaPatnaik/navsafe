@@ -206,7 +206,7 @@ const MapView = ({ routes = [], sourceCoords, destinationCoords, selectedRoute, 
     }
   }, [sourceCoords, destinationCoords, mapReady]);
 
-  // Draw route paths from routes array
+  // Draw route paths from routes array (only when routes change)
   useEffect(() => {
     if (!mapRef.current || !mapReady || routes.length === 0) return;
 
@@ -295,7 +295,7 @@ const MapView = ({ routes = [], sourceCoords, destinationCoords, selectedRoute, 
       return trimmed;
     };
 
-    // Draw each route
+    // Draw each route - store route id on polyline for later style updates
     routes.forEach(route => {
       if (route.path && route.path.length > 0) {
         const isSelected = selectedRoute?.id === route.id;
@@ -306,11 +306,31 @@ const MapView = ({ routes = [], sourceCoords, destinationCoords, selectedRoute, 
           weight: isSelected ? 6 : 4,
           opacity: isSelected ? 1 : 0.6,
         });
+        (polyline as any)._routeId = route.id;
+        (polyline as any)._routeType = route.type;
         polyline.addTo(mapRef.current!);
         routeLayersRef.current.push(polyline);
       }
     });
-  }, [routes, selectedRoute?.id, mapReady, sourceCoords, destinationCoords]);
+  }, [routes, mapReady, sourceCoords, destinationCoords]);
+
+  // Update route styles when selection changes (no re-draw, no blink)
+  useEffect(() => {
+    routeLayersRef.current.forEach(polyline => {
+      const routeId = (polyline as any)._routeId;
+      const routeType = (polyline as any)._routeType;
+      if (!routeId || !routeType) return;
+      const isSelected = selectedRoute?.id === routeId;
+      polyline.setStyle({
+        color: getRouteColor(routeType, isSelected),
+        weight: isSelected ? 6 : 4,
+        opacity: isSelected ? 1 : 0.6,
+      });
+      if (isSelected) {
+        polyline.bringToFront();
+      }
+    });
+  }, [selectedRoute?.id]);
 
   // Load and display safety zones on map - filter by highlighted crime types AND route path
   useEffect(() => {
