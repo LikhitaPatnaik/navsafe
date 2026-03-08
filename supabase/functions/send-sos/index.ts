@@ -72,7 +72,8 @@ const handler = async (req: Request): Promise<Response> => {
   }
 
   try {
-    const { location, landmark, message, contactIds }: SOSRequest = await req.json();
+    const { location, landmark, message, contactIds, channels }: SOSRequest = await req.json();
+    const activeChannels: ('sms' | 'whatsapp')[] = channels && channels.length > 0 ? channels : ['sms', 'whatsapp'];
 
     if (!location || typeof location.lat !== 'number' || typeof location.lng !== 'number') {
       return new Response(
