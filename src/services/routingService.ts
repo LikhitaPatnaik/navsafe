@@ -634,7 +634,7 @@ export const calculateRoutes = async (
   }
 
   // ===== Step 5b: Two-waypoint routes for maximum diversity =====
-  if (distinctPaths.length < 5) {
+  if (distinctPaths.length < 3) {
     const twoWpStrategies = [
       { dir1: 'left' as const, dir2: 'right' as const, km: 2.5 },
       { dir1: 'right' as const, dir2: 'left' as const, km: 2.5 },

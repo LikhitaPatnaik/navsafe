@@ -310,7 +310,7 @@ const MapView = ({ routes = [], sourceCoords, destinationCoords, selectedRoute, 
         routeLayersRef.current.push(polyline);
       }
     });
-  }, [routes, selectedRoute, mapReady, sourceCoords, destinationCoords]);
+  }, [routes, selectedRoute?.id, mapReady, sourceCoords, destinationCoords]);
 
   // Load and display safety zones on map - filter by highlighted crime types AND route path
   useEffect(() => {

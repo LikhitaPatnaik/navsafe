@@ -299,6 +299,7 @@ const TripApp = () => {
     <div className="min-h-screen bg-background">
       <LiveStatusBanner />
       
+      
       {/* Header */}
       <header className="fixed top-0 left-0 right-0 z-30 p-3 sm:p-4 safe-area-top">
         <div className="flex items-center justify-between gap-2">
