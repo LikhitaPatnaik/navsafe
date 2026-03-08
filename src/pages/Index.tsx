@@ -41,6 +41,7 @@ const TripApp = () => {
   const [isCalculatingRoutes, setIsCalculatingRoutes] = useState(false);
   const [safetyZones, setSafetyZones] = useState<any[]>([]);
   const [selectedCrimeTypes, setSelectedCrimeTypes] = useState<CrimeType[]>([]);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
 
   // Toggle crime type filter - for highlighting zones on map
   const handleToggleCrimeType = useCallback((crimeType: CrimeType) => {
