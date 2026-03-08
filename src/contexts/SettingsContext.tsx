@@ -1,8 +1,10 @@
-import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import React, { createContext, useContext, useState, ReactNode } from 'react';
 
 interface SettingsContextType {
   voiceSosEnabled: boolean;
   setVoiceSosEnabled: (enabled: boolean) => void;
+  whatsappSosEnabled: boolean;
+  setWhatsappSosEnabled: (enabled: boolean) => void;
 }
 
 const SettingsContext = createContext<SettingsContextType | undefined>(undefined);
@@ -13,13 +15,23 @@ export const SettingsProvider = ({ children }: { children: ReactNode }) => {
     return stored ? JSON.parse(stored) : false;
   });
 
+  const [whatsappSosEnabled, setWhatsappSosEnabledState] = useState<boolean>(() => {
+    const stored = localStorage.getItem('whatsappSosEnabled');
+    return stored ? JSON.parse(stored) : false;
+  });
+
   const setVoiceSosEnabled = (enabled: boolean) => {
     setVoiceSosEnabledState(enabled);
     localStorage.setItem('voiceSosEnabled', JSON.stringify(enabled));
   };
 
+  const setWhatsappSosEnabled = (enabled: boolean) => {
+    setWhatsappSosEnabledState(enabled);
+    localStorage.setItem('whatsappSosEnabled', JSON.stringify(enabled));
+  };
+
   return (
-    <SettingsContext.Provider value={{ voiceSosEnabled, setVoiceSosEnabled }}>
+    <SettingsContext.Provider value={{ voiceSosEnabled, setVoiceSosEnabled, whatsappSosEnabled, setWhatsappSosEnabled }}>
       {children}
     </SettingsContext.Provider>
   );
