@@ -14,6 +14,7 @@ interface SOSRequest {
   landmark?: string;
   message?: string;
   contactIds?: string[];
+  channels?: ('sms' | 'whatsapp')[];
 }
 
 const formatOSMUrl = (lat: number, lng: number): string => {
