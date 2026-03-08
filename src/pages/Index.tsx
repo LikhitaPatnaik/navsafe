@@ -379,7 +379,7 @@ const TripApp = () => {
       {/* Main Content */}
       <div className="min-h-screen pt-16 sm:pt-20 pb-24 sm:pb-6 px-3 sm:px-4">
         {/* Source/Destination display - always above the map, full width */}
-        {(trip.source || trip.destination) && trip.routes.length > 0 && (
+        {(trip.source || trip.destination) && trip.routes.length > 0 && !trip.isMonitoring && (
           <div className="glass-strong rounded-xl px-3 py-2 space-y-1 mb-4">
             <div className="flex items-center gap-2">
               <MapPin className="w-3.5 h-3.5 text-safe shrink-0" />
