@@ -134,12 +134,13 @@ const handler = async (req: Request): Promise<Response> => {
 
     console.log(`[SOS] SMS: ${smsSuccess}/${contacts.length}, WhatsApp: ${waSuccess}/${contacts.length}`);
 
+    const totalSuccess = smsSuccess + waSuccess;
     return new Response(
       JSON.stringify({
-        success: successCount > 0,
-        sent: successCount,
+        success: totalSuccess > 0,
+        sent: { sms: smsSuccess, whatsapp: waSuccess },
         total: contacts.length,
-        message: `SOS alert sent to ${successCount} out of ${contacts.length} contacts`,
+        message: `SOS: SMS ${smsSuccess}/${contacts.length}, WhatsApp ${waSuccess}/${contacts.length}`,
         errors: errors.length > 0 ? errors : undefined,
       }),
       { status: 200, headers: { 'Content-Type': 'application/json', ...corsHeaders } }
