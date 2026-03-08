@@ -301,36 +301,51 @@ const TripApp = () => {
       <LiveStatusBanner />
       
       
-      {/* Header */}
-      <header className="fixed top-0 left-0 right-0 z-30 p-3 sm:p-4 safe-area-top">
+      {/* Header - pushed down when monitoring to avoid overlap with LiveStatusBanner */}
+      <header className={`fixed left-0 right-0 z-30 p-3 sm:p-4 safe-area-top ${trip.isMonitoring ? 'top-[5.5rem] sm:top-[4.5rem]' : 'top-0'}`}>
         <div className="flex items-center justify-between gap-2">
-          <Button
-            variant="glass"
-            size="sm"
-            className="text-xs sm:text-sm"
-            onClick={() => {
-              if (trip.isMonitoring) {
-                completeTip();
-              } else if (trip.routes.length > 0) {
-                setRoutes([]);
-              } else {
-                setShowLanding(true);
-                resetTrip();
-              }
-            }}
-          >
-            {trip.isMonitoring ? (
-              <>
-                <StopCircle className="w-4 h-4 sm:mr-2" />
-                <span className="hidden sm:inline">End Trip</span>
-              </>
-            ) : (
-              <>
-                <ArrowLeft className="w-4 h-4 sm:mr-2" />
-                <span className="hidden sm:inline">Back</span>
-              </>
+          <div className="flex items-center gap-2">
+            {/* Hamburger menu for sidebar (visible when routes exist on mobile) */}
+            {trip.routes.length > 0 && !trip.isMonitoring && (
+              <Button
+                variant="glass"
+                size="sm"
+                className="lg:hidden"
+                onClick={() => setSidebarOpen(true)}
+              >
+                <Menu className="w-4 h-4" />
+              </Button>
             )}
-          </Button>
+            
+            <Button
+              variant="glass"
+              size="sm"
+              className="text-xs sm:text-sm"
+              onClick={() => {
+                if (trip.isMonitoring) {
+                  completeTip();
+                } else if (trip.routes.length > 0) {
+                  setRoutes([]);
+                } else {
+                  setShowLanding(true);
+                  resetTrip();
+                }
+              }}
+            >
+              {trip.isMonitoring ? (
+                <>
+                  <StopCircle className="w-4 h-4 sm:mr-2" />
+                  <span className="sm:hidden">End</span>
+                  <span className="hidden sm:inline">End Trip</span>
+                </>
+              ) : (
+                <>
+                  <ArrowLeft className="w-4 h-4 sm:mr-2" />
+                  <span className="hidden sm:inline">Back</span>
+                </>
+              )}
+            </Button>
+          </div>
           
           {trip.isMonitoring && (
             <div className="glass rounded-full px-3 py-1.5 sm:px-4 sm:py-2">
