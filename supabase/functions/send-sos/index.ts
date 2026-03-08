@@ -119,19 +119,20 @@ const handler = async (req: Request): Promise<Response> => {
 
     console.log(`Sending SOS to ${contacts.length} contacts`);
 
-    // Send SMS to all contacts
-    const sendPromises = contacts.map(contact => 
-      sendTwilioSMS(contact.phone, sosMessage)
-    );
+    // Send SMS + WhatsApp to all contacts in parallel
+    const sendPromises = contacts.flatMap(contact => [
+      sendTwilioMessage(contact.phone, sosMessage, 'sms'),
+      sendTwilioMessage(contact.phone, sosMessage, 'whatsapp'),
+    ]);
 
     const results = await Promise.all(sendPromises);
-    const successCount = results.filter(r => r.success).length;
-    const errors = results.filter(r => !r.success).map(r => r.error);
+    const smsResults = results.filter(r => r.channel === 'sms');
+    const waResults = results.filter(r => r.channel === 'whatsapp');
+    const smsSuccess = smsResults.filter(r => r.success).length;
+    const waSuccess = waResults.filter(r => r.success).length;
+    const errors = results.filter(r => !r.success).map(r => `${r.channel}: ${r.error}`);
 
-    console.log(`[SOS] Results: ${successCount}/${contacts.length} contacts received alert`);
-    if (errors.length > 0) {
-      console.log(`[SOS] Errors encountered:`, errors);
-    }
+    console.log(`[SOS] SMS: ${smsSuccess}/${contacts.length}, WhatsApp: ${waSuccess}/${contacts.length}`);
 
     return new Response(
       JSON.stringify({
