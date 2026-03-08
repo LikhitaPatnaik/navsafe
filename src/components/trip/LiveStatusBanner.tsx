@@ -47,16 +47,19 @@ const LiveStatusBanner = () => {
     <div className="fixed top-3 sm:top-4 left-2 right-2 sm:left-1/2 sm:right-auto sm:transform sm:-translate-x-1/2 z-50 flex flex-col items-center gap-1.5">
       {/* Source → Destination bar */}
       {(trip.source || trip.destination) && (
-        <div className="flex items-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-1.5 sm:py-2 rounded-full border backdrop-blur-xl bg-background/80 border-border shadow-md w-full max-w-md">
-          <MapPin className="w-3 h-3 sm:w-4 sm:h-4 text-safe shrink-0" />
-          <span className="text-[10px] sm:text-xs font-medium text-foreground truncate max-w-[35%]">
-            {trip.source || 'Start'}
-          </span>
-          <Navigation className="w-3 h-3 text-muted-foreground shrink-0 rotate-90" />
-          <MapPin className="w-3 h-3 sm:w-4 sm:h-4 text-destructive shrink-0" />
-          <span className="text-[10px] sm:text-xs font-medium text-foreground truncate max-w-[35%]">
-            {trip.destination || 'End'}
-          </span>
+        <div className="px-3 sm:px-4 py-1.5 sm:py-2 rounded-xl border backdrop-blur-xl bg-background/80 border-border shadow-md w-full max-w-md space-y-1">
+          <div className="flex items-center gap-2">
+            <MapPin className="w-3 h-3 sm:w-4 sm:h-4 text-safe shrink-0" />
+            <span className="text-[10px] sm:text-xs font-medium text-foreground truncate">
+              {trip.source || 'Source'}
+            </span>
+          </div>
+          <div className="flex items-center gap-2">
+            <MapPin className="w-3 h-3 sm:w-4 sm:h-4 text-destructive shrink-0" />
+            <span className="text-[10px] sm:text-xs font-medium text-foreground truncate">
+              {trip.destination || 'Destination'}
+            </span>
+          </div>
         </div>
       )}
       

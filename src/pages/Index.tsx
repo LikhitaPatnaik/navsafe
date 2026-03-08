@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { MapPin, Navigation } from 'lucide-react';
 import { TripProvider, useTrip } from '@/context/TripContext';
 import { useAuth } from '@/contexts/AuthContext';
 import HeroSection from '@/components/landing/HeroSection';
@@ -432,8 +433,26 @@ const TripApp = () => {
           )}
         </div>
 
+        {/* Source/Destination display above map */}
+        {(trip.source || trip.destination) && trip.routes.length > 0 && (
+          <div className="order-2 lg:order-2 w-full lg:flex-1 glass-strong rounded-xl px-3 py-2 space-y-1">
+            <div className="flex items-center gap-2">
+              <MapPin className="w-3.5 h-3.5 text-safe shrink-0" />
+              <span className="text-xs font-medium text-foreground truncate">
+                {trip.source || 'Source'}
+              </span>
+            </div>
+            <div className="flex items-center gap-2">
+              <MapPin className="w-3.5 h-3.5 text-destructive shrink-0" />
+              <span className="text-xs font-medium text-foreground truncate">
+                {trip.destination || 'Destination'}
+              </span>
+            </div>
+          </div>
+        )}
+
         {/* Map - Full width, below trip input on mobile */}
-        <div className="flex-1 min-h-[50vh] sm:min-h-[400px] lg:min-h-0 lg:h-auto lg:self-stretch order-2 lg:order-2 lg:sticky lg:top-20" style={{ minHeight: 'calc(100vh - 6rem)' }}>
+        <div className="flex-1 min-h-[50vh] sm:min-h-[400px] lg:min-h-0 lg:h-auto lg:self-stretch order-3 lg:order-3 lg:sticky lg:top-20" style={{ minHeight: 'calc(100vh - 6rem)' }}>
           <MapView 
             routes={trip.routes} 
             sourceCoords={trip.sourceCoords}
