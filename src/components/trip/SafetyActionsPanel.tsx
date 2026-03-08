@@ -108,10 +108,11 @@ const SafetyActionsPanel = () => {
   const [reportReason, setReportReason] = useState<string>('');
   const [reportSeverity, setReportSeverity] = useState<'low' | 'medium' | 'high'>('medium');
   const [isSending, setIsSending] = useState(false);
+  const [isReporting, setIsReporting] = useState(false);
   const [reportLocation, setReportLocation] = useState<{ lat: number; lng: number; area: string; street: string | null } | null>(null);
 
-  // Send SOS alert function
-  const sendSosAlert = useCallback(async () => {
+  // Send SOS alert function with channel selection
+  const sendSosAlert = useCallback(async (channels: ('sms' | 'whatsapp')[] = ['sms', 'whatsapp']) => {
     try {
       let location = trip.currentPosition;
       
@@ -133,12 +134,13 @@ const SafetyActionsPanel = () => {
       }
 
       const landmark = findNearestLandmark(location.lat, location.lng);
-      console.log('[SOS] Sending with location:', location, 'Landmark:', landmark);
+      console.log('[SOS] Sending via', channels.join(' + '), 'with location:', location, 'Landmark:', landmark);
       
       const { data, error } = await supabase.functions.invoke('send-sos', {
         body: {
           landmark,
           location: { lat: location.lat, lng: location.lng },
+          channels,
         },
       });
 
@@ -153,7 +155,8 @@ const SafetyActionsPanel = () => {
         return false;
       }
 
-      toast.success(`SOS sent to ${data?.sent || 0} contacts!`);
+      const channelLabel = channels.join(' & ').toUpperCase();
+      toast.success(`SOS sent via ${channelLabel}!`);
       return true;
     } catch (err) {
       console.error('[SOS] Error:', err);
