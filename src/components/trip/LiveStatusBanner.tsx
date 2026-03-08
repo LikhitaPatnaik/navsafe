@@ -1,5 +1,5 @@
 import { useTrip } from '@/context/TripContext';
-import { CheckCircle, AlertTriangle, XCircle } from 'lucide-react';
+import { CheckCircle, AlertTriangle, XCircle, MapPin, Navigation } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 type StatusType = 'safe' | 'deviation' | 'high-risk';
@@ -44,22 +44,39 @@ const LiveStatusBanner = () => {
   if (!trip.isMonitoring) return null;
 
   return (
-    <div
-      className={cn(
-        'fixed top-3 sm:top-4 left-2 right-2 sm:left-1/2 sm:right-auto sm:transform sm:-translate-x-1/2 z-50',
-        'flex items-center justify-center gap-2 sm:gap-3 px-3 sm:px-6 py-2 sm:py-3 rounded-full border backdrop-blur-xl',
-        'animate-slide-up shadow-lg safe-area-top',
-        config.className
+    <div className="fixed top-3 sm:top-4 left-2 right-2 sm:left-1/2 sm:right-auto sm:transform sm:-translate-x-1/2 z-50 flex flex-col items-center gap-1.5">
+      {/* Source → Destination bar */}
+      {(trip.source || trip.destination) && (
+        <div className="flex items-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-1.5 sm:py-2 rounded-full border backdrop-blur-xl bg-background/80 border-border shadow-md w-full max-w-md">
+          <MapPin className="w-3 h-3 sm:w-4 sm:h-4 text-safe shrink-0" />
+          <span className="text-[10px] sm:text-xs font-medium text-foreground truncate max-w-[35%]">
+            {trip.source || 'Start'}
+          </span>
+          <Navigation className="w-3 h-3 text-muted-foreground shrink-0 rotate-90" />
+          <MapPin className="w-3 h-3 sm:w-4 sm:h-4 text-destructive shrink-0" />
+          <span className="text-[10px] sm:text-xs font-medium text-foreground truncate max-w-[35%]">
+            {trip.destination || 'End'}
+          </span>
+        </div>
       )}
-    >
-      <Icon className={cn('w-4 h-4 sm:w-5 sm:h-5 shrink-0', config.iconClassName)} />
-      <span className="font-medium text-xs sm:text-sm truncate">{config.message}</span>
-      {status === 'safe' && (
-        <span className="flex items-center gap-1 shrink-0">
-          <span className="w-1.5 h-1.5 sm:w-2 sm:h-2 bg-safe rounded-full animate-pulse" />
-          <span className="text-[10px] sm:text-xs opacity-70">Live</span>
-        </span>
-      )}
+      
+      {/* Status banner */}
+      <div
+        className={cn(
+          'flex items-center justify-center gap-2 sm:gap-3 px-3 sm:px-6 py-2 sm:py-3 rounded-full border backdrop-blur-xl',
+          'animate-slide-up shadow-lg',
+          config.className
+        )}
+      >
+        <Icon className={cn('w-4 h-4 sm:w-5 sm:h-5 shrink-0', config.iconClassName)} />
+        <span className="font-medium text-xs sm:text-sm truncate">{config.message}</span>
+        {status === 'safe' && (
+          <span className="flex items-center gap-1 shrink-0">
+            <span className="w-1.5 h-1.5 sm:w-2 sm:h-2 bg-safe rounded-full animate-pulse" />
+            <span className="text-[10px] sm:text-xs opacity-70">Live</span>
+          </span>
+        )}
+      </div>
     </div>
   );
 };

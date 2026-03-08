@@ -310,7 +310,7 @@ const MapView = ({ routes = [], sourceCoords, destinationCoords, selectedRoute, 
         routeLayersRef.current.push(polyline);
       }
     });
-  }, [routes, selectedRoute, mapReady, sourceCoords, destinationCoords]);
+  }, [routes, selectedRoute?.id, mapReady, sourceCoords, destinationCoords]);
 
   // Load and display safety zones on map - filter by highlighted crime types AND route path
   useEffect(() => {
@@ -708,7 +708,7 @@ const MapView = ({ routes = [], sourceCoords, destinationCoords, selectedRoute, 
     };
 
     loadSafetyZones();
-  }, [mapReady, showSafetyZones, highlightedCrimeTypes, selectedRoute]);
+  }, [mapReady, showSafetyZones, highlightedCrimeTypes, selectedRoute?.id]);
 
   // No zoom-based hiding — circles are always visible at all zoom levels
 
