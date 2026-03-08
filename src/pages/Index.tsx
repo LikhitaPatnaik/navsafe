@@ -445,6 +445,8 @@ const TripApp = () => {
           onClearAllFilters={handleClearAllFilters}
           onSelectRoute={(route) => selectRoute(route)}
           onStartMonitoring={handleStartMonitoring}
+          externalOpen={sidebarOpen}
+          onExternalOpenChange={setSidebarOpen}
         />
       </div>
 
