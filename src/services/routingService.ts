@@ -506,10 +506,14 @@ export const calculateRoutes = async (
            haversineDistance(area.point, destination) > directDist * 0.1;
   });
 
-  // Try single safe waypoints
-  for (const wp of safeCandidateWaypoints.slice(0, 5)) {
-    if (distinctPaths.length >= 8) break;
+  // Try single safe waypoints - PARALLEL
+  const safeWpPromises = safeCandidateWaypoints.slice(0, 4).map(async (wp) => {
     const osrmRoute = await getOSRMRoute([source, wp.point, destination]);
+    return { osrmRoute, wp };
+  });
+  const safeWpResults = await Promise.all(safeWpPromises);
+  for (const { osrmRoute, wp } of safeWpResults) {
+    if (distinctPaths.length >= 6) break;
     if (osrmRoute && validateRouteQuality(osrmRoute, source, destination)) {
       const path = osrmRoute.geometry.coordinates.map(([lng, lat]) => ({ lat, lng }));
       const isDuplicate = distinctPaths.some(existing => !arePathsDifferent(path, existing.path));
@@ -521,26 +525,29 @@ export const calculateRoutes = async (
     }
   }
 
-  // Try pairs of safe waypoints for even safer routes
-  for (let i = 0; i < Math.min(3, safeCandidateWaypoints.length); i++) {
-    for (let j = i + 1; j < Math.min(5, safeCandidateWaypoints.length); j++) {
-      if (distinctPaths.length >= 8) break;
+  // Try pairs of safe waypoints - PARALLEL (limit to 3 pairs)
+  const pairPromises: Promise<{ osrmRoute: OSRMRoute | null; wp1Name: string; wp2Name: string }>[] = [];
+  for (let i = 0; i < Math.min(2, safeCandidateWaypoints.length); i++) {
+    for (let j = i + 1; j < Math.min(3, safeCandidateWaypoints.length); j++) {
       const wp1 = safeCandidateWaypoints[i];
       const wp2 = safeCandidateWaypoints[j];
-      // Order waypoints by distance from source
       const d1 = haversineDistance(source, wp1.point);
       const d2 = haversineDistance(source, wp2.point);
       const ordered = d1 < d2 ? [wp1.point, wp2.point] : [wp2.point, wp1.point];
-      
-      const osrmRoute = await getOSRMRoute([source, ...ordered, destination]);
-      if (osrmRoute && validateRouteQuality(osrmRoute, source, destination)) {
-        const path = osrmRoute.geometry.coordinates.map(([lng, lat]) => ({ lat, lng }));
-        const isDuplicate = distinctPaths.some(existing => !arePathsDifferent(path, existing.path));
-        if (!isDuplicate) {
-          const analysis = analyzeRouteSafety(path, safetyZones);
-          distinctPaths.push({ path, distance: osrmRoute.distance, duration: osrmRoute.duration, analysis, source: `safe-pair-${wp1.name}-${wp2.name}` });
-          console.log(`Found safe-pair route via ${wp1.name} + ${wp2.name}`);
-        }
+      pairPromises.push(
+        getOSRMRoute([source, ...ordered, destination]).then(r => ({ osrmRoute: r, wp1Name: wp1.name, wp2Name: wp2.name }))
+      );
+    }
+  }
+  const pairResults = await Promise.all(pairPromises);
+  for (const { osrmRoute, wp1Name, wp2Name } of pairResults) {
+    if (distinctPaths.length >= 6) break;
+    if (osrmRoute && validateRouteQuality(osrmRoute, source, destination)) {
+      const path = osrmRoute.geometry.coordinates.map(([lng, lat]) => ({ lat, lng }));
+      const isDuplicate = distinctPaths.some(existing => !arePathsDifferent(path, existing.path));
+      if (!isDuplicate) {
+        const analysis = analyzeRouteSafety(path, safetyZones);
+        distinctPaths.push({ path, distance: osrmRoute.distance, duration: osrmRoute.duration, analysis, source: `safe-pair-${wp1Name}-${wp2Name}` });
       }
     }
   }
