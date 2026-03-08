@@ -14,7 +14,7 @@ import SafetyActionsPanel from '@/components/trip/SafetyActionsPanel';
 import TripSummaryComponent from '@/components/trip/TripSummary';
 import ProfileDropdown from '@/components/ProfileDropdown';
 import { Button } from '@/components/ui/button';
-import { ArrowLeft, StopCircle, Loader2, LogIn } from 'lucide-react';
+import { ArrowLeft, StopCircle, Loader2, LogIn, Menu } from 'lucide-react';
 import { calculateRoutes } from '@/services/routingService';
 import { toast } from 'sonner';
 import { checkDeviation, DeviationResult } from '@/utils/deviationDetection';
