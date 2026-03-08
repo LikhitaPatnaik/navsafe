@@ -20,50 +20,47 @@ const formatOSMUrl = (lat: number, lng: number): string => {
   return `https://www.openstreetmap.org/?mlat=${lat}&mlon=${lng}&zoom=17`;
 };
 
-const sendTwilioSMS = async (to: string, body: string): Promise<{ success: boolean; error?: string }> => {
+const sendTwilioMessage = async (
+  to: string, 
+  body: string, 
+  channel: 'sms' | 'whatsapp'
+): Promise<{ success: boolean; error?: string; channel: string }> => {
   const accountSid = Deno.env.get('TWILIO_ACCOUNT_SID');
   const authToken = Deno.env.get('TWILIO_AUTH_TOKEN');
   const fromNumber = Deno.env.get('TWILIO_PHONE_NUMBER');
-
-  console.log(`[SOS] Attempting to send SMS to: ${to}`);
-  console.log(`[SOS] From number configured: ${fromNumber ? 'Yes' : 'No'}`);
-  console.log(`[SOS] Account SID configured: ${accountSid ? 'Yes (' + accountSid.substring(0, 8) + '...)' : 'No'}`);
+  const whatsappSandbox = 'whatsapp:+14155238886';
 
   if (!accountSid || !authToken || !fromNumber) {
-    console.error('[SOS] Missing Twilio credentials - accountSid:', !!accountSid, 'authToken:', !!authToken, 'fromNumber:', !!fromNumber);
-    return { success: false, error: 'Missing Twilio credentials' };
+    return { success: false, error: 'Missing Twilio credentials', channel };
   }
+
+  const fromAddr = channel === 'whatsapp' ? whatsappSandbox : fromNumber;
+  const toAddr = channel === 'whatsapp' ? `whatsapp:${to}` : to;
 
   try {
     const url = `https://api.twilio.com/2010-04-01/Accounts/${accountSid}/Messages.json`;
-    
-    console.log(`[SOS] Sending to Twilio API for number: ${to}`);
-    
+    console.log(`[SOS] Sending ${channel} to: ${toAddr}`);
+
     const response = await fetch(url, {
       method: 'POST',
       headers: {
         'Authorization': 'Basic ' + btoa(`${accountSid}:${authToken}`),
         'Content-Type': 'application/x-www-form-urlencoded',
       },
-      body: new URLSearchParams({
-        To: to,
-        From: fromNumber,
-        Body: body,
-      }),
+      body: new URLSearchParams({ To: toAddr, From: fromAddr, Body: body }),
     });
 
     const result = await response.json();
-    
     if (response.ok) {
-      console.log(`[SOS] ✅ SMS sent successfully to ${to} - SID: ${result.sid}`);
-      return { success: true };
+      console.log(`[SOS] ✅ ${channel} sent to ${to} - SID: ${result.sid}`);
+      return { success: true, channel };
     } else {
-      console.error(`[SOS] ❌ Twilio API error for ${to}:`, JSON.stringify(result));
-      return { success: false, error: result.message || 'Twilio API error' };
+      console.error(`[SOS] ❌ ${channel} error for ${to}:`, JSON.stringify(result));
+      return { success: false, error: result.message || `${channel} API error`, channel };
     }
   } catch (error) {
-    console.error(`[SOS] ❌ Exception sending SMS to ${to}:`, error);
-    return { success: false, error: error instanceof Error ? error.message : 'Unknown error' };
+    console.error(`[SOS] ❌ Exception sending ${channel} to ${to}:`, error);
+    return { success: false, error: error instanceof Error ? error.message : 'Unknown error', channel };
   }
 };
 
