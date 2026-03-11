@@ -41,6 +41,7 @@ const EmergencyContactsManager = () => {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingContact, setEditingContact] = useState<EmergencyContact | null>(null);
   const [deleteContactId, setDeleteContactId] = useState<string | null>(null);
+  const [isSaving, setIsSaving] = useState(false);
   const { user } = useAuth();
   const userId = user?.id ?? null;
   
