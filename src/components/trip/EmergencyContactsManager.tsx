@@ -5,7 +5,7 @@ import { Label } from '@/components/ui/label';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
-import { Plus, Pencil, Trash2, Phone, User, Loader2, X, Check, Users } from 'lucide-react';
+import { Plus, Pencil, Trash2, Phone, User, Loader2, Check, Users } from 'lucide-react';
 import {
   Dialog,
   DialogContent,
