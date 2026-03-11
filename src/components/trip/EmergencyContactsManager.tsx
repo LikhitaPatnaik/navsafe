@@ -179,8 +179,16 @@ const EmergencyContactsManager = () => {
       resetForm();
       fetchContacts();
     } catch (error) {
+      const errorMessage =
+        typeof error === 'object' &&
+        error !== null &&
+        'message' in error &&
+        typeof (error as { message?: unknown }).message === 'string'
+          ? (error as { message: string }).message
+          : 'Unknown error';
+
       console.error('Error saving contact:', error);
-      toast.error('Failed to save contact');
+      toast.error(`Failed to save contact: ${errorMessage}`);
     } finally {
       setIsSaving(false);
     }
