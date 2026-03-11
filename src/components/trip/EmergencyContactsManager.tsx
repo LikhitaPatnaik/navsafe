@@ -41,23 +41,14 @@ const EmergencyContactsManager = () => {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingContact, setEditingContact] = useState<EmergencyContact | null>(null);
   const [deleteContactId, setDeleteContactId] = useState<string | null>(null);
-  const [isSaving, setIsSaving] = useState(false);
-  const [userId, setUserId] = useState<string | null>(null);
+  const { user } = useAuth();
+  const userId = user?.id ?? null;
   
   // Form state
   const [formName, setFormName] = useState('');
   const [formPhone, setFormPhone] = useState('');
   const [formRelationship, setFormRelationship] = useState('');
   const [formIsPrimary, setFormIsPrimary] = useState(false);
-
-  // Get current user
-  useEffect(() => {
-    const getUser = async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      setUserId(user?.id || null);
-    };
-    getUser();
-  }, []);
 
   // Fetch contacts
   const fetchContacts = async () => {
