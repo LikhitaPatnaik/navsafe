@@ -60,7 +60,7 @@ export const useVoiceCommand = ({
   const [isSupported, setIsSupported] = useState(false);
   const [lastTranscript, setLastTranscript] = useState('');
   const recognitionRef = useRef<SpeechRecognition | null>(null);
-  const restartTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const restartTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
     const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;

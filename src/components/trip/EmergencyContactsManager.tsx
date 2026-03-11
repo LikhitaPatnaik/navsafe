@@ -3,8 +3,9 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
-import { Plus, Pencil, Trash2, Phone, User, Loader2, X, Check, Users } from 'lucide-react';
+import { Plus, Pencil, Trash2, Phone, User, Loader2, Check, Users } from 'lucide-react';
 import {
   Dialog,
   DialogContent,
@@ -41,22 +42,14 @@ const EmergencyContactsManager = () => {
   const [editingContact, setEditingContact] = useState<EmergencyContact | null>(null);
   const [deleteContactId, setDeleteContactId] = useState<string | null>(null);
   const [isSaving, setIsSaving] = useState(false);
-  const [userId, setUserId] = useState<string | null>(null);
+  const { user } = useAuth();
+  const userId = user?.id ?? null;
   
   // Form state
   const [formName, setFormName] = useState('');
   const [formPhone, setFormPhone] = useState('');
   const [formRelationship, setFormRelationship] = useState('');
   const [formIsPrimary, setFormIsPrimary] = useState(false);
-
-  // Get current user
-  useEffect(() => {
-    const getUser = async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      setUserId(user?.id || null);
-    };
-    getUser();
-  }, []);
 
   // Fetch contacts
   const fetchContacts = async () => {
@@ -187,8 +180,16 @@ const EmergencyContactsManager = () => {
       resetForm();
       fetchContacts();
     } catch (error) {
+      const errorMessage =
+        typeof error === 'object' &&
+        error !== null &&
+        'message' in error &&
+        typeof (error as { message?: unknown }).message === 'string'
+          ? (error as { message: string }).message
+          : 'Unknown error';
+
       console.error('Error saving contact:', error);
-      toast.error('Failed to save contact');
+      toast.error(`Failed to save contact: ${errorMessage}`);
     } finally {
       setIsSaving(false);
     }
