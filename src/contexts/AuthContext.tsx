@@ -130,10 +130,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         // Defer profile fetch with setTimeout to avoid deadlock
         if (session?.user) {
           setTimeout(() => {
-            fetchProfile(session.user.id).then(async (profileData) => {
-              if (!profileData) {
-                profileData = await createProfile(session.user);
-              }
+            ensureProfile(session.user).then((profileData) => {
               setProfile(profileData);
               setLoading(false);
             });
