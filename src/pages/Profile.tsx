@@ -17,7 +17,8 @@ const Profile = () => {
   const navigate = useNavigate();
   const fileInputRef = useRef<HTMLInputElement>(null);
   
-  const [fullName, setFullName] = useState(profile?.full_name || '');
+  const metadataName = user?.user_metadata?.full_name || user?.user_metadata?.name || '';
+  const [fullName, setFullName] = useState(profile?.full_name || metadataName);
   const [gender, setGender] = useState(profile?.gender || '');
   const [age, setAge] = useState(profile?.age?.toString() || '');
   const [phone, setPhone] = useState(profile?.phone || '');
@@ -32,12 +33,14 @@ const Profile = () => {
 
   React.useEffect(() => {
     if (profile) {
-      setFullName(profile.full_name || '');
+      setFullName(profile.full_name || metadataName);
       setGender(profile.gender || '');
       setAge(profile.age?.toString() || '');
       setPhone(profile.phone || '');
+    } else if (metadataName) {
+      setFullName(metadataName);
     }
-  }, [profile]);
+  }, [profile, metadataName]);
 
   const handleAvatarUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -127,6 +130,12 @@ const Profile = () => {
     );
   }
 
+  const avatarUrl =
+    profile?.avatar_url ||
+    user?.user_metadata?.avatar_url ||
+    user?.user_metadata?.picture ||
+    undefined;
+
   const initials = fullName
     ? fullName.split(' ').map(n => n[0]).join('').toUpperCase()
     : user?.email?.[0].toUpperCase() || 'U';
@@ -149,7 +158,7 @@ const Profile = () => {
             <div className="flex flex-col items-center gap-4">
               <div className="relative">
                 <Avatar className="w-24 h-24 border-4 border-primary/20">
-                  <AvatarImage src={profile?.avatar_url || undefined} alt="Profile" />
+                  <AvatarImage src={avatarUrl} alt="Profile" />
                   <AvatarFallback className="text-2xl bg-primary/10">
                     {initials}
                   </AvatarFallback>

@@ -24,8 +24,16 @@ const ProfileDropdown = () => {
     navigate('/auth');
   };
 
-  const initials = profile?.full_name
-    ? profile.full_name.split(' ').map(n => n[0]).join('').toUpperCase()
+  const metadataName = user.user_metadata?.full_name || user.user_metadata?.name || null;
+  const displayName = profile?.full_name || metadataName || 'User';
+  const displayAvatar =
+    profile?.avatar_url ||
+    user.user_metadata?.avatar_url ||
+    user.user_metadata?.picture ||
+    undefined;
+
+  const initials = displayName
+    ? displayName.split(' ').map(n => n[0]).join('').toUpperCase()
     : user.email?.[0].toUpperCase() || 'U';
 
   return (
@@ -33,7 +41,7 @@ const ProfileDropdown = () => {
       <DropdownMenuTrigger asChild>
         <button className="rounded-full ring-2 ring-primary/20 hover:ring-primary/40 transition-all">
           <Avatar className="w-10 h-10">
-            <AvatarImage src={profile?.avatar_url || undefined} alt="Profile" />
+            <AvatarImage src={displayAvatar} alt="Profile" />
             <AvatarFallback className="bg-primary/10 text-primary font-medium">
               {initials}
             </AvatarFallback>
@@ -43,7 +51,7 @@ const ProfileDropdown = () => {
       <DropdownMenuContent align="end" className="w-48">
         <div className="px-2 py-1.5">
           <p className="text-sm font-medium truncate">
-            {profile?.full_name || 'User'}
+            {displayName}
           </p>
           <p className="text-xs text-muted-foreground truncate">
             {user.email}
