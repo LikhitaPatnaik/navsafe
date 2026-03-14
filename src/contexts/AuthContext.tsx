@@ -31,6 +31,18 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [profile, setProfile] = useState<Profile | null>(null);
   const [loading, setLoading] = useState(true);
 
+  const getAuthProfileSeed = (authUser: User) => ({
+    email: authUser.email ?? null,
+    full_name:
+      authUser.user_metadata?.full_name ??
+      authUser.user_metadata?.name ??
+      null,
+    avatar_url:
+      authUser.user_metadata?.avatar_url ??
+      authUser.user_metadata?.picture ??
+      null,
+  });
+
   const fetchProfile = async (userId: string) => {
     const { data, error } = await supabase
       .from('profiles')
@@ -46,14 +58,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     return data as Profile | null;
   };
 
-  const createProfile = async (user: User) => {
+  const createProfile = async (authUser: User) => {
+    const seed = getAuthProfileSeed(authUser);
+
     const { data, error } = await supabase
       .from('profiles')
       .insert({
-        user_id: user.id,
-        email: user.email,
-        full_name: user.user_metadata?.full_name || user.user_metadata?.name || null,
-        avatar_url: user.user_metadata?.avatar_url || user.user_metadata?.picture || null,
+        user_id: authUser.id,
+        ...seed,
       })
       .select()
       .single();
@@ -66,14 +78,46 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     return data as Profile;
   };
 
-  const refreshProfile = async () => {
-    if (user) {
-      let profileData = await fetchProfile(user.id);
-      if (!profileData) {
-        profileData = await createProfile(user);
-      }
-      setProfile(profileData);
+  const syncMissingProfileFields = async (authUser: User, existingProfile: Profile) => {
+    const seed = getAuthProfileSeed(authUser);
+
+    const updates: Partial<Profile> = {};
+    if (!existingProfile.full_name && seed.full_name) updates.full_name = seed.full_name;
+    if (!existingProfile.avatar_url && seed.avatar_url) updates.avatar_url = seed.avatar_url;
+    if (!existingProfile.email && seed.email) updates.email = seed.email;
+
+    if (Object.keys(updates).length === 0) {
+      return existingProfile;
     }
+
+    const { data, error } = await supabase
+      .from('profiles')
+      .update(updates)
+      .eq('user_id', authUser.id)
+      .select()
+      .single();
+
+    if (error) {
+      console.error('Error syncing profile fields:', error);
+      return existingProfile;
+    }
+
+    return data as Profile;
+  };
+
+  const ensureProfile = async (authUser: User) => {
+    const existingProfile = await fetchProfile(authUser.id);
+    if (!existingProfile) {
+      return await createProfile(authUser);
+    }
+
+    return await syncMissingProfileFields(authUser, existingProfile);
+  };
+
+  const refreshProfile = async () => {
+    if (!user) return;
+    const profileData = await ensureProfile(user);
+    setProfile(profileData);
   };
 
   useEffect(() => {
