@@ -51,7 +51,7 @@ const ProfileDropdown = () => {
       <DropdownMenuContent align="end" className="w-48">
         <div className="px-2 py-1.5">
           <p className="text-sm font-medium truncate">
-            {profile?.full_name || 'User'}
+            {displayName}
           </p>
           <p className="text-xs text-muted-foreground truncate">
             {user.email}
