@@ -130,6 +130,12 @@ const Profile = () => {
     );
   }
 
+  const avatarUrl =
+    profile?.avatar_url ||
+    user?.user_metadata?.avatar_url ||
+    user?.user_metadata?.picture ||
+    undefined;
+
   const initials = fullName
     ? fullName.split(' ').map(n => n[0]).join('').toUpperCase()
     : user?.email?.[0].toUpperCase() || 'U';
