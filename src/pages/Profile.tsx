@@ -17,7 +17,8 @@ const Profile = () => {
   const navigate = useNavigate();
   const fileInputRef = useRef<HTMLInputElement>(null);
   
-  const [fullName, setFullName] = useState(profile?.full_name || '');
+  const metadataName = user?.user_metadata?.full_name || user?.user_metadata?.name || '';
+  const [fullName, setFullName] = useState(profile?.full_name || metadataName);
   const [gender, setGender] = useState(profile?.gender || '');
   const [age, setAge] = useState(profile?.age?.toString() || '');
   const [phone, setPhone] = useState(profile?.phone || '');
