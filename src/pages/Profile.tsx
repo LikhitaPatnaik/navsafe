@@ -33,12 +33,14 @@ const Profile = () => {
 
   React.useEffect(() => {
     if (profile) {
-      setFullName(profile.full_name || '');
+      setFullName(profile.full_name || metadataName);
       setGender(profile.gender || '');
       setAge(profile.age?.toString() || '');
       setPhone(profile.phone || '');
+    } else if (metadataName) {
+      setFullName(metadataName);
     }
-  }, [profile]);
+  }, [profile, metadataName]);
 
   const handleAvatarUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
