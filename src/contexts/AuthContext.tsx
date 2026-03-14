@@ -148,10 +148,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setUser(session?.user ?? null);
       
       if (session?.user) {
-        fetchProfile(session.user.id).then(async (profileData) => {
-          if (!profileData) {
-            profileData = await createProfile(session.user);
-          }
+        ensureProfile(session.user).then((profileData) => {
           setProfile(profileData);
           setLoading(false);
         });

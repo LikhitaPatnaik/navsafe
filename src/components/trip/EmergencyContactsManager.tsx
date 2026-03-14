@@ -167,11 +167,14 @@ const EmergencyContactsManager = () => {
         if (error) throw error;
         toast.success('Contact updated successfully');
       } else {
-        // Add new
+        // Add new (explicit id for compatibility with self-hosted/manual schemas)
         const { error } = await supabase
           .from('emergency_contacts')
-          .insert(contactData);
-        
+          .insert({
+            id: crypto.randomUUID(),
+            ...contactData,
+          });
+
         if (error) throw error;
         toast.success('Contact added successfully');
       }
