@@ -25,12 +25,26 @@ const Auth = () => {
   const [showForgotPassword, setShowForgotPassword] = useState(false);
   const [resetEmail, setResetEmail] = useState('');
   const [isResetting, setIsResetting] = useState(false);
+  const [isRecoveryMode, setIsRecoveryMode] = useState(false);
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [isUpdatingPassword, setIsUpdatingPassword] = useState(false);
+
+  // Detect recovery mode from URL hash or query params
+  useEffect(() => {
+    const hashParams = new URLSearchParams(window.location.hash.substring(1));
+    const queryParams = new URLSearchParams(window.location.search);
+    
+    if (hashParams.get('type') === 'recovery' || queryParams.get('type') === 'recovery') {
+      setIsRecoveryMode(true);
+    }
+  }, []);
 
   useEffect(() => {
-    if (user && !loading) {
+    if (user && !loading && !isRecoveryMode) {
       navigate('/');
     }
-  }, [user, loading, navigate]);
+  }, [user, loading, navigate, isRecoveryMode]);
 
   const handleGoogleSignIn = async () => {
     const { error } = await signInWithGoogle();
