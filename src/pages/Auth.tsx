@@ -29,8 +29,9 @@ const Auth = () => {
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [isUpdatingPassword, setIsUpdatingPassword] = useState(false);
+  const [recoverySessionReady, setRecoverySessionReady] = useState(false);
 
-  // Detect recovery mode from URL hash or query params
+  // Detect recovery mode from URL hash or query params and listen for PASSWORD_RECOVERY event
   useEffect(() => {
     const hashParams = new URLSearchParams(window.location.hash.substring(1));
     const queryParams = new URLSearchParams(window.location.search);
@@ -38,6 +39,16 @@ const Auth = () => {
     if (hashParams.get('type') === 'recovery' || queryParams.get('type') === 'recovery') {
       setIsRecoveryMode(true);
     }
+
+    // Listen for the PASSWORD_RECOVERY auth event which confirms session is ready
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event) => {
+      if (event === 'PASSWORD_RECOVERY') {
+        setIsRecoveryMode(true);
+        setRecoverySessionReady(true);
+      }
+    });
+
+    return () => subscription.unsubscribe();
   }, []);
 
   useEffect(() => {
@@ -175,6 +186,16 @@ const Auth = () => {
 
     setIsUpdatingPassword(true);
     try {
+      // Wait briefly for session if not ready yet
+      if (!recoverySessionReady) {
+        const { data: { session } } = await supabase.auth.getSession();
+        if (!session) {
+          toast.error('Session expired. Please request a new password reset link.');
+          setIsUpdatingPassword(false);
+          return;
+        }
+      }
+      
       const { error } = await supabase.auth.updateUser({ password: newPassword });
       if (error) throw error;
       
