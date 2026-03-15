@@ -186,6 +186,16 @@ const Auth = () => {
 
     setIsUpdatingPassword(true);
     try {
+      // Wait briefly for session if not ready yet
+      if (!recoverySessionReady) {
+        const { data: { session } } = await supabase.auth.getSession();
+        if (!session) {
+          toast.error('Session expired. Please request a new password reset link.');
+          setIsUpdatingPassword(false);
+          return;
+        }
+      }
+      
       const { error } = await supabase.auth.updateUser({ password: newPassword });
       if (error) throw error;
       
