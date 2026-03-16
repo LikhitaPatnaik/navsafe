@@ -162,11 +162,24 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   }, []);
 
   const signInWithGoogle = async () => {
-    const result = await lovable.auth.signInWithOAuth("google", {
-      redirect_uri: window.location.origin,
-    });
+    const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || '';
+    const isLovableCloud = supabaseUrl.includes('dkkgnyakaygahndoipte');
 
-    return { error: result?.error ?? null };
+    if (isLovableCloud) {
+      const result = await lovable.auth.signInWithOAuth("google", {
+        redirect_uri: window.location.origin,
+      });
+      return { error: result?.error ?? null };
+    } else {
+      // For personal Supabase instances, use standard OAuth
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider: 'google',
+        options: {
+          redirectTo: window.location.origin,
+        },
+      });
+      return { error };
+    }
   };
 
   const signOut = async () => {
