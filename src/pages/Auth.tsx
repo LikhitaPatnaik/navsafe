@@ -149,18 +149,6 @@ const Auth = () => {
 
       if (error) throw error;
 
-      // Also send via our edge function for better email formatting
-      const { error: emailError } = await supabase.functions.invoke('send-password-reset', {
-        body: {
-          email: resetEmail.trim(),
-          resetUrl: `${window.location.origin}/auth?type=recovery`,
-        },
-      });
-
-      if (emailError) {
-        console.warn('Custom email failed, but Supabase email was sent:', emailError);
-      }
-
       toast.success('Password reset link sent! Check your email.');
       setShowForgotPassword(false);
       setResetEmail('');
