@@ -36,8 +36,18 @@ const Auth = () => {
     const hashParams = new URLSearchParams(window.location.hash.substring(1));
     const queryParams = new URLSearchParams(window.location.search);
     
-    if (hashParams.get('type') === 'recovery' || queryParams.get('type') === 'recovery') {
+    const isRecovery = hashParams.get('type') === 'recovery' || queryParams.get('type') === 'recovery';
+    
+    if (isRecovery) {
       setIsRecoveryMode(true);
+      
+      // Try to exchange the token from the URL hash — Supabase auto-handles this
+      // but we need to wait for the session to be established
+      supabase.auth.getSession().then(({ data: { session } }) => {
+        if (session) {
+          setRecoverySessionReady(true);
+        }
+      });
     }
 
     // Listen for the PASSWORD_RECOVERY auth event which confirms session is ready
@@ -148,18 +158,6 @@ const Auth = () => {
       });
 
       if (error) throw error;
-
-      // Also send via our edge function for better email formatting
-      const { error: emailError } = await supabase.functions.invoke('send-password-reset', {
-        body: {
-          email: resetEmail.trim(),
-          resetUrl: `${window.location.origin}/auth?type=recovery`,
-        },
-      });
-
-      if (emailError) {
-        console.warn('Custom email failed, but Supabase email was sent:', emailError);
-      }
 
       toast.success('Password reset link sent! Check your email.');
       setShowForgotPassword(false);
