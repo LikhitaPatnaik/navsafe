@@ -36,8 +36,18 @@ const Auth = () => {
     const hashParams = new URLSearchParams(window.location.hash.substring(1));
     const queryParams = new URLSearchParams(window.location.search);
     
-    if (hashParams.get('type') === 'recovery' || queryParams.get('type') === 'recovery') {
+    const isRecovery = hashParams.get('type') === 'recovery' || queryParams.get('type') === 'recovery';
+    
+    if (isRecovery) {
       setIsRecoveryMode(true);
+      
+      // Try to exchange the token from the URL hash — Supabase auto-handles this
+      // but we need to wait for the session to be established
+      supabase.auth.getSession().then(({ data: { session } }) => {
+        if (session) {
+          setRecoverySessionReady(true);
+        }
+      });
     }
 
     // Listen for the PASSWORD_RECOVERY auth event which confirms session is ready
