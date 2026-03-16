@@ -41,7 +41,7 @@ const ProfileDropdown = () => {
       <DropdownMenuTrigger asChild>
         <button className="rounded-full ring-2 ring-primary/20 hover:ring-primary/40 transition-all">
           <Avatar className="w-10 h-10">
-            <AvatarImage src={displayAvatar} alt="Profile" />
+            <AvatarImage src={displayAvatar} alt="Profile" referrerPolicy="no-referrer" />
             <AvatarFallback className="bg-primary/10 text-primary font-medium">
               {initials}
             </AvatarFallback>
