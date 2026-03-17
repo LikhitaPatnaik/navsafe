@@ -447,10 +447,21 @@ const getPerpendicularPoint = (source: LatLng, dest: LatLng, offsetKm: number, d
 
 // Validate that an OSRM route doesn't have U-turns and reaches destination
 const validateRouteQuality = (osrmRoute: OSRMRoute, source: LatLng, destination: LatLng): boolean => {
-  const path = osrmRoute.geometry.coordinates.map(([lng, lat]) => ({ lat, lng }));
+  const path = normalizePath(osrmRoute.geometry.coordinates.map(([lng, lat]) => ({ lat, lng })));
   
   if (path.length < 2) {
     console.warn('Route too short');
+    return false;
+  }
+  
+  // Reject explicit u-turn instructions from OSRM
+  const hasUTurnInstruction = osrmRoute.legs?.some(leg =>
+    leg.steps?.some(step =>
+      step.maneuver?.modifier === 'uturn' || step.maneuver?.type === 'uturn'
+    )
+  );
+  if (hasUTurnInstruction) {
+    console.warn('Route rejected: explicit U-turn instruction detected');
     return false;
   }
   
@@ -470,12 +481,10 @@ const validateRouteQuality = (osrmRoute: OSRMRoute, source: LatLng, destination:
     return false;
   }
   
-  // Check for U-turns and loops
   if (hasUTurnsOrLoops(path, source, destination)) {
     return false;
   }
   
-  // Check for consistent progress
   if (!hasConsistentProgress(path, source, destination)) {
     return false;
   }
