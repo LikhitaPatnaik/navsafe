@@ -21,6 +21,14 @@ interface OSRMRoute {
   geometry: {
     coordinates: [number, number][];
   };
+  legs?: Array<{
+    steps?: Array<{
+      maneuver?: {
+        modifier?: string;
+        type?: string;
+      };
+    }>;
+  }>;
 }
 
 interface OSRMResponse {
