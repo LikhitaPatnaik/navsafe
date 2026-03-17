@@ -825,17 +825,33 @@ export const calculateRoutes = async (
 
   console.log(`Total distinct paths found: ${distinctPaths.length}`);
 
-  // ===== Step 6: Assign routes - STRICTLY enforce different paths =====
+  // ===== Step 6: Assign routes - enforce different road clusters =====
   if (distinctPaths.length === 0) {
     console.error('No routes found');
     return [];
   }
 
-  // Sort by distance to find fastest
-  const byDistance = [...distinctPaths].sort((a, b) => a.distance - b.distance);
-  
-  // Calculate composite safety scores considering danger zone proximity
-  const scoredPaths = distinctPaths.map(d => {
+  const uniquePaths = distinctPaths.reduce<typeof distinctPaths>((acc, candidate) => {
+    const duplicateIndex = acc.findIndex(existing => !arePathsDifferent(candidate.path, existing.path));
+    if (duplicateIndex === -1) {
+      acc.push(candidate);
+      return acc;
+    }
+
+    const existing = acc[duplicateIndex];
+    const candidateScore = candidate.analysis.overallScore - candidate.distance / 1000;
+    const existingScore = existing.analysis.overallScore - existing.distance / 1000;
+    if (candidateScore > existingScore) {
+      acc[duplicateIndex] = candidate;
+    }
+    return acc;
+  }, []);
+
+  console.log(`Unique road route clusters: ${uniquePaths.length}`);
+
+  const byDistance = [...uniquePaths].sort((a, b) => a.distance - b.distance);
+
+  const scoredPaths = uniquePaths.map(d => {
     let dangerPenalty = 0;
     const sampleRate = Math.max(1, Math.floor(d.path.length / 30));
     for (let i = 0; i < d.path.length; i += sampleRate) {
@@ -853,26 +869,11 @@ export const calculateRoutes = async (
   });
 
   const bySafety = [...scoredPaths].sort((a, b) => b.compositeScore - a.compositeScore);
-  
-  // === FASTEST: shortest distance ===
+
   const fastestData = byDistance[0];
-  const fastestDistKm = Math.round(fastestData.distance / 100) / 10;
-  const fastestRoute: RouteInfo = {
-    id: 'route-fastest',
-    type: 'fastest',
-    distance: fastestDistKm,
-    duration: calculateTrafficDuration(fastestDistKm),
-    safetyScore: applyDemographicWeight(fastestData.analysis.overallScore),
-    riskLevel: fastestData.analysis.riskLevel,
-    path: fastestData.path,
-  };
-  
-  // === SAFEST: highest composite safety, MUST be different path from fastest ===
-  let safestData = bySafety.find(d => 
-    d !== fastestData && arePathsDifferent(d.path, fastestData.path)
-  );
-  
-  // If no genuinely different safer path, try generating one via perpendicular offset - PARALLEL
+
+  let safestData = bySafety.find(d => d !== fastestData && arePathsDifferent(d.path, fastestData.path));
+
   if (!safestData) {
     console.warn('No distinct safest path found, generating via perpendicular...');
     const safeFallbackPromises: Promise<{ osrmRoute: OSRMRoute | null; dir: string; offset: number }>[] = [];
@@ -888,7 +889,7 @@ export const calculateRoutes = async (
     for (const { osrmRoute, dir, offset } of safeFallbackResults) {
       if (safestData) break;
       if (osrmRoute && validateRouteQuality(osrmRoute, source, destination)) {
-        const path = osrmRoute.geometry.coordinates.map(([lng, lat]) => ({ lat, lng }));
+        const path = normalizePath(osrmRoute.geometry.coordinates.map(([lng, lat]) => ({ lat, lng })));
         if (arePathsDifferent(path, fastestData.path)) {
           const analysis = analyzeRouteSafety(path, safetyZones);
           safestData = { path, distance: osrmRoute.distance, duration: osrmRoute.duration, analysis, compositeScore: analysis.overallScore, source: `safest-fallback-${dir}-${offset}` };
@@ -896,61 +897,23 @@ export const calculateRoutes = async (
       }
     }
   }
-  
-  if (!safestData) safestData = bySafety[0];
-  
-  const safestDistKm = Math.round(safestData.distance / 100) / 10;
-  const safestRoute: RouteInfo = {
-    id: 'route-safest',
-    type: 'safest',
-    distance: safestDistKm,
-    duration: calculateTrafficDuration(safestDistKm),
-    safetyScore: safestData.analysis.overallScore,
-    riskLevel: safestData.analysis.riskLevel,
-    path: safestData.path,
-  };
-  
-  // === OPTIMIZED: MUST be different from BOTH fastest and safest ===
-  let optimizedData = distinctPaths.find(d => 
-    d !== fastestData && d !== safestData &&
-    arePathsDifferent(d.path, fastestData.path) && arePathsDifferent(d.path, safestData.path)
-  );
-  
-  // If no triple-distinct path exists, find the most divergent candidate
-  if (!optimizedData) {
-    let maxCombinedDivergence = -1;
-    for (const d of distinctPaths) {
-      if (d === fastestData || d === safestData) continue;
-      let divFromFastest = 0;
-      let divFromSafest = 0;
-      const sampleCount = 15;
-      for (let i = 1; i < sampleCount - 1; i++) {
-        const idx = Math.floor((i / sampleCount) * d.path.length);
-        
-        let minDistF = Infinity;
-        for (let j = 0; j < fastestData.path.length; j += Math.max(1, Math.floor(fastestData.path.length / 40))) {
-          const dist = haversineDistance(d.path[idx], fastestData.path[j]);
-          if (dist < minDistF) minDistF = dist;
-        }
-        divFromFastest += minDistF;
-        
-        let minDistS = Infinity;
-        for (let j = 0; j < safestData.path.length; j += Math.max(1, Math.floor(safestData.path.length / 40))) {
-          const dist = haversineDistance(d.path[idx], safestData.path[j]);
-          if (dist < minDistS) minDistS = dist;
-        }
-        divFromSafest += minDistS;
-      }
-      const combined = Math.min(divFromFastest, divFromSafest);
-      if (combined > maxCombinedDivergence) {
-        maxCombinedDivergence = combined;
-        optimizedData = d;
-      }
-    }
+
+  if (!safestData) {
+    safestData = bySafety.find(d => d !== fastestData) ?? fastestData;
   }
-  
-  // Last resort: generate via large perpendicular offsets - PARALLEL
-  if (!optimizedData || (!arePathsDifferent(optimizedData.path, fastestData.path) || !arePathsDifferent(optimizedData.path, safestData.path))) {
+
+  let optimizedData = scoredPaths
+    .filter(d => d !== fastestData && d !== safestData)
+    .sort((a, b) => {
+      const aDistanceGap = Math.abs(a.distance - ((fastestData.distance + safestData.distance) / 2));
+      const bDistanceGap = Math.abs(b.distance - ((fastestData.distance + safestData.distance) / 2));
+      const aSafetyGap = Math.abs(a.compositeScore - ((fastestData.analysis.overallScore + safestData.compositeScore) / 2));
+      const bSafetyGap = Math.abs(b.compositeScore - ((fastestData.analysis.overallScore + safestData.compositeScore) / 2));
+      return (aDistanceGap + aSafetyGap * 25) - (bDistanceGap + bSafetyGap * 25);
+    })
+    .find(d => arePathsDifferent(d.path, fastestData.path) && arePathsDifferent(d.path, safestData.path));
+
+  if (!optimizedData) {
     console.warn('Generating emergency 3rd route via large perpendicular offset');
     const emergencyPromises: Promise<{ osrmRoute: OSRMRoute | null; dir: string; offset: number }>[] = [];
     for (const offset of [2.0, 3.0, 3.5, 4.5, 5.5]) {
@@ -963,25 +926,54 @@ export const calculateRoutes = async (
         }
       }
     }
+
     const emergencyResults = await Promise.all(emergencyPromises);
-    for (const { osrmRoute } of emergencyResults) {
-      if (optimizedData && arePathsDifferent(optimizedData.path, fastestData.path) && arePathsDifferent(optimizedData.path, safestData.path)) break;
+    for (const { osrmRoute, dir, offset } of emergencyResults) {
+      if (optimizedData) break;
       if (osrmRoute && validateRouteQuality(osrmRoute, source, destination)) {
-        const path = osrmRoute.geometry.coordinates.map(([lng, lat]) => ({ lat, lng }));
+        const path = normalizePath(osrmRoute.geometry.coordinates.map(([lng, lat]) => ({ lat, lng })));
         if (arePathsDifferent(path, fastestData.path) && arePathsDifferent(path, safestData.path)) {
           const analysis = analyzeRouteSafety(path, safetyZones);
-          optimizedData = { path, distance: osrmRoute.distance, duration: osrmRoute.duration, analysis, source: 'emergency' };
+          optimizedData = { path, distance: osrmRoute.distance, duration: osrmRoute.duration, analysis, compositeScore: analysis.overallScore, source: `emergency-${dir}-${offset}` };
         }
       }
     }
   }
-  
-  if (!optimizedData) {
-    optimizedData = safestData;
-    console.warn('Could not find 3rd distinct path, optimized will share safest path');
+
+  const fallbackDistinct = byDistance.find(d => d !== fastestData && d !== safestData && arePathsDifferent(d.path, fastestData.path) && arePathsDifferent(d.path, safestData.path));
+  if (!optimizedData && fallbackDistinct) {
+    optimizedData = fallbackDistinct as typeof scoredPaths[number];
   }
-  
+
+  if (!optimizedData) {
+    console.error('Could not generate 3 genuinely distinct road routes');
+    return [];
+  }
+
+  const fastestDistKm = Math.round(fastestData.distance / 100) / 10;
+  const safestDistKm = Math.round(safestData.distance / 100) / 10;
   const optimizedDistKm = Math.round(optimizedData.distance / 100) / 10;
+
+  const fastestRoute: RouteInfo = {
+    id: 'route-fastest',
+    type: 'fastest',
+    distance: fastestDistKm,
+    duration: calculateTrafficDuration(fastestDistKm),
+    safetyScore: applyDemographicWeight(fastestData.analysis.overallScore),
+    riskLevel: fastestData.analysis.riskLevel,
+    path: normalizePath(fastestData.path),
+  };
+
+  const safestRoute: RouteInfo = {
+    id: 'route-safest',
+    type: 'safest',
+    distance: safestDistKm,
+    duration: calculateTrafficDuration(safestDistKm),
+    safetyScore: safestData.analysis.overallScore,
+    riskLevel: safestData.analysis.riskLevel,
+    path: normalizePath(safestData.path),
+  };
+
   const optimizedRoute: RouteInfo = {
     id: 'route-optimized',
     type: 'optimized',
@@ -989,25 +981,28 @@ export const calculateRoutes = async (
     duration: calculateTrafficDuration(optimizedDistKm),
     safetyScore: optimizedData.analysis.overallScore,
     riskLevel: optimizedData.analysis.riskLevel,
-    path: optimizedData.path,
+    path: normalizePath(optimizedData.path),
   };
 
   routes.push(fastestRoute, safestRoute, optimizedRoute);
-  
-  // === FINAL VERIFICATION: ensure all 3 are truly different ===
+
   const f2s = arePathsDifferent(fastestRoute.path, safestRoute.path);
   const f2o = arePathsDifferent(fastestRoute.path, optimizedRoute.path);
   const s2o = arePathsDifferent(safestRoute.path, optimizedRoute.path);
-  
+
   console.log('=== PATH DIVERSITY CHECK ===');
   console.log(`Fastest vs Safest different: ${f2s}`);
   console.log(`Fastest vs Optimized different: ${f2o}`);
   console.log(`Safest vs Optimized different: ${s2o}`);
-  
-  if (!f2s) console.warn('⚠️ Fastest and Safest share the same road path!');
-  if (!f2o) console.warn('⚠️ Fastest and Optimized share the same road path!');
-  if (!s2o) console.warn('⚠️ Safest and Optimized share the same road path!');
-  
+  console.log(`Overlap F/S: ${calculatePathOverlapRatio(fastestRoute.path, safestRoute.path).toFixed(2)}`);
+  console.log(`Overlap F/O: ${calculatePathOverlapRatio(fastestRoute.path, optimizedRoute.path).toFixed(2)}`);
+  console.log(`Overlap S/O: ${calculatePathOverlapRatio(safestRoute.path, optimizedRoute.path).toFixed(2)}`);
+
+  if (!f2s || !f2o || !s2o) {
+    console.error('Rejected final routes because at least two still share the same road');
+    return [];
+  }
+
   validateAndAdjustRoutes(routes, fastestData.path, safestData.path);
 
   routes.sort((a, b) => {
@@ -1016,8 +1011,7 @@ export const calculateRoutes = async (
   });
 
   console.log('=== FINAL ROUTES ===');
-  routes.forEach(r => console.log(`${r.type}: ${r.distance}km, ${r.duration}min, safety=${r.safetyScore}, risk=${r.riskLevel}, pathPoints=${r.path.length}, source=${(r as any).source || 'n/a'}`));
-  console.log(`Safest route source: ${safestData.source}, dangerAreas avoided: ${safestData.analysis.dangerousAreas.length === 0 ? 'all' : safestData.analysis.dangerousAreas.join(',')}`);
+  routes.forEach(r => console.log(`${r.type}: ${r.distance}km, ${r.duration}min, safety=${r.safetyScore}, risk=${r.riskLevel}, pathPoints=${r.path.length}`));
 
   return routes;
 };
