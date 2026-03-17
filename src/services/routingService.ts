@@ -624,11 +624,15 @@ export const calculateRoutes = async (
     }
   }
 
-  // ===== Step 5: Perpendicular offsets - try aggressively =====
+  // ===== Step 5: Perpendicular offsets - try aggressively in PARALLEL =====
   if (distinctPaths.length < 3) {
     const offsets = [
-      { km: 1.5, dir: 'left' as const, progress: 0.4 },
-      { km: 1.5, dir: 'right' as const, progress: 0.6 },
+      { km: 1.0, dir: 'left' as const, progress: 0.4 },
+      { km: 1.0, dir: 'right' as const, progress: 0.6 },
+      { km: 1.5, dir: 'left' as const, progress: 0.5 },
+      { km: 1.5, dir: 'right' as const, progress: 0.5 },
+      { km: 2.0, dir: 'left' as const, progress: 0.3 },
+      { km: 2.0, dir: 'right' as const, progress: 0.7 },
       { km: 2.5, dir: 'left' as const, progress: 0.5 },
       { km: 2.5, dir: 'right' as const, progress: 0.5 },
       { km: 3.5, dir: 'left' as const, progress: 0.3 },
@@ -637,11 +641,16 @@ export const calculateRoutes = async (
       { km: 4.0, dir: 'right' as const, progress: 0.5 },
     ];
     
-    for (const strategy of offsets) {
-      if (distinctPaths.length >= 5) break;
+    // Run all offset attempts in parallel
+    const offsetPromises = offsets.map(async (strategy) => {
       const offsetPoint = getPerpendicularPoint(source, destination, strategy.km, strategy.dir, strategy.progress);
       const osrmRoute = await getOSRMRoute([source, offsetPoint, destination]);
-      
+      return { osrmRoute, strategy };
+    });
+    const offsetResults = await Promise.all(offsetPromises);
+    
+    for (const { osrmRoute, strategy } of offsetResults) {
+      if (distinctPaths.length >= 6) break;
       if (osrmRoute && validateRouteQuality(osrmRoute, source, destination)) {
         const path = osrmRoute.geometry.coordinates.map(([lng, lat]) => ({ lat, lng }));
         const isDuplicate = distinctPaths.some(existing => !arePathsDifferent(path, existing.path));
@@ -653,27 +662,65 @@ export const calculateRoutes = async (
     }
   }
 
-  // ===== Step 5b: Two-waypoint routes for maximum diversity =====
+  // ===== Step 5b: Two-waypoint routes for maximum diversity - PARALLEL =====
   if (distinctPaths.length < 3) {
     const twoWpStrategies = [
-      { dir1: 'left' as const, dir2: 'right' as const, km: 2.5 },
-      { dir1: 'right' as const, dir2: 'left' as const, km: 2.5 },
-      { dir1: 'left' as const, dir2: 'left' as const, km: 3.5 },
-      { dir1: 'right' as const, dir2: 'right' as const, km: 3.5 },
+      { dir1: 'left' as const, dir2: 'right' as const, km: 2.0 },
+      { dir1: 'right' as const, dir2: 'left' as const, km: 2.0 },
+      { dir1: 'left' as const, dir2: 'left' as const, km: 2.5 },
+      { dir1: 'right' as const, dir2: 'right' as const, km: 2.5 },
+      { dir1: 'left' as const, dir2: 'right' as const, km: 3.5 },
+      { dir1: 'right' as const, dir2: 'left' as const, km: 3.5 },
     ];
     
-    for (const strategy of twoWpStrategies) {
-      if (distinctPaths.length >= 5) break;
+    const twoWpPromises = twoWpStrategies.map(async (strategy) => {
       const wp1 = getPerpendicularPoint(source, destination, strategy.km, strategy.dir1, 0.33);
       const wp2 = getPerpendicularPoint(source, destination, strategy.km, strategy.dir2, 0.66);
       const osrmRoute = await getOSRMRoute([source, wp1, wp2, destination]);
-      
+      return { osrmRoute, strategy };
+    });
+    const twoWpResults = await Promise.all(twoWpPromises);
+    
+    for (const { osrmRoute, strategy } of twoWpResults) {
+      if (distinctPaths.length >= 6) break;
       if (osrmRoute && validateRouteQuality(osrmRoute, source, destination)) {
         const path = osrmRoute.geometry.coordinates.map(([lng, lat]) => ({ lat, lng }));
         const isDuplicate = distinctPaths.some(existing => !arePathsDifferent(path, existing.path));
         if (!isDuplicate) {
           const analysis = analyzeRouteSafety(path, safetyZones);
           distinctPaths.push({ path, distance: osrmRoute.distance, duration: osrmRoute.duration, analysis, source: `two-wp-${strategy.dir1}-${strategy.dir2}` });
+        }
+      }
+    }
+  }
+
+  // ===== Step 5c: Three-waypoint routes for very stubborn cases =====
+  if (distinctPaths.length < 3) {
+    console.warn('Still < 3 paths, trying 3-waypoint routes');
+    const threeWpStrategies = [
+      { dir: 'left' as const, kms: [1.5, 2.5, 1.5], progresses: [0.25, 0.5, 0.75] },
+      { dir: 'right' as const, kms: [1.5, 2.5, 1.5], progresses: [0.25, 0.5, 0.75] },
+      { dir: 'left' as const, kms: [2.0, 3.0, 2.0], progresses: [0.2, 0.5, 0.8] },
+      { dir: 'right' as const, kms: [2.0, 3.0, 2.0], progresses: [0.2, 0.5, 0.8] },
+    ];
+    
+    const threeWpPromises = threeWpStrategies.map(async (strategy) => {
+      const wp1 = getPerpendicularPoint(source, destination, strategy.kms[0], strategy.dir, strategy.progresses[0]);
+      const wp2 = getPerpendicularPoint(source, destination, strategy.kms[1], strategy.dir, strategy.progresses[1]);
+      const wp3 = getPerpendicularPoint(source, destination, strategy.kms[2], strategy.dir, strategy.progresses[2]);
+      const osrmRoute = await getOSRMRoute([source, wp1, wp2, wp3, destination]);
+      return { osrmRoute, strategy };
+    });
+    const threeWpResults = await Promise.all(threeWpPromises);
+    
+    for (const { osrmRoute } of threeWpResults) {
+      if (distinctPaths.length >= 6) break;
+      if (osrmRoute && validateRouteQuality(osrmRoute, source, destination)) {
+        const path = osrmRoute.geometry.coordinates.map(([lng, lat]) => ({ lat, lng }));
+        const isDuplicate = distinctPaths.some(existing => !arePathsDifferent(path, existing.path));
+        if (!isDuplicate) {
+          const analysis = analyzeRouteSafety(path, safetyZones);
+          distinctPaths.push({ path, distance: osrmRoute.distance, duration: osrmRoute.duration, analysis, source: `three-wp` });
         }
       }
     }
