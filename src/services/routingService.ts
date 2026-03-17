@@ -92,51 +92,131 @@ const getOSRMAlternatives = async (source: LatLng, destination: LatLng): Promise
   return [];
 };
 
+// Normalize path for comparisons by trimming dangling tails and removing obvious loops
+const normalizePath = (path: LatLng[]): LatLng[] => {
+  if (path.length < 4) return path;
+
+  let result = [...path];
+
+  const removeLoops = (pts: LatLng[]): LatLng[] => {
+    if (pts.length < 10) return pts;
+    let cleaned = [...pts];
+    let changed = true;
+    let passes = 0;
+
+    while (changed && passes < 3) {
+      changed = false;
+      passes++;
+
+      for (let i = 0; i < cleaned.length - 5; i++) {
+        for (let j = i + 5; j < cleaned.length; j++) {
+          const dist = haversineDistance(cleaned[i], cleaned[j]);
+          if (dist >= 150) continue;
+
+          let maxLoopDist = 0;
+          for (let k = i + 1; k < j; k++) {
+            const loopDist = haversineDistance(cleaned[i], cleaned[k]);
+            if (loopDist > maxLoopDist) maxLoopDist = loopDist;
+          }
+
+          if (maxLoopDist > 200) {
+            cleaned = [...cleaned.slice(0, i + 1), ...cleaned.slice(j)];
+            changed = true;
+            break;
+          }
+        }
+        if (changed) break;
+      }
+    }
+
+    return cleaned;
+  };
+
+  result = removeLoops(result);
+  return result;
+};
+
+// Measure how much of path1 overlaps path2 (0..1). High overlap means same road route.
+const calculatePathOverlapRatio = (path1: LatLng[], path2: LatLng[]): number => {
+  if (path1.length < 3 || path2.length < 3) return 1;
+
+  const normalized1 = normalizePath(path1);
+  const normalized2 = normalizePath(path2);
+  const tripDist = haversineDistance(normalized1[0], normalized1[normalized1.length - 1]);
+
+  let overlapThreshold = 60;
+  if (tripDist >= 3000 && tripDist < 8000) overlapThreshold = 75;
+  else if (tripDist >= 8000 && tripDist < 15000) overlapThreshold = 90;
+  else if (tripDist >= 15000) overlapThreshold = 110;
+
+  const sampleCount = 40;
+  let overlappedPoints = 0;
+
+  for (let i = 1; i < sampleCount - 1; i++) {
+    const idx1 = Math.floor((i / sampleCount) * normalized1.length);
+    const p1 = normalized1[idx1];
+
+    let minDist = Infinity;
+    const searchRate = Math.max(1, Math.floor(normalized2.length / 120));
+    for (let j = 0; j < normalized2.length; j += searchRate) {
+      const d = haversineDistance(p1, normalized2[j]);
+      if (d < minDist) minDist = d;
+    }
+
+    if (minDist <= overlapThreshold) {
+      overlappedPoints++;
+    }
+  }
+
+  return overlappedPoints / (sampleCount - 2);
+};
+
 // Check if two paths are sufficiently different
-// Adapts thresholds based on trip distance for better results on short/long trips
 const arePathsDifferent = (path1: LatLng[], path2: LatLng[]): boolean => {
   if (path1.length < 3 || path2.length < 3) return false;
-  
-  // Estimate trip distance from path endpoints
-  const tripDist = haversineDistance(path1[0], path1[path1.length - 1]);
-  
-  // Scale threshold: shorter trips need less separation
-  // <3km: 80m, 3-8km: 100m, 8-15km: 130m, >15km: 150m
+
+  const overlapRatio = calculatePathOverlapRatio(path1, path2);
+  if (overlapRatio >= 0.72) return false;
+
+  const normalized1 = normalizePath(path1);
+  const normalized2 = normalizePath(path2);
+  const tripDist = haversineDistance(normalized1[0], normalized1[normalized1.length - 1]);
+
   let distThreshold: number;
   let minDivergentPoints: number;
   if (tripDist < 3000) {
-    distThreshold = 80;
+    distThreshold = 70;
     minDivergentPoints = 4;
   } else if (tripDist < 8000) {
-    distThreshold = 100;
+    distThreshold = 90;
     minDivergentPoints = 5;
   } else if (tripDist < 15000) {
-    distThreshold = 130;
+    distThreshold = 120;
     minDivergentPoints = 5;
   } else {
-    distThreshold = 150;
+    distThreshold = 140;
     minDivergentPoints = 6;
   }
-  
+
   const sampleCount = 30;
   let differentPoints = 0;
-  
+
   for (let i = 1; i < sampleCount - 1; i++) {
-    const idx1 = Math.floor((i / sampleCount) * path1.length);
-    const p1 = path1[idx1];
-    
+    const idx1 = Math.floor((i / sampleCount) * normalized1.length);
+    const p1 = normalized1[idx1];
+
     let minDist = Infinity;
-    const searchRate = Math.max(1, Math.floor(path2.length / 100));
-    for (let j = 0; j < path2.length; j += searchRate) {
-      const d = haversineDistance(p1, path2[j]);
+    const searchRate = Math.max(1, Math.floor(normalized2.length / 100));
+    for (let j = 0; j < normalized2.length; j += searchRate) {
+      const d = haversineDistance(p1, normalized2[j]);
       if (d < minDist) minDist = d;
     }
-    
+
     if (minDist > distThreshold) {
       differentPoints++;
     }
   }
-  
+
   return differentPoints >= minDivergentPoints;
 };
 
