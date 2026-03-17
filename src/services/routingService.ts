@@ -85,8 +85,30 @@ const getOSRMAlternatives = async (source: LatLng, destination: LatLng): Promise
 };
 
 // Check if two paths are sufficiently different
+// Adapts thresholds based on trip distance for better results on short/long trips
 const arePathsDifferent = (path1: LatLng[], path2: LatLng[]): boolean => {
   if (path1.length < 3 || path2.length < 3) return false;
+  
+  // Estimate trip distance from path endpoints
+  const tripDist = haversineDistance(path1[0], path1[path1.length - 1]);
+  
+  // Scale threshold: shorter trips need less separation
+  // <3km: 80m, 3-8km: 100m, 8-15km: 130m, >15km: 150m
+  let distThreshold: number;
+  let minDivergentPoints: number;
+  if (tripDist < 3000) {
+    distThreshold = 80;
+    minDivergentPoints = 4;
+  } else if (tripDist < 8000) {
+    distThreshold = 100;
+    minDivergentPoints = 5;
+  } else if (tripDist < 15000) {
+    distThreshold = 130;
+    minDivergentPoints = 5;
+  } else {
+    distThreshold = 150;
+    minDivergentPoints = 6;
+  }
   
   const sampleCount = 30;
   let differentPoints = 0;
@@ -102,14 +124,12 @@ const arePathsDifferent = (path1: LatLng[], path2: LatLng[]): boolean => {
       if (d < minDist) minDist = d;
     }
     
-    // 150m threshold for genuine street-level differences
-    if (minDist > 150) {
+    if (minDist > distThreshold) {
       differentPoints++;
     }
   }
   
-  // Paths are different if at least 6 of 28 middle points diverge by 150m+
-  return differentPoints >= 6;
+  return differentPoints >= minDivergentPoints;
 };
 
 // Detect if a route has U-turns or loops by checking for backtracking
