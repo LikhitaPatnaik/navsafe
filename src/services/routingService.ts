@@ -899,16 +899,24 @@ export const calculateRoutes = async (
   }
 
   if (!safestData) {
-    safestData = bySafety.find(d => d !== fastestData) ?? fastestData;
+    const fallbackSafest = bySafety.find(d => d !== fastestData);
+    if (!fallbackSafest) {
+      console.error('Could not find a distinct safest route candidate');
+      return [];
+    }
+    safestData = fallbackSafest;
   }
+
+  const targetDistanceMidpoint = (fastestData.distance + safestData.distance) / 2;
+  const targetSafetyMidpoint = (fastestData.analysis.overallScore + safestData.compositeScore) / 2;
 
   let optimizedData = scoredPaths
     .filter(d => d !== fastestData && d !== safestData)
     .sort((a, b) => {
-      const aDistanceGap = Math.abs(a.distance - ((fastestData.distance + safestData.distance) / 2));
-      const bDistanceGap = Math.abs(b.distance - ((fastestData.distance + safestData.distance) / 2));
-      const aSafetyGap = Math.abs(a.compositeScore - ((fastestData.analysis.overallScore + safestData.compositeScore) / 2));
-      const bSafetyGap = Math.abs(b.compositeScore - ((fastestData.analysis.overallScore + safestData.compositeScore) / 2));
+      const aDistanceGap = Math.abs(a.distance - targetDistanceMidpoint);
+      const bDistanceGap = Math.abs(b.distance - targetDistanceMidpoint);
+      const aSafetyGap = Math.abs(a.compositeScore - targetSafetyMidpoint);
+      const bSafetyGap = Math.abs(b.compositeScore - targetSafetyMidpoint);
       return (aDistanceGap + aSafetyGap * 25) - (bDistanceGap + bSafetyGap * 25);
     })
     .find(d => arePathsDifferent(d.path, fastestData.path) && arePathsDifferent(d.path, safestData.path));
@@ -940,9 +948,11 @@ export const calculateRoutes = async (
     }
   }
 
-  const fallbackDistinct = byDistance.find(d => d !== fastestData && d !== safestData && arePathsDifferent(d.path, fastestData.path) && arePathsDifferent(d.path, safestData.path));
-  if (!optimizedData && fallbackDistinct) {
-    optimizedData = fallbackDistinct as typeof scoredPaths[number];
+  if (!optimizedData) {
+    const fallbackDistinct = scoredPaths.find(d => d !== fastestData && d !== safestData && arePathsDifferent(d.path, fastestData.path) && arePathsDifferent(d.path, safestData.path));
+    if (fallbackDistinct) {
+      optimizedData = fallbackDistinct;
+    }
   }
 
   if (!optimizedData) {
