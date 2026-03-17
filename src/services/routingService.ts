@@ -85,8 +85,30 @@ const getOSRMAlternatives = async (source: LatLng, destination: LatLng): Promise
 };
 
 // Check if two paths are sufficiently different
+// Adapts thresholds based on trip distance for better results on short/long trips
 const arePathsDifferent = (path1: LatLng[], path2: LatLng[]): boolean => {
   if (path1.length < 3 || path2.length < 3) return false;
+  
+  // Estimate trip distance from path endpoints
+  const tripDist = haversineDistance(path1[0], path1[path1.length - 1]);
+  
+  // Scale threshold: shorter trips need less separation
+  // <3km: 80m, 3-8km: 100m, 8-15km: 130m, >15km: 150m
+  let distThreshold: number;
+  let minDivergentPoints: number;
+  if (tripDist < 3000) {
+    distThreshold = 80;
+    minDivergentPoints = 4;
+  } else if (tripDist < 8000) {
+    distThreshold = 100;
+    minDivergentPoints = 5;
+  } else if (tripDist < 15000) {
+    distThreshold = 130;
+    minDivergentPoints = 5;
+  } else {
+    distThreshold = 150;
+    minDivergentPoints = 6;
+  }
   
   const sampleCount = 30;
   let differentPoints = 0;
@@ -102,14 +124,12 @@ const arePathsDifferent = (path1: LatLng[], path2: LatLng[]): boolean => {
       if (d < minDist) minDist = d;
     }
     
-    // 150m threshold for genuine street-level differences
-    if (minDist > 150) {
+    if (minDist > distThreshold) {
       differentPoints++;
     }
   }
   
-  // Paths are different if at least 6 of 28 middle points diverge by 150m+
-  return differentPoints >= 6;
+  return differentPoints >= minDivergentPoints;
 };
 
 // Detect if a route has U-turns or loops by checking for backtracking
@@ -604,11 +624,15 @@ export const calculateRoutes = async (
     }
   }
 
-  // ===== Step 5: Perpendicular offsets - try aggressively =====
+  // ===== Step 5: Perpendicular offsets - try aggressively in PARALLEL =====
   if (distinctPaths.length < 3) {
     const offsets = [
-      { km: 1.5, dir: 'left' as const, progress: 0.4 },
-      { km: 1.5, dir: 'right' as const, progress: 0.6 },
+      { km: 1.0, dir: 'left' as const, progress: 0.4 },
+      { km: 1.0, dir: 'right' as const, progress: 0.6 },
+      { km: 1.5, dir: 'left' as const, progress: 0.5 },
+      { km: 1.5, dir: 'right' as const, progress: 0.5 },
+      { km: 2.0, dir: 'left' as const, progress: 0.3 },
+      { km: 2.0, dir: 'right' as const, progress: 0.7 },
       { km: 2.5, dir: 'left' as const, progress: 0.5 },
       { km: 2.5, dir: 'right' as const, progress: 0.5 },
       { km: 3.5, dir: 'left' as const, progress: 0.3 },
@@ -617,11 +641,16 @@ export const calculateRoutes = async (
       { km: 4.0, dir: 'right' as const, progress: 0.5 },
     ];
     
-    for (const strategy of offsets) {
-      if (distinctPaths.length >= 5) break;
+    // Run all offset attempts in parallel
+    const offsetPromises = offsets.map(async (strategy) => {
       const offsetPoint = getPerpendicularPoint(source, destination, strategy.km, strategy.dir, strategy.progress);
       const osrmRoute = await getOSRMRoute([source, offsetPoint, destination]);
-      
+      return { osrmRoute, strategy };
+    });
+    const offsetResults = await Promise.all(offsetPromises);
+    
+    for (const { osrmRoute, strategy } of offsetResults) {
+      if (distinctPaths.length >= 6) break;
       if (osrmRoute && validateRouteQuality(osrmRoute, source, destination)) {
         const path = osrmRoute.geometry.coordinates.map(([lng, lat]) => ({ lat, lng }));
         const isDuplicate = distinctPaths.some(existing => !arePathsDifferent(path, existing.path));
@@ -633,27 +662,65 @@ export const calculateRoutes = async (
     }
   }
 
-  // ===== Step 5b: Two-waypoint routes for maximum diversity =====
+  // ===== Step 5b: Two-waypoint routes for maximum diversity - PARALLEL =====
   if (distinctPaths.length < 3) {
     const twoWpStrategies = [
-      { dir1: 'left' as const, dir2: 'right' as const, km: 2.5 },
-      { dir1: 'right' as const, dir2: 'left' as const, km: 2.5 },
-      { dir1: 'left' as const, dir2: 'left' as const, km: 3.5 },
-      { dir1: 'right' as const, dir2: 'right' as const, km: 3.5 },
+      { dir1: 'left' as const, dir2: 'right' as const, km: 2.0 },
+      { dir1: 'right' as const, dir2: 'left' as const, km: 2.0 },
+      { dir1: 'left' as const, dir2: 'left' as const, km: 2.5 },
+      { dir1: 'right' as const, dir2: 'right' as const, km: 2.5 },
+      { dir1: 'left' as const, dir2: 'right' as const, km: 3.5 },
+      { dir1: 'right' as const, dir2: 'left' as const, km: 3.5 },
     ];
     
-    for (const strategy of twoWpStrategies) {
-      if (distinctPaths.length >= 5) break;
+    const twoWpPromises = twoWpStrategies.map(async (strategy) => {
       const wp1 = getPerpendicularPoint(source, destination, strategy.km, strategy.dir1, 0.33);
       const wp2 = getPerpendicularPoint(source, destination, strategy.km, strategy.dir2, 0.66);
       const osrmRoute = await getOSRMRoute([source, wp1, wp2, destination]);
-      
+      return { osrmRoute, strategy };
+    });
+    const twoWpResults = await Promise.all(twoWpPromises);
+    
+    for (const { osrmRoute, strategy } of twoWpResults) {
+      if (distinctPaths.length >= 6) break;
       if (osrmRoute && validateRouteQuality(osrmRoute, source, destination)) {
         const path = osrmRoute.geometry.coordinates.map(([lng, lat]) => ({ lat, lng }));
         const isDuplicate = distinctPaths.some(existing => !arePathsDifferent(path, existing.path));
         if (!isDuplicate) {
           const analysis = analyzeRouteSafety(path, safetyZones);
           distinctPaths.push({ path, distance: osrmRoute.distance, duration: osrmRoute.duration, analysis, source: `two-wp-${strategy.dir1}-${strategy.dir2}` });
+        }
+      }
+    }
+  }
+
+  // ===== Step 5c: Three-waypoint routes for very stubborn cases =====
+  if (distinctPaths.length < 3) {
+    console.warn('Still < 3 paths, trying 3-waypoint routes');
+    const threeWpStrategies = [
+      { dir: 'left' as const, kms: [1.5, 2.5, 1.5], progresses: [0.25, 0.5, 0.75] },
+      { dir: 'right' as const, kms: [1.5, 2.5, 1.5], progresses: [0.25, 0.5, 0.75] },
+      { dir: 'left' as const, kms: [2.0, 3.0, 2.0], progresses: [0.2, 0.5, 0.8] },
+      { dir: 'right' as const, kms: [2.0, 3.0, 2.0], progresses: [0.2, 0.5, 0.8] },
+    ];
+    
+    const threeWpPromises = threeWpStrategies.map(async (strategy) => {
+      const wp1 = getPerpendicularPoint(source, destination, strategy.kms[0], strategy.dir, strategy.progresses[0]);
+      const wp2 = getPerpendicularPoint(source, destination, strategy.kms[1], strategy.dir, strategy.progresses[1]);
+      const wp3 = getPerpendicularPoint(source, destination, strategy.kms[2], strategy.dir, strategy.progresses[2]);
+      const osrmRoute = await getOSRMRoute([source, wp1, wp2, wp3, destination]);
+      return { osrmRoute, strategy };
+    });
+    const threeWpResults = await Promise.all(threeWpPromises);
+    
+    for (const { osrmRoute } of threeWpResults) {
+      if (distinctPaths.length >= 6) break;
+      if (osrmRoute && validateRouteQuality(osrmRoute, source, destination)) {
+        const path = osrmRoute.geometry.coordinates.map(([lng, lat]) => ({ lat, lng }));
+        const isDuplicate = distinctPaths.some(existing => !arePathsDifferent(path, existing.path));
+        if (!isDuplicate) {
+          const analysis = analyzeRouteSafety(path, safetyZones);
+          distinctPaths.push({ path, distance: osrmRoute.distance, duration: osrmRoute.duration, analysis, source: `three-wp` });
         }
       }
     }
@@ -708,23 +775,28 @@ export const calculateRoutes = async (
     d !== fastestData && arePathsDifferent(d.path, fastestData.path)
   );
   
-  // If no genuinely different safer path, try generating one via perpendicular offset
+  // If no genuinely different safer path, try generating one via perpendicular offset - PARALLEL
   if (!safestData) {
     console.warn('No distinct safest path found, generating via perpendicular...');
-    for (const offset of [3.0, 4.0, 5.0]) {
+    const safeFallbackPromises: Promise<{ osrmRoute: OSRMRoute | null; dir: string; offset: number }>[] = [];
+    for (const offset of [2.0, 3.0, 4.0, 5.0]) {
       for (const dir of ['left', 'right'] as const) {
         const offsetPoint = getPerpendicularPoint(source, destination, offset, dir, 0.5);
-        const osrmRoute = await getOSRMRoute([source, offsetPoint, destination]);
-        if (osrmRoute && validateRouteQuality(osrmRoute, source, destination)) {
-          const path = osrmRoute.geometry.coordinates.map(([lng, lat]) => ({ lat, lng }));
-          if (arePathsDifferent(path, fastestData.path)) {
-            const analysis = analyzeRouteSafety(path, safetyZones);
-            safestData = { path, distance: osrmRoute.distance, duration: osrmRoute.duration, analysis, compositeScore: analysis.overallScore, source: `safest-fallback-${dir}-${offset}` };
-            break;
-          }
+        safeFallbackPromises.push(
+          getOSRMRoute([source, offsetPoint, destination]).then(r => ({ osrmRoute: r, dir, offset }))
+        );
+      }
+    }
+    const safeFallbackResults = await Promise.all(safeFallbackPromises);
+    for (const { osrmRoute, dir, offset } of safeFallbackResults) {
+      if (safestData) break;
+      if (osrmRoute && validateRouteQuality(osrmRoute, source, destination)) {
+        const path = osrmRoute.geometry.coordinates.map(([lng, lat]) => ({ lat, lng }));
+        if (arePathsDifferent(path, fastestData.path)) {
+          const analysis = analyzeRouteSafety(path, safetyZones);
+          safestData = { path, distance: osrmRoute.distance, duration: osrmRoute.duration, analysis, compositeScore: analysis.overallScore, source: `safest-fallback-${dir}-${offset}` };
         }
       }
-      if (safestData) break;
     }
   }
   
@@ -780,23 +852,30 @@ export const calculateRoutes = async (
     }
   }
   
-  // Last resort: generate via large perpendicular offsets in the opposite direction from safest
+  // Last resort: generate via large perpendicular offsets - PARALLEL
   if (!optimizedData || (!arePathsDifferent(optimizedData.path, fastestData.path) || !arePathsDifferent(optimizedData.path, safestData.path))) {
     console.warn('Generating emergency 3rd route via large perpendicular offset');
-    for (const offset of [3.5, 4.5, 5.5]) {
+    const emergencyPromises: Promise<{ osrmRoute: OSRMRoute | null; dir: string; offset: number }>[] = [];
+    for (const offset of [2.0, 3.0, 3.5, 4.5, 5.5]) {
       for (const dir of ['right', 'left'] as const) {
-        const emergencyPoint = getPerpendicularPoint(source, destination, offset, dir, 0.5);
-        const emergencyRoute = await getOSRMRoute([source, emergencyPoint, destination]);
-        if (emergencyRoute && validateRouteQuality(emergencyRoute, source, destination)) {
-          const path = emergencyRoute.geometry.coordinates.map(([lng, lat]) => ({ lat, lng }));
-          if (arePathsDifferent(path, fastestData.path) && arePathsDifferent(path, safestData.path)) {
-            const analysis = analyzeRouteSafety(path, safetyZones);
-            optimizedData = { path, distance: emergencyRoute.distance, duration: emergencyRoute.duration, analysis, source: 'emergency' };
-            break;
-          }
+        for (const progress of [0.5, 0.35, 0.65]) {
+          const emergencyPoint = getPerpendicularPoint(source, destination, offset, dir, progress);
+          emergencyPromises.push(
+            getOSRMRoute([source, emergencyPoint, destination]).then(r => ({ osrmRoute: r, dir, offset }))
+          );
         }
       }
+    }
+    const emergencyResults = await Promise.all(emergencyPromises);
+    for (const { osrmRoute } of emergencyResults) {
       if (optimizedData && arePathsDifferent(optimizedData.path, fastestData.path) && arePathsDifferent(optimizedData.path, safestData.path)) break;
+      if (osrmRoute && validateRouteQuality(osrmRoute, source, destination)) {
+        const path = osrmRoute.geometry.coordinates.map(([lng, lat]) => ({ lat, lng }));
+        if (arePathsDifferent(path, fastestData.path) && arePathsDifferent(path, safestData.path)) {
+          const analysis = analyzeRouteSafety(path, safetyZones);
+          optimizedData = { path, distance: osrmRoute.distance, duration: osrmRoute.duration, analysis, source: 'emergency' };
+        }
+      }
     }
   }
   
