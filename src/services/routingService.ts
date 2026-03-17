@@ -775,23 +775,28 @@ export const calculateRoutes = async (
     d !== fastestData && arePathsDifferent(d.path, fastestData.path)
   );
   
-  // If no genuinely different safer path, try generating one via perpendicular offset
+  // If no genuinely different safer path, try generating one via perpendicular offset - PARALLEL
   if (!safestData) {
     console.warn('No distinct safest path found, generating via perpendicular...');
-    for (const offset of [3.0, 4.0, 5.0]) {
+    const safeFallbackPromises: Promise<{ osrmRoute: OSRMRoute | null; dir: string; offset: number }>[] = [];
+    for (const offset of [2.0, 3.0, 4.0, 5.0]) {
       for (const dir of ['left', 'right'] as const) {
         const offsetPoint = getPerpendicularPoint(source, destination, offset, dir, 0.5);
-        const osrmRoute = await getOSRMRoute([source, offsetPoint, destination]);
-        if (osrmRoute && validateRouteQuality(osrmRoute, source, destination)) {
-          const path = osrmRoute.geometry.coordinates.map(([lng, lat]) => ({ lat, lng }));
-          if (arePathsDifferent(path, fastestData.path)) {
-            const analysis = analyzeRouteSafety(path, safetyZones);
-            safestData = { path, distance: osrmRoute.distance, duration: osrmRoute.duration, analysis, compositeScore: analysis.overallScore, source: `safest-fallback-${dir}-${offset}` };
-            break;
-          }
+        safeFallbackPromises.push(
+          getOSRMRoute([source, offsetPoint, destination]).then(r => ({ osrmRoute: r, dir, offset }))
+        );
+      }
+    }
+    const safeFallbackResults = await Promise.all(safeFallbackPromises);
+    for (const { osrmRoute, dir, offset } of safeFallbackResults) {
+      if (safestData) break;
+      if (osrmRoute && validateRouteQuality(osrmRoute, source, destination)) {
+        const path = osrmRoute.geometry.coordinates.map(([lng, lat]) => ({ lat, lng }));
+        if (arePathsDifferent(path, fastestData.path)) {
+          const analysis = analyzeRouteSafety(path, safetyZones);
+          safestData = { path, distance: osrmRoute.distance, duration: osrmRoute.duration, analysis, compositeScore: analysis.overallScore, source: `safest-fallback-${dir}-${offset}` };
         }
       }
-      if (safestData) break;
     }
   }
   
