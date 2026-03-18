@@ -44,6 +44,12 @@ const TripApp = () => {
   const [selectedCrimeTypes, setSelectedCrimeTypes] = useState<CrimeType[]>([]);
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
+  useEffect(() => {
+    if (!authLoading && user) {
+      setShowLanding(false);
+    }
+  }, [authLoading, user]);
+
   // Toggle crime type filter - for highlighting zones on map
   const handleToggleCrimeType = useCallback((crimeType: CrimeType) => {
     setSelectedCrimeTypes(prev => 
