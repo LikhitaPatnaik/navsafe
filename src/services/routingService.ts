@@ -234,7 +234,7 @@ const arePathsDifferent = (path1: LatLng[], path2: LatLng[]): boolean => {
   return overlapRatio <= 0.82 && midSeparation >= minMidSeparation;
 };
 
-const calculateDistinctnessScore = (candidatePath: LatLng[], anchorPaths: LatLng[]): number => {
+const calculateDistinctnessScore = (candidatePath: LatLng[], anchorPaths: LatLng[][]): number => {
   return anchorPaths.reduce((score, anchorPath) => {
     const separation = calculateAveragePathSeparation(candidatePath, anchorPath);
     const overlapPenalty = calculatePathOverlapRatio(candidatePath, anchorPath) * 250;
