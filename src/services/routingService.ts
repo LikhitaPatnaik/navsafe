@@ -244,98 +244,7 @@ const calculateDistinctnessScore = (candidatePath: LatLng[], anchorPaths: LatLng
   }, 0);
 };
 
-// Detect if a route has U-turns or loops by checking for backtracking
-const hasUTurnsOrLoops = (path: LatLng[], source: LatLng, destination: LatLng): boolean => {
-  if (path.length < 10) return false;
-  
-  const mainBearing = calculateBearing(source, destination);
-  
-  // Sample every 10th point for efficiency
-  const sampleRate = Math.max(1, Math.floor(path.length / 20));
-  let previousBearing = mainBearing;
-  let sharpTurnCount = 0;
-  let backtrackCount = 0;
-  
-  for (let i = sampleRate; i < path.length - sampleRate; i += sampleRate) {
-    const current = path[i];
-    const next = path[Math.min(i + sampleRate, path.length - 1)];
-    const segmentBearing = calculateBearing(current, next);
-    
-    // Check for sharp turns (> 120 degrees change)
-    const turnAngle = bearingDifference(previousBearing, segmentBearing);
-    if (turnAngle > 120) {
-      sharpTurnCount++;
-      console.log(`Sharp turn detected at point ${i}: ${turnAngle.toFixed(0)}°`);
-    }
-    
-    // Check for backtracking (moving away from destination when we were closer)
-    const distToDest = haversineDistance(current, destination);
-    const nextDistToDest = haversineDistance(next, destination);
-    const movingTowardsDest = bearingDifference(mainBearing, segmentBearing) < 90;
-    
-    // If we're moving away from destination significantly and not towards main direction
-    if (nextDistToDest > distToDest + 500 && !movingTowardsDest) {
-      backtrackCount++;
-    }
-    
-    previousBearing = segmentBearing;
-  }
-  
-  // Flag as problematic if too many sharp turns or backtracking
-  if (sharpTurnCount >= 2 || backtrackCount >= 3) {
-    console.log(`Route rejected: ${sharpTurnCount} sharp turns, ${backtrackCount} backtrack segments`);
-    return true;
-  }
-  
-  return false;
-};
-
-// Check if route makes consistent progress towards destination
-const hasConsistentProgress = (path: LatLng[], source: LatLng, destination: LatLng): boolean => {
-  if (path.length < 5) return true;
-  
-  const directDist = haversineDistance(source, destination);
-  let lastDistance = haversineDistance(path[0], destination);
-  let regressionCount = 0;
-  let maxRegression = 0;
-  const sampleRate = Math.max(1, Math.floor(path.length / 20));
-  
-  for (let i = sampleRate; i < path.length; i += sampleRate) {
-    const currentDistance = haversineDistance(path[i], destination);
-    
-    // Track regressions (moving away from destination)
-    if (currentDistance > lastDistance + 200) {
-      regressionCount++;
-      const regression = currentDistance - lastDistance;
-      if (regression > maxRegression) maxRegression = regression;
-    }
-    lastDistance = currentDistance;
-  }
-  
-  // Reject if too many regressions or a single large one
-  if (regressionCount > 2) return false;
-  if (maxRegression > directDist * 0.3) return false; // Single regression > 30% of trip distance
-  
-  // Check for loops: if path revisits a point within 100m
-  for (let i = 0; i < path.length - 10; i += sampleRate) {
-    for (let j = i + Math.max(10, sampleRate * 3); j < path.length; j += sampleRate) {
-      if (haversineDistance(path[i], path[j]) < 100) {
-        // Check the loop went at least 300m away
-        let maxDist = 0;
-        for (let k = i; k < j; k += Math.max(1, Math.floor((j - i) / 5))) {
-          const d = haversineDistance(path[i], path[k]);
-          if (d > maxDist) maxDist = d;
-        }
-        if (maxDist > 300) {
-          console.warn(`Loop detected: points ${i}-${j}, max loop extent ${maxDist.toFixed(0)}m`);
-          return false;
-        }
-      }
-    }
-  }
-  
-  return true;
-};
+// (U-turn and loop detection removed - OSRM handles routing quality)
 
 // Find safe areas with coordinates
 const getSafeAreasWithCoords = (safetyZones: SafetyZone[], minScore: number = 70): { point: LatLng; score: number; name: string }[] => {
@@ -468,47 +377,32 @@ const getPerpendicularPoint = (source: LatLng, dest: LatLng, offsetKm: number, d
   };
 };
 
-// Validate that an OSRM route doesn't have U-turns and reaches destination
+// Validate that an OSRM route reaches destination and isn't wildly loopy
 const validateRouteQuality = (osrmRoute: OSRMRoute, source: LatLng, destination: LatLng): boolean => {
-  const path = normalizePath(osrmRoute.geometry.coordinates.map(([lng, lat]) => ({ lat, lng })));
+  const path = osrmRoute.geometry.coordinates.map(([lng, lat]) => ({ lat, lng }));
   
-  if (path.length < 2) {
-    console.warn('Route too short');
-    return false;
-  }
+  if (path.length < 2) return false;
   
-  // Reject explicit u-turn instructions from OSRM
-  const hasUTurnInstruction = osrmRoute.legs?.some(leg =>
-    leg.steps?.some(step =>
-      step.maneuver?.modifier === 'uturn' || step.maneuver?.type === 'uturn'
-    )
-  );
-  if (hasUTurnInstruction) {
-    console.warn('Route rejected: explicit U-turn instruction detected');
-    return false;
-  }
-  
-  // Verify route reaches destination (within 200m)
+  // Verify route reaches destination (within 500m)
   const lastPoint = path[path.length - 1];
   const distToDestination = haversineDistance(lastPoint, destination);
-  if (distToDestination > 200) {
+  if (distToDestination > 500) {
     console.warn(`Route doesn't reach destination: ${distToDestination.toFixed(0)}m away`);
     return false;
   }
   
-  // Verify route starts near source (within 200m)
+  // Verify route starts near source (within 500m)
   const firstPoint = path[0];
   const distFromSource = haversineDistance(firstPoint, source);
-  if (distFromSource > 200) {
+  if (distFromSource > 500) {
     console.warn(`Route doesn't start from source: ${distFromSource.toFixed(0)}m away`);
     return false;
   }
   
-  if (hasUTurnsOrLoops(path, source, destination)) {
-    return false;
-  }
-  
-  if (!hasConsistentProgress(path, source, destination)) {
+  // Reject only if route is absurdly long (> 4x direct distance)
+  const directDist = haversineDistance(source, destination);
+  if (osrmRoute.distance > directDist * 4) {
+    console.warn(`Route too long: ${osrmRoute.distance.toFixed(0)}m vs ${directDist.toFixed(0)}m direct`);
     return false;
   }
   
