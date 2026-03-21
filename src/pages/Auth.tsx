@@ -68,9 +68,18 @@ const Auth = () => {
   }, [user, loading, navigate, isRecoveryMode]);
 
   const handleGoogleSignIn = async () => {
-    const { error } = await signInWithGoogle();
-    if (error) {
+    setIsSubmitting(true);
+
+    try {
+      const { error } = await signInWithGoogle();
+      if (error) {
+        toast.error(error.message || 'Failed to sign in with Google');
+      }
+    } catch (error) {
+      console.error('Google sign-in error:', error);
       toast.error('Failed to sign in with Google');
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -355,6 +364,7 @@ const Auth = () => {
                 onClick={handleGoogleSignIn}
                 variant="outline"
                 className="w-full h-12 text-base font-medium gap-3 hover:bg-primary/5 border-2"
+                disabled={isSubmitting}
               >
                 <svg className="w-5 h-5" viewBox="0 0 24 24">
                   <path
@@ -444,6 +454,7 @@ const Auth = () => {
                 onClick={handleGoogleSignIn}
                 variant="outline"
                 className="w-full h-12 text-base font-medium gap-3 hover:bg-primary/5 border-2"
+                disabled={isSubmitting}
               >
                 <svg className="w-5 h-5" viewBox="0 0 24 24">
                   <path

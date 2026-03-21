@@ -49,9 +49,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       .from('profiles')
       .select('*')
       .eq('user_id', userId)
-      .single();
+      .maybeSingle();
 
-    if (error && error.code !== 'PGRST116') {
+    if (error) {
       console.error('Error fetching profile:', error);
       return null;
     }
@@ -72,6 +72,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       .single();
 
     if (error) {
+      if (error.code === '23505') {
+        return await fetchProfile(authUser.id);
+      }
+
       console.error('Error creating profile:', error);
       return null;
     }
@@ -117,46 +121,56 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const refreshProfile = async () => {
     if (!user) return;
-    const profileData = await ensureProfile(user);
+    let profileData: Profile | null = null;
+
+    try {
+      profileData = await ensureProfile(user);
+    } catch (error) {
+      console.error('Error refreshing profile:', error);
+    }
+
     setProfile(profileData);
   };
 
+  const loadProfileForUser = async (authUser: User) => {
+    try {
+      const profileData = await ensureProfile(authUser);
+      setProfile(profileData);
+    } catch (error) {
+      console.error('Error ensuring profile:', error);
+      setProfile(null);
+    }
+  };
+
+  const applySessionState = (nextSession: Session | null) => {
+    setSession(nextSession);
+    setUser(nextSession?.user ?? null);
+
+    if (!nextSession?.user) {
+      setProfile(null);
+      setLoading(false);
+      return;
+    }
+
+    setLoading(false);
+    void loadProfileForUser(nextSession.user);
+  };
+
   useEffect(() => {
-    // Set up auth state listener FIRST
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (event, session) => {
-        setSession(session);
-        setUser(session?.user ?? null);
-        
-        // Defer profile fetch with setTimeout to avoid deadlock
-        if (session?.user) {
-          setTimeout(() => {
-            ensureProfile(session.user).then((profileData) => {
-              setProfile(profileData);
-              setLoading(false);
-            });
-          }, 0);
-        } else {
-          setProfile(null);
-          setLoading(false);
-        }
+      (_event, nextSession) => {
+        applySessionState(nextSession);
       }
     );
 
-    // THEN check for existing session
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setSession(session);
-      setUser(session?.user ?? null);
-      
-      if (session?.user) {
-        ensureProfile(session.user).then((profileData) => {
-          setProfile(profileData);
-          setLoading(false);
-        });
-      } else {
+    supabase.auth.getSession()
+      .then(({ data: { session } }) => {
+        applySessionState(session);
+      })
+      .catch((error) => {
+        console.error('Error restoring session:', error);
         setLoading(false);
-      }
-    });
+      });
 
     return () => subscription.unsubscribe();
   }, []);
