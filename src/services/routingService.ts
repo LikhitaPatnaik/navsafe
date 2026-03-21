@@ -5,6 +5,7 @@ import {
   areaCoordinates,
   analyzeRouteSafety,
 } from './astarRouting';
+import { getPreferredRoadCorridors } from './routeCorridors';
 
 interface SafetyZone {
   id: string;
@@ -587,10 +588,11 @@ export const calculateRoutes = async (
   demographicSafetyWeight: number = 1.0
 ): Promise<RouteInfo[]> => {
   const safetyZones = await fetchSafetyZones();
+  const preferredCorridors = getPreferredRoadCorridors(source, destination);
   console.log('Safety zones loaded:', safetyZones.length);
 
   const routes: RouteInfo[] = [];
-  const targetCandidateCount = 4;
+  const targetCandidateCount = preferredCorridors.length > 0 ? 3 : 4;
 
   // Apply demographic weight to safety scoring
   const applyDemographicWeight = (score: number): number => {
@@ -621,6 +623,35 @@ export const calculateRoutes = async (
   }
 
   console.log(`Distinct paths from OSRM: ${distinctPaths.length}`);
+
+  // ===== Step 2a: Force known local road corridors first (e.g. Madhurawada / IT SEZ / NH16) =====
+  if (preferredCorridors.length > 0 && distinctPaths.length < targetCandidateCount) {
+    const corridorResults = await Promise.all(
+      preferredCorridors.map(async (corridor) => ({
+        corridor,
+        osrmRoute: await getOSRMRoute([source, ...corridor.waypoints, destination]),
+      })),
+    );
+
+    for (const { corridor, osrmRoute } of corridorResults) {
+      if (distinctPaths.length >= targetCandidateCount) break;
+      if (!osrmRoute || !validateRouteQuality(osrmRoute, source, destination)) continue;
+
+      const path = osrmRoute.geometry.coordinates.map(([lng, lat]) => ({ lat, lng }));
+      const isDuplicate = distinctPaths.some((existing) => !arePathsDifferent(path, existing.path));
+      if (!isDuplicate) {
+        const analysis = analyzeRouteSafety(path, safetyZones);
+        distinctPaths.push({
+          path,
+          distance: osrmRoute.distance,
+          duration: osrmRoute.duration,
+          analysis,
+          source: `corridor-${corridor.id}`,
+        });
+        console.log(`Found corridor route via ${corridor.label}`);
+      }
+    }
+  }
 
   // ===== Step 2b: Generate dedicated SAFE routes through highest-safety areas =====
   // Aggressively route through areas with best safety scores to ensure a genuinely safe option
