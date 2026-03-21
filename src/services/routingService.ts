@@ -468,47 +468,32 @@ const getPerpendicularPoint = (source: LatLng, dest: LatLng, offsetKm: number, d
   };
 };
 
-// Validate that an OSRM route doesn't have U-turns and reaches destination
+// Validate that an OSRM route reaches destination and isn't wildly loopy
 const validateRouteQuality = (osrmRoute: OSRMRoute, source: LatLng, destination: LatLng): boolean => {
-  const path = normalizePath(osrmRoute.geometry.coordinates.map(([lng, lat]) => ({ lat, lng })));
+  const path = osrmRoute.geometry.coordinates.map(([lng, lat]) => ({ lat, lng }));
   
-  if (path.length < 2) {
-    console.warn('Route too short');
-    return false;
-  }
+  if (path.length < 2) return false;
   
-  // Reject explicit u-turn instructions from OSRM
-  const hasUTurnInstruction = osrmRoute.legs?.some(leg =>
-    leg.steps?.some(step =>
-      step.maneuver?.modifier === 'uturn' || step.maneuver?.type === 'uturn'
-    )
-  );
-  if (hasUTurnInstruction) {
-    console.warn('Route rejected: explicit U-turn instruction detected');
-    return false;
-  }
-  
-  // Verify route reaches destination (within 200m)
+  // Verify route reaches destination (within 500m)
   const lastPoint = path[path.length - 1];
   const distToDestination = haversineDistance(lastPoint, destination);
-  if (distToDestination > 200) {
+  if (distToDestination > 500) {
     console.warn(`Route doesn't reach destination: ${distToDestination.toFixed(0)}m away`);
     return false;
   }
   
-  // Verify route starts near source (within 200m)
+  // Verify route starts near source (within 500m)
   const firstPoint = path[0];
   const distFromSource = haversineDistance(firstPoint, source);
-  if (distFromSource > 200) {
+  if (distFromSource > 500) {
     console.warn(`Route doesn't start from source: ${distFromSource.toFixed(0)}m away`);
     return false;
   }
   
-  if (hasUTurnsOrLoops(path, source, destination)) {
-    return false;
-  }
-  
-  if (!hasConsistentProgress(path, source, destination)) {
+  // Reject only if route is absurdly long (> 4x direct distance)
+  const directDist = haversineDistance(source, destination);
+  if (osrmRoute.distance > directDist * 4) {
+    console.warn(`Route too long: ${osrmRoute.distance.toFixed(0)}m vs ${directDist.toFixed(0)}m direct`);
     return false;
   }
   
