@@ -148,18 +148,30 @@ const resamplePath = (path: LatLng[], sampleCount: number = 48): LatLng[] => {
   });
 };
 
+// Extract only the middle portion of a path (skip converging start/end segments)
+const extractMiddlePortion = (path: LatLng[], trimRatio: number = 0.2): LatLng[] => {
+  if (path.length < 6) return path;
+  const startIdx = Math.floor(path.length * trimRatio);
+  const endIdx = Math.ceil(path.length * (1 - trimRatio));
+  return path.slice(startIdx, endIdx);
+};
+
 const calculateAveragePathSeparation = (path1: LatLng[], path2: LatLng[]): number => {
   if (path1.length < 3 || path2.length < 3) return 0;
 
-  const sampled1 = resamplePath(path1);
-  const sampled2 = resamplePath(path2, sampled1.length);
+  // Compare only middle portions to ignore shared start/end segments
+  const mid1 = extractMiddlePortion(path1);
+  const mid2 = extractMiddlePortion(path2);
+  const sampled1 = resamplePath(mid1, 30);
+  const sampled2 = resamplePath(mid2, 30);
 
   let total = 0;
-  for (let i = 1; i < sampled1.length - 1; i++) {
+  const count = Math.min(sampled1.length, sampled2.length);
+  for (let i = 0; i < count; i++) {
     total += haversineDistance(sampled1[i], sampled2[i]);
   }
 
-  return total / Math.max(1, sampled1.length - 2);
+  return total / Math.max(1, count);
 };
 
 const calculateMidRouteSeparation = (path1: LatLng[], path2: LatLng[]): number => {
