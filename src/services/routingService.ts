@@ -177,13 +177,17 @@ const calculateAveragePathSeparation = (path1: LatLng[], path2: LatLng[]): numbe
 const calculateMidRouteSeparation = (path1: LatLng[], path2: LatLng[]): number => {
   if (path1.length < 3 || path2.length < 3) return 0;
 
-  const sampled1 = resamplePath(path1);
-  const sampled2 = resamplePath(path2, sampled1.length);
+  // Use middle portions only
+  const mid1 = extractMiddlePortion(path1);
+  const mid2 = extractMiddlePortion(path2);
+  const sampled1 = resamplePath(mid1, 20);
+  const sampled2 = resamplePath(mid2, 20);
   const checkpoints = [0.25, 0.5, 0.75];
 
   const separations = checkpoints.map((checkpoint) => {
-    const index = Math.min(sampled1.length - 1, Math.round(checkpoint * (sampled1.length - 1)));
-    return haversineDistance(sampled1[index], sampled2[index]);
+    const idx1 = Math.min(sampled1.length - 1, Math.round(checkpoint * (sampled1.length - 1)));
+    const idx2 = Math.min(sampled2.length - 1, Math.round(checkpoint * (sampled2.length - 1)));
+    return haversineDistance(sampled1[idx1], sampled2[idx2]);
   });
 
   return separations.reduce((sum, value) => sum + value, 0) / separations.length;
