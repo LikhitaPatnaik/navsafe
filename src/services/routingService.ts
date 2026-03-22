@@ -216,21 +216,21 @@ const calculateNearestPointDistance = (point: LatLng, path: LatLng[]): number =>
 const calculateSharedCorridorRatio = (path1: LatLng[], path2: LatLng[]): number => {
   if (path1.length < 3 || path2.length < 3) return 1;
 
-  const sampled1 = resamplePath(path1, 40);
-  const sampled2 = resamplePath(path2, 40);
-  const tripDist = haversineDistance(sampled1[0], sampled1[sampled1.length - 1]);
-  const { overlapThreshold } = getPathComparisonThresholds(tripDist);
+  // Only compare middle portions - routes naturally share roads near source/destination
+  const mid1 = extractMiddlePortion(path1);
+  const mid2 = extractMiddlePortion(path2);
+  const sampled1 = resamplePath(mid1, 30);
+  const sampled2 = resamplePath(mid2, 30);
+  const { overlapThreshold } = getPathComparisonThresholds(0);
 
   const calculateCoverage = (from: LatLng[], against: LatLng[]) => {
     let overlappingPoints = 0;
-
-    for (let i = 1; i < from.length - 1; i++) {
+    for (let i = 0; i < from.length; i++) {
       if (calculateNearestPointDistance(from[i], against) <= overlapThreshold) {
         overlappingPoints++;
       }
     }
-
-    return overlappingPoints / Math.max(1, from.length - 2);
+    return overlappingPoints / Math.max(1, from.length);
   };
 
   return Math.max(calculateCoverage(sampled1, sampled2), calculateCoverage(sampled2, sampled1));
