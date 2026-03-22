@@ -189,50 +189,17 @@ const calculateMidRouteSeparation = (path1: LatLng[], path2: LatLng[]): number =
   return separations.reduce((sum, value) => sum + value, 0) / separations.length;
 };
 
-const getPathComparisonThresholds = (tripDist: number) => {
-  const thresholds = {
-    overlapThreshold: 45,
-    maxAllowedOverlap: 0.5,
-    minAverageSeparation: 70,
-    minMidSeparation: 110,
-    maxSharedCorridorRatio: 0.78,
-    minLateralProfileGap: 90,
+const getPathComparisonThresholds = (_tripDist: number) => {
+  // Relaxed thresholds - focus on middle portion divergence
+  // Routes that use different roads in the middle section should always pass
+  return {
+    overlapThreshold: 80,      // meters - points closer than this are "same road"
+    maxAllowedOverlap: 0.70,   // 70% overlap allowed (routes share start/end)
+    minAverageSeparation: 40,  // very low - middle portion comparison handles this
+    minMidSeparation: 50,      // low - if middle 60% diverges, that's enough
+    maxSharedCorridorRatio: 0.85,
+    minLateralProfileGap: 40,
   };
-
-  if (tripDist >= 3000 && tripDist < 8000) {
-    return {
-      overlapThreshold: 60,
-      maxAllowedOverlap: 0.56,
-      minAverageSeparation: 95,
-      minMidSeparation: 145,
-      maxSharedCorridorRatio: 0.82,
-      minLateralProfileGap: 130,
-    };
-  }
-
-  if (tripDist >= 8000 && tripDist < 15000) {
-    return {
-      overlapThreshold: 80,
-      maxAllowedOverlap: 0.62,
-      minAverageSeparation: 125,
-      minMidSeparation: 185,
-      maxSharedCorridorRatio: 0.85,
-      minLateralProfileGap: 170,
-    };
-  }
-
-  if (tripDist >= 15000) {
-    return {
-      overlapThreshold: 100,
-      maxAllowedOverlap: 0.68,
-      minAverageSeparation: 155,
-      minMidSeparation: 230,
-      maxSharedCorridorRatio: 0.88,
-      minLateralProfileGap: 210,
-    };
-  }
-
-  return thresholds;
 };
 
 const calculateNearestPointDistance = (point: LatLng, path: LatLng[]): number => {
