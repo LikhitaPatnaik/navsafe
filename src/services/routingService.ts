@@ -277,61 +277,48 @@ const calculateLateralProfileGap = (path1: LatLng[], path2: LatLng[]): number =>
   return profile1.reduce((sum, value, index) => sum + Math.abs(value - profile2[index]), 0) / profile1.length;
 };
 
-// Measure how much of path1 overlaps path2 (0..1). High overlap means same road route.
+// Measure how much of the MIDDLE portion of path1 overlaps path2 (0..1)
 const calculatePathOverlapRatio = (path1: LatLng[], path2: LatLng[]): number => {
   if (path1.length < 3 || path2.length < 3) return 1;
 
-  const sampled1 = resamplePath(path1);
-  const sampled2 = resamplePath(path2, sampled1.length);
-  const tripDist = haversineDistance(sampled1[0], sampled1[sampled1.length - 1]);
-  const { overlapThreshold } = getPathComparisonThresholds(tripDist);
+  // Only compare middle 60% - routes naturally converge near source/destination
+  const mid1 = extractMiddlePortion(path1);
+  const mid2 = extractMiddlePortion(path2);
+  const sampled1 = resamplePath(mid1, 30);
+  const sampled2 = resamplePath(mid2, 30);
+  const { overlapThreshold } = getPathComparisonThresholds(0);
 
   let overlappedPoints = 0;
-  for (let i = 1; i < sampled1.length - 1; i++) {
+  const count = Math.min(sampled1.length, sampled2.length);
+  for (let i = 0; i < count; i++) {
     if (haversineDistance(sampled1[i], sampled2[i]) <= overlapThreshold) {
       overlappedPoints++;
     }
   }
 
-  return overlappedPoints / Math.max(1, sampled1.length - 2);
+  return overlappedPoints / Math.max(1, count);
 };
 
-// Check if two paths are sufficiently different
+// Check if two paths use different roads (focused on middle section only)
 const arePathsDifferent = (path1: LatLng[], path2: LatLng[]): boolean => {
   if (path1.length < 3 || path2.length < 3) return false;
 
-  const normalized1 = normalizePath(path1);
-  const tripDist = haversineDistance(normalized1[0], normalized1[normalized1.length - 1]);
   const overlapRatio = calculatePathOverlapRatio(path1, path2);
-  const sharedCorridorRatio = calculateSharedCorridorRatio(path1, path2);
   const avgSeparation = calculateAveragePathSeparation(path1, path2);
   const midSeparation = calculateMidRouteSeparation(path1, path2);
-  const lateralProfileGap = calculateLateralProfileGap(path1, path2);
-  const {
-    maxAllowedOverlap,
-    minAverageSeparation,
-    minMidSeparation,
-    maxSharedCorridorRatio,
-    minLateralProfileGap,
-  } = getPathComparisonThresholds(tripDist);
 
-  if (sharedCorridorRatio >= maxSharedCorridorRatio && lateralProfileGap < minLateralProfileGap) {
-    return false;
-  }
+  console.log(`Path comparison: overlap=${overlapRatio.toFixed(2)}, avgSep=${avgSeparation.toFixed(0)}m, midSep=${midSeparation.toFixed(0)}m`);
 
-  if (
-    overlapRatio <= maxAllowedOverlap &&
-    sharedCorridorRatio <= maxSharedCorridorRatio &&
-    (avgSeparation >= minAverageSeparation || lateralProfileGap >= minLateralProfileGap)
-  ) {
-    return true;
-  }
+  // If the middle portions have low overlap, they use different roads
+  if (overlapRatio <= 0.65) return true;
+  
+  // If average separation in middle section is meaningful (different streets)
+  if (avgSeparation >= 50) return true;
+  
+  // If mid-route checkpoints show divergence
+  if (midSeparation >= 60) return true;
 
-  return (
-    sharedCorridorRatio <= Math.min(0.92, maxSharedCorridorRatio + 0.05) &&
-    midSeparation >= minMidSeparation &&
-    lateralProfileGap >= minLateralProfileGap * 0.8
-  );
+  return false;
 };
 
 const calculateDistinctnessScore = (candidatePath: LatLng[], anchorPaths: LatLng[][]): number => {
