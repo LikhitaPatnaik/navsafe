@@ -9,7 +9,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { User, Settings, LogOut } from 'lucide-react';
+import { User, Settings, LogOut, History } from 'lucide-react';
 import { toast } from 'sonner';
 
 const ProfileDropdown = () => {
@@ -61,6 +61,10 @@ const ProfileDropdown = () => {
         <DropdownMenuItem onClick={() => navigate('/profile')}>
           <User className="w-4 h-4 mr-2" />
           Profile
+        </DropdownMenuItem>
+        <DropdownMenuItem onClick={() => navigate('/trip-history')}>
+          <History className="w-4 h-4 mr-2" />
+          Trip History
         </DropdownMenuItem>
         <DropdownMenuItem onClick={() => navigate('/settings')}>
           <Settings className="w-4 h-4 mr-2" />
