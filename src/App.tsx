@@ -11,6 +11,7 @@ import Auth from "./pages/Auth";
 import Profile from "./pages/Profile";
 import Settings from "./pages/Settings";
 import Install from "./pages/Install";
+import TripHistory from "./pages/TripHistory";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
