@@ -505,6 +505,7 @@ const MapView = ({ routes = [], sourceCoords, destinationCoords, selectedRoute, 
                   weight: 1,
                   fillOpacity: 0.12,
                 });
+                areaCircle.bindPopup(popupContent);
                 areaCircle.addTo(mapRef.current!);
                 safetyZoneLayersRef.current.push(areaCircle as unknown as L.CircleMarker);
               });
