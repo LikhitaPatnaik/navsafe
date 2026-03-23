@@ -185,6 +185,51 @@ export type Database = {
         }
         Relationships: []
       }
+      trip_history: {
+        Row: {
+          alerts_raised: number
+          created_at: string
+          destination: string
+          ended_at: string
+          id: string
+          route_type: string
+          safety_score: number
+          source: string
+          started_at: string
+          time_taken: number
+          total_distance: number
+          user_id: string
+        }
+        Insert: {
+          alerts_raised?: number
+          created_at?: string
+          destination: string
+          ended_at: string
+          id?: string
+          route_type: string
+          safety_score: number
+          source: string
+          started_at: string
+          time_taken: number
+          total_distance: number
+          user_id: string
+        }
+        Update: {
+          alerts_raised?: number
+          created_at?: string
+          destination?: string
+          ended_at?: string
+          id?: string
+          route_type?: string
+          safety_score?: number
+          source?: string
+          started_at?: string
+          time_taken?: number
+          total_distance?: number
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
