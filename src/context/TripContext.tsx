@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, ReactNode } from 'react';
 import { TripState, RouteInfo, TripAlert, TripSummary, LatLng } from '@/types/route';
+import { supabase } from '@/integrations/supabase/client';
 
 interface TripContextType {
   trip: TripState;
