@@ -62,6 +62,10 @@ const ProfileDropdown = () => {
           <User className="w-4 h-4 mr-2" />
           Profile
         </DropdownMenuItem>
+        <DropdownMenuItem onClick={() => navigate('/trip-history')}>
+          <History className="w-4 h-4 mr-2" />
+          Trip History
+        </DropdownMenuItem>
         <DropdownMenuItem onClick={() => navigate('/settings')}>
           <Settings className="w-4 h-4 mr-2" />
           Settings
