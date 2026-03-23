@@ -84,17 +84,40 @@ export const TripProvider = ({ children }: { children: ReactNode }) => {
     }));
   };
 
-  const completeTip = () => {
+  const completeTip = async () => {
+    const endTime = new Date();
     if (trip.selectedRoute && startTime) {
-      setTripSummary({
+      const summary: TripSummary = {
         totalDistance: trip.selectedRoute.distance,
-        timeTaken: Math.round((new Date().getTime() - startTime.getTime()) / 60000),
+        timeTaken: Math.round((endTime.getTime() - startTime.getTime()) / 60000),
         routeType: trip.selectedRoute.type,
         safetyScore: trip.selectedRoute.safetyScore,
         alertsRaised: trip.alerts.length,
         startTime,
-        endTime: new Date(),
-      });
+        endTime,
+      };
+      setTripSummary(summary);
+
+      // Save to database
+      try {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (user) {
+          await supabase.from('trip_history').insert({
+            user_id: user.id,
+            source: trip.source,
+            destination: trip.destination,
+            route_type: trip.selectedRoute.type,
+            total_distance: trip.selectedRoute.distance,
+            time_taken: summary.timeTaken,
+            safety_score: trip.selectedRoute.safetyScore,
+            alerts_raised: trip.alerts.length,
+            started_at: startTime.toISOString(),
+            ended_at: endTime.toISOString(),
+          });
+        }
+      } catch (err) {
+        console.error('Failed to save trip history:', err);
+      }
     }
     setTrip(prev => ({ ...prev, status: 'completed', isMonitoring: false }));
   };
