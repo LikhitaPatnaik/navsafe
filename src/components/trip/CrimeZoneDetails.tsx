@@ -1,5 +1,5 @@
 import { CrimeZone, crimeTypeConfig, groupCrimeZonesByType, CrimeType } from '@/utils/crimeTypeMapping';
-import { AlertTriangle, MapPin, ChevronDown, ChevronUp, Shield } from 'lucide-react';
+import { AlertTriangle, MapPin, ChevronDown, ChevronUp } from 'lucide-react';
 import { useState } from 'react';
 import { cn } from '@/lib/utils';
 
