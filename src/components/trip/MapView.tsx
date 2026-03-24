@@ -470,10 +470,10 @@ const MapView = ({ routes = [], sourceCoords, destinationCoords, selectedRoute, 
                 const circle = L.circleMarker([streetLoc.coords.lat, streetLoc.coords.lng], {
                   radius: markerRadius,
                   fillColor: color,
-                  color: '#1a1a1a',
-                  weight: 2.5,
+                  color: '#000000',
+                  weight: 3.5,
                   opacity: 1,
-                  fillOpacity: 0.85,
+                  fillOpacity: 0.9,
                 });
                 
                 let riskLabel = 'LOW RISK';
@@ -512,8 +512,8 @@ const MapView = ({ routes = [], sourceCoords, destinationCoords, selectedRoute, 
                 const areaCircle = L.circle([streetLoc.coords.lat, streetLoc.coords.lng], {
                   radius: areaRadius,
                   fillColor: color,
-                  color: '#1a1a1a',
-                  weight: 1.5,
+                  color: '#000000',
+                  weight: 2,
                   fillOpacity: 0.15,
                 });
                 areaCircle.bindPopup(popupContent);
@@ -604,10 +604,10 @@ const MapView = ({ routes = [], sourceCoords, destinationCoords, selectedRoute, 
             const circle = L.circleMarker([centerCoords.lat, centerCoords.lng], {
               radius: markerRadius,
               fillColor: color,
-              color: isCritical ? '#450a0a' : isRisky ? '#7f1d1d' : color,
-              weight: isCritical ? 4 : isRisky ? 3 : 2,
+              color: '#000000',
+              weight: 3.5,
               opacity: 1,
-              fillOpacity: isCritical ? 0.7 : isRisky ? 0.5 : 0.4,
+              fillOpacity: 0.9,
             });
 
             let riskLabel = 'SAFE';
@@ -690,10 +690,10 @@ const MapView = ({ routes = [], sourceCoords, destinationCoords, selectedRoute, 
           const circle = L.circleMarker([centerCoords.lat, centerCoords.lng], {
             radius: markerRadius,
             fillColor: color,
-            color: isCritical ? '#450a0a' : isRisky ? '#7f1d1d' : color,
-            weight: isCritical ? 4 : isRisky ? 3 : 2,
+            color: '#000000',
+            weight: 3.5,
             opacity: 1,
-            fillOpacity: isCritical ? 0.7 : isRisky ? 0.5 : 0.4,
+            fillOpacity: 0.9,
           });
 
           const localPopupContent = `
