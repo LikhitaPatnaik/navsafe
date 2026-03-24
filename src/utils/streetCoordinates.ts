@@ -400,11 +400,15 @@ export const areaStreetCoordinates: Record<string, StreetLocation[]> = {
     { street: 'Railway Station Junction', coords: { lat: 17.7250, lng: 83.2950 }, crimeTypes: ['kidnap'] },
   ],
 
-  // RK Beach - 19 crimes
+  // RK Beach - 19 crimes (DB: spread across types)
   'RK Beach': [
     { street: 'Beach Road', coords: { lat: 17.7180, lng: 83.3250 }, crimeTypes: ['murder', 'robbery', 'accident', 'assault', 'kidnap'] },
-    { street: 'Gokul Park', coords: { lat: 17.7160, lng: 83.3230 }, crimeTypes: ['murder'] },
-    { street: 'Children Park', coords: { lat: 17.7200, lng: 83.3270 }, crimeTypes: ['kidnap'] },
+    { street: 'Gokul Park', coords: { lat: 17.7160, lng: 83.3230 }, crimeTypes: ['murder', 'assault'] },
+    { street: 'Children Park', coords: { lat: 17.7200, lng: 83.3270 }, crimeTypes: ['kidnap', 'accident'] },
+    { street: 'Submarine Museum', coords: { lat: 17.7170, lng: 83.3240 }, crimeTypes: ['robbery', 'accident'] },
+    { street: 'Kali Temple Beach Road', coords: { lat: 17.7190, lng: 83.3260 }, crimeTypes: ['assault', 'murder'] },
+    { street: 'RK Beach Promenade', coords: { lat: 17.7175, lng: 83.3245 }, crimeTypes: ['kidnap', 'robbery'] },
+    { street: 'War Memorial', coords: { lat: 17.7195, lng: 83.3265 }, crimeTypes: ['accident', 'assault'] },
   ],
 
   // RTC Complex - 4 crimes
