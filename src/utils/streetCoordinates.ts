@@ -671,7 +671,18 @@ export const getStreetLocationsForCrimeType = (
   area: string, 
   crimeType: CrimeType
 ): StreetLocation[] => {
-  const allLocations = getStreetLocations(area);
+  // Try direct lookup first, then DB key mapping
+  let allLocations = getStreetLocations(area);
+  if (allLocations.length === 0) {
+    // Try via dbToStreetKeyMap
+    const keys = getStreetKeysForDbArea(area);
+    for (const key of keys) {
+      const locs = areaStreetCoordinates[key];
+      if (locs && locs.length > 0) {
+        allLocations = [...allLocations, ...locs];
+      }
+    }
+  }
   if (allLocations.length === 0) return [];
   
   const matched = allLocations.filter(loc => 
@@ -679,13 +690,7 @@ export const getStreetLocationsForCrimeType = (
   );
   
   // If no streets match this crime type at all, return all streets
-  // so the DB crime count still gets distributed across the area
   if (matched.length === 0) {
-    return allLocations;
-  }
-  
-  // If very few streets match but area has many, return all to spread markers
-  if (matched.length < 2 && allLocations.length >= 4) {
     return allLocations;
   }
   
