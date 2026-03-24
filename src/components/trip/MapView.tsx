@@ -470,10 +470,10 @@ const MapView = ({ routes = [], sourceCoords, destinationCoords, selectedRoute, 
                 const circle = L.circleMarker([streetLoc.coords.lat, streetLoc.coords.lng], {
                   radius: markerRadius,
                   fillColor: color,
-                  color: '#1a1a1a',
-                  weight: 2.5,
+                  color: '#000000',
+                  weight: 3.5,
                   opacity: 1,
-                  fillOpacity: 0.85,
+                  fillOpacity: 0.9,
                 });
                 
                 let riskLabel = 'LOW RISK';
