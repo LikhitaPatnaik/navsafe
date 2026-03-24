@@ -93,6 +93,7 @@ export const areaStreetCoordinates: Record<string, StreetLocation[]> = {
   // Balayya Sastri Layout - 1 crime
   'Balayya Sastri Layout': [
     { street: 'Gurudwara Highway', coords: { lat: 17.7250, lng: 83.3050 }, crimeTypes: ['accident'] },
+    { street: 'Balayya Sastri Layout Main Road', coords: { lat: 17.7240, lng: 83.3040 }, crimeTypes: ['robbery'] },
   ],
 
   // Beach Road - 11 crimes
