@@ -285,13 +285,13 @@ export const areaStreetCoordinates: Record<string, StreetLocation[]> = {
     { street: 'Rickshaw Colony, Srinivasa Nagar', coords: { lat: 17.8025, lng: 83.3515 }, crimeTypes: ['murder'] },
   ],
 
-  // Malkapuram - 5 crimes
+  // Malkapuram - 5 crimes (real location near Gangavaram)
   'Malkapuram': [
-    { street: 'Malkapuram Area', coords: { lat: 17.6880, lng: 83.2450 }, crimeTypes: ['robbery'] },
-    { street: 'Signal Junction, Agnampudi', coords: { lat: 17.6900, lng: 83.2470 }, crimeTypes: ['murder'] },
-    { street: 'Janatha Colony', coords: { lat: 17.6870, lng: 83.2440 }, crimeTypes: ['robbery'] },
-    { street: 'Coast Guard Quarters', coords: { lat: 17.6890, lng: 83.2460 }, crimeTypes: ['murder'] },
-    { street: 'Malkapuram Road', coords: { lat: 17.6860, lng: 83.2430 }, crimeTypes: ['assault'] },
+    { street: 'Malkapuram Area', coords: { lat: 17.6580, lng: 83.2350 }, crimeTypes: ['robbery'] },
+    { street: 'Signal Junction, Aganampudi', coords: { lat: 17.6295, lng: 83.1895 }, crimeTypes: ['murder'] },
+    { street: 'Janatha Colony', coords: { lat: 17.6560, lng: 83.2330 }, crimeTypes: ['robbery'] },
+    { street: 'Coast Guard Quarters', coords: { lat: 17.6600, lng: 83.2370 }, crimeTypes: ['murder'] },
+    { street: 'Malkapuram Road', coords: { lat: 17.6540, lng: 83.2310 }, crimeTypes: ['assault'] },
   ],
 
   // Marikavalasa - 4 crimes
