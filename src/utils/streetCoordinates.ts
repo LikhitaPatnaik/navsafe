@@ -253,11 +253,13 @@ export const areaStreetCoordinates: Record<string, StreetLocation[]> = {
     { street: 'Sector 1, Duvvada', coords: { lat: 17.6895, lng: 83.1715 }, crimeTypes: ['accident'] },
   ],
 
-  // Lawsons Bay Colony - 15 crimes
+  // Lawsons Bay Colony - 12 crimes (DB: 3 Accident, 4 Assault, 4 Kidnap, 1 Murder, 0 Robbery)
   'Lawsons Bay Colony': [
     { street: 'Lawsons Bay Road', coords: { lat: 17.7300, lng: 83.3300 }, crimeTypes: ['kidnap', 'murder', 'assault', 'accident'] },
-    { street: 'Lawsons Bay Main Road', coords: { lat: 17.7320, lng: 83.3320 }, crimeTypes: ['robbery'] },
-    { street: 'Bharat Petrol Bunk', coords: { lat: 17.7280, lng: 83.3280 }, crimeTypes: ['assault'] },
+    { street: 'Lawsons Bay Main Road', coords: { lat: 17.7320, lng: 83.3320 }, crimeTypes: ['assault', 'kidnap'] },
+    { street: 'Bharat Petrol Bunk', coords: { lat: 17.7280, lng: 83.3280 }, crimeTypes: ['assault', 'accident'] },
+    { street: 'Lawsons Bay Beach Side', coords: { lat: 17.7310, lng: 83.3310 }, crimeTypes: ['kidnap', 'accident'] },
+    { street: 'Sagarnagar Lane', coords: { lat: 17.7290, lng: 83.3290 }, crimeTypes: ['assault', 'kidnap'] },
   ],
 
   // Maddilapalem - 23 crimes
