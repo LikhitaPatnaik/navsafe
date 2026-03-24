@@ -581,20 +581,42 @@ const dbToStreetKeyMap: Record<string, string[]> = {
 };
 
 // Get streetCoordinates keys that match a DB area name
+// Handles typos, extra spaces, and partial matches
 export const getStreetKeysForDbArea = (dbArea: string): string[] => {
-  const normalized = dbArea.toLowerCase().trim();
+  const normalized = dbArea.toLowerCase().trim().replace(/\s+/g, ' ');
   const mapped = dbToStreetKeyMap[normalized];
   if (mapped) return mapped;
 
-  // Fallback: try direct match against areaStreetCoordinates keys
-  for (const key of Object.keys(areaStreetCoordinates)) {
-    if (key.toLowerCase() === normalized ||
-        normalized.includes(key.toLowerCase()) ||
-        key.toLowerCase().includes(normalized)) {
-      return [key];
+  // Try removing common suffixes/prefixes for fuzzy matching
+  const stripped = normalized
+    .replace(/\b(central|hub|core|jct|junction|north|south|east|west|industrial|heritage|bypass|flyover|zone|ghat|rural|town)\b/g, '')
+    .trim()
+    .replace(/\s+/g, ' ');
+
+  // Check dbToStreetKeyMap with stripped version
+  for (const [key, value] of Object.entries(dbToStreetKeyMap)) {
+    const keyStripped = key
+      .replace(/\b(central|hub|core|jct|junction|north|south|east|west|industrial|heritage|bypass|flyover|zone|ghat|rural|town)\b/g, '')
+      .trim()
+      .replace(/\s+/g, ' ');
+    if (keyStripped === stripped || stripped.includes(keyStripped) || keyStripped.includes(stripped)) {
+      return value;
     }
   }
-  return [];
+
+  // Fallback: try direct match against areaStreetCoordinates keys
+  const results: string[] = [];
+  for (const key of Object.keys(areaStreetCoordinates)) {
+    const keyNorm = key.toLowerCase().trim();
+    if (keyNorm === normalized ||
+        normalized.includes(keyNorm) ||
+        keyNorm.includes(normalized) ||
+        stripped.includes(keyNorm) ||
+        keyNorm.includes(stripped)) {
+      results.push(key);
+    }
+  }
+  return results;
 };
 
 // Get all street locations for a streetCoordinates key (exact or fuzzy)
