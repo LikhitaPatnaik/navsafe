@@ -591,12 +591,29 @@ export const getStreetLocations = (area: string): StreetLocation[] => {
 };
 
 // Get street locations that match a specific crime type
+// Falls back to all streets in the area if too few match, ensuring DB crime counts
+// are distributed across visible markers on the map
 export const getStreetLocationsForCrimeType = (
   area: string, 
   crimeType: CrimeType
 ): StreetLocation[] => {
   const allLocations = getStreetLocations(area);
-  return allLocations.filter(loc => 
+  if (allLocations.length === 0) return [];
+  
+  const matched = allLocations.filter(loc => 
     loc.crimeTypes?.includes(crimeType)
   );
+  
+  // If no streets match this crime type at all, return all streets
+  // so the DB crime count still gets distributed across the area
+  if (matched.length === 0) {
+    return allLocations;
+  }
+  
+  // If very few streets match but area has many, return all to spread markers
+  if (matched.length < 2 && allLocations.length >= 4) {
+    return allLocations;
+  }
+  
+  return matched;
 };
