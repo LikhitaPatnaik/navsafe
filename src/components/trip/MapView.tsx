@@ -382,12 +382,19 @@ const MapView = ({ routes = [], sourceCoords, destinationCoords, selectedRoute, 
             if (!crimeDataByArea.has(normalizedArea)) {
               crimeDataByArea.set(normalizedArea, new Map());
             }
-            // Normalize DB crime_type (capitalized) to lowercase to match CrimeType
             const crimeType = record.crime_type.toLowerCase() as CrimeType;
             crimeDataByArea.get(normalizedArea)!.set(crimeType, record.count);
           });
           
-          // Helper: Check if a specific coordinate is along the route path (within 1km radius)
+          // Build paths to check against - exclude safest route, use fastest/optimized only
+          const nonSafestRoutes = routes.filter(r => r.type !== 'safest' && r.path && r.path.length > 0);
+          // If the selected route is the safest, don't show any crime zones on it
+          if (selectedRoute.type === 'safest') {
+            // Don't render crime type filter zones for safest route
+            return;
+          }
+          
+          // Helper: Check if a specific coordinate is along any non-safest route path (within 1km radius)
           const isPointAlongRoute = (coords: LatLng): boolean => {
             const maxDistance = 1000; // 1km detection radius
             const sampleRate = Math.max(1, Math.floor(selectedRoute.path.length / 100));
