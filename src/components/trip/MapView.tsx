@@ -512,8 +512,8 @@ const MapView = ({ routes = [], sourceCoords, destinationCoords, selectedRoute, 
                 const areaCircle = L.circle([streetLoc.coords.lat, streetLoc.coords.lng], {
                   radius: areaRadius,
                   fillColor: color,
-                  color: '#1a1a1a',
-                  weight: 1.5,
+                  color: '#000000',
+                  weight: 2,
                   fillOpacity: 0.15,
                 });
                 areaCircle.bindPopup(popupContent);
