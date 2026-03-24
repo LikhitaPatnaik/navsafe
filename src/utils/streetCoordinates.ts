@@ -141,8 +141,9 @@ export const areaStreetCoordinates: Record<string, StreetLocation[]> = {
 
   // Dabagardens - 2 crimes
   'Dabagardens': [
-    { street: 'Pedagantyada Area', coords: { lat: 17.7150, lng: 83.3050 }, crimeTypes: ['assault'] },
-    { street: 'Near Prakashrao Junction', coords: { lat: 17.7170, lng: 83.3070 }, crimeTypes: ['murder'] },
+    { street: 'Pedagantyada Area', coords: { lat: 17.7150, lng: 83.3050 }, crimeTypes: ['assault', 'robbery'] },
+    { street: 'Near Prakashrao Junction', coords: { lat: 17.7170, lng: 83.3070 }, crimeTypes: ['murder', 'accident'] },
+    { street: 'Dabagardens Circle', coords: { lat: 17.7160, lng: 83.3060 }, crimeTypes: ['kidnap', 'assault'] },
   ],
 
   // Daspalla Hills - 2 crimes
