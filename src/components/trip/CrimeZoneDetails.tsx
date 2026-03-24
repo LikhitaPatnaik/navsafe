@@ -1,5 +1,5 @@
 import { CrimeZone, crimeTypeConfig, groupCrimeZonesByType, CrimeType } from '@/utils/crimeTypeMapping';
-import { AlertTriangle, MapPin, ChevronDown, ChevronUp, Shield } from 'lucide-react';
+import { AlertTriangle, MapPin, ChevronDown, ChevronUp } from 'lucide-react';
 import { useState } from 'react';
 import { cn } from '@/lib/utils';
 
@@ -11,14 +11,7 @@ const CrimeZoneDetails = ({ zones }: CrimeZoneDetailsProps) => {
   const [expanded, setExpanded] = useState(true);
   
   if (zones.length === 0) {
-    return (
-      <div className="glass rounded-xl p-4 border border-safe/30 bg-safe/5">
-        <div className="flex items-center gap-2 text-safe">
-          <Shield className="w-5 h-5" />
-          <span className="font-medium">No high-risk zones detected on this route</span>
-        </div>
-      </div>
-    );
+    return null;
   }
   
   const groupedZones = groupCrimeZonesByType(zones);
