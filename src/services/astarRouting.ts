@@ -100,7 +100,7 @@ export const areaCoordinates: Record<string, LatLng> = {
   'Kommadhi': { lat: 17.8306, lng: 83.3358 }, // alias → Kommadi
   'RTC Complex': { lat: 17.7200, lng: 83.3100 },
   'Allipuram': { lat: 17.7193, lng: 83.2971 },
-  'Malkapuram': { lat: 17.6880, lng: 83.2450 },
+  'Malkapuram': { lat: 17.6580, lng: 83.2350 },
   'Poorna Market': { lat: 17.7064, lng: 83.2982 },
   'Railway New Colony': { lat: 17.7245, lng: 83.2956 },
   'Yendada': { lat: 17.7772, lng: 83.3628 },
@@ -115,6 +115,10 @@ export const areaCoordinates: Record<string, LatLng> = {
   'Marikavalasa': { lat: 17.8359, lng: 83.3581 },
   'Bhogapuram': { lat: 18.0300, lng: 83.4900 },
   'Steel Plant Township': { lat: 17.6100, lng: 83.1900 },
+  'Aganampudi': { lat: 17.6295, lng: 83.1895 },
+  'Mindi': { lat: 17.6620, lng: 83.2350 },
+  'Yarada': { lat: 17.6540, lng: 83.2520 },
+  'Pedagantyada': { lat: 17.7140, lng: 83.2250 },
 };
 
 // Get nearest safety zone info for a given point
