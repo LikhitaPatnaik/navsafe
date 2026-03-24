@@ -466,8 +466,8 @@ const MapView = ({ routes = [], sourceCoords, destinationCoords, selectedRoute, 
                 const circle = L.circleMarker([streetLoc.coords.lat, streetLoc.coords.lng], {
                   radius: markerRadius,
                   fillColor: color,
-                  color: color,
-                  weight: 2,
+                  color: '#1a1a1a',
+                  weight: 2.5,
                   opacity: 1,
                   fillOpacity: 0.85,
                 });
