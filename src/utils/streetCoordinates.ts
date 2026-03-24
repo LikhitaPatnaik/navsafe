@@ -171,27 +171,27 @@ export const areaStreetCoordinates: Record<string, StreetLocation[]> = {
 
   // Gajuwaka - 27 crimes
   'Gajuwaka': [
-    { street: 'Autonagar Signal Junction', coords: { lat: 17.6853, lng: 83.2037 }, crimeTypes: ['accident'] },
-    { street: 'Krishna Nagar', coords: { lat: 17.6830, lng: 83.2010 }, crimeTypes: ['robbery'] },
-    { street: 'Gopalapatnam Railway Station', coords: { lat: 17.6870, lng: 83.2060 }, crimeTypes: ['kidnap'] },
-    { street: 'Aganampudi Junction', coords: { lat: 17.6810, lng: 83.1990 }, crimeTypes: ['accident', 'robbery'] },
-    { street: 'Butchirajupalem', coords: { lat: 17.6890, lng: 83.2080 }, crimeTypes: ['accident'] },
-    { street: 'NH16, Nathayyapalem', coords: { lat: 17.6840, lng: 83.2020 }, crimeTypes: ['accident'] },
-    { street: 'Pentayya Nagar', coords: { lat: 17.6800, lng: 83.1980 }, crimeTypes: ['murder'] },
-    { street: 'Gajuwaka Junction', coords: { lat: 17.6860, lng: 83.2050 }, crimeTypes: ['murder', 'robbery'] },
-    { street: 'Kanithi Road Market', coords: { lat: 17.6820, lng: 83.2000 }, crimeTypes: ['assault'] },
-    { street: 'Jaggu Junction', coords: { lat: 17.6880, lng: 83.2070 }, crimeTypes: ['murder', 'accident'] },
-    { street: 'Old Gajuwaka Junction', coords: { lat: 17.6850, lng: 83.2040 }, crimeTypes: ['accident'] },
-    { street: 'Gangavaram Port Road', coords: { lat: 17.6790, lng: 83.1970 }, crimeTypes: ['robbery'] },
-    { street: 'NAD-Gajuwaka Road', coords: { lat: 17.6845, lng: 83.2030 }, crimeTypes: ['assault', 'murder'] },
-    { street: 'Happy Mobile Store, Scindia Road', coords: { lat: 17.6835, lng: 83.2025 }, crimeTypes: ['robbery'] },
-    { street: 'Yarada Beach', coords: { lat: 17.6780, lng: 83.1960 }, crimeTypes: ['robbery'] },
-    { street: 'Hanuman Koodali, Aganampudi', coords: { lat: 17.6815, lng: 83.1995 }, crimeTypes: ['murder'] },
-    { street: 'Mindi Village', coords: { lat: 17.6795, lng: 83.1975 }, crimeTypes: ['robbery'] },
-    { street: 'Balacheruvu, Pedaganthyada', coords: { lat: 17.6825, lng: 83.2005 }, crimeTypes: ['assault'] },
-    { street: 'Malkapuram', coords: { lat: 17.6855, lng: 83.2045 }, crimeTypes: ['murder'] },
-    { street: 'Sundharayya Colony', coords: { lat: 17.6865, lng: 83.2055 }, crimeTypes: ['accident'] },
-    { street: 'Kurmannapalem', coords: { lat: 17.6875, lng: 83.2065 }, crimeTypes: ['accident'] },
+    { street: 'Autonagar Signal Junction', coords: { lat: 17.7020, lng: 83.2080 }, crimeTypes: ['accident'] },
+    { street: 'Krishna Nagar', coords: { lat: 17.6980, lng: 83.2120 }, crimeTypes: ['robbery'] },
+    { street: 'Gopalapatnam Railway Station', coords: { lat: 17.7050, lng: 83.2150 }, crimeTypes: ['kidnap'] },
+    { street: 'Aganampudi Junction', coords: { lat: 17.6295, lng: 83.1895 }, crimeTypes: ['accident', 'robbery'] },
+    { street: 'Butchirajupalem', coords: { lat: 17.6930, lng: 83.2200 }, crimeTypes: ['accident'] },
+    { street: 'NH16, Nathayyapalem', coords: { lat: 17.6960, lng: 83.2060 }, crimeTypes: ['accident'] },
+    { street: 'Pentayya Nagar', coords: { lat: 17.6940, lng: 83.2030 }, crimeTypes: ['murder'] },
+    { street: 'Gajuwaka Junction', coords: { lat: 17.7010, lng: 83.2100 }, crimeTypes: ['murder', 'robbery'] },
+    { street: 'Kanithi Road Market', coords: { lat: 17.6870, lng: 83.1950 }, crimeTypes: ['assault'] },
+    { street: 'Jaggu Junction', coords: { lat: 17.6990, lng: 83.2140 }, crimeTypes: ['murder', 'accident'] },
+    { street: 'Old Gajuwaka Junction', coords: { lat: 17.6950, lng: 83.2040 }, crimeTypes: ['accident'] },
+    { street: 'Gangavaram Port Road', coords: { lat: 17.6300, lng: 83.2280 }, crimeTypes: ['robbery'] },
+    { street: 'NAD-Gajuwaka Road', coords: { lat: 17.7100, lng: 83.2170 }, crimeTypes: ['assault', 'murder'] },
+    { street: 'Happy Mobile Store, Scindia Road', coords: { lat: 17.6970, lng: 83.2050 }, crimeTypes: ['robbery'] },
+    { street: 'Yarada Beach', coords: { lat: 17.6540, lng: 83.2520 }, crimeTypes: ['robbery'] },
+    { street: 'Hanuman Koodali, Aganampudi', coords: { lat: 17.6280, lng: 83.1880 }, crimeTypes: ['murder'] },
+    { street: 'Mindi Village', coords: { lat: 17.6620, lng: 83.2350 }, crimeTypes: ['robbery'] },
+    { street: 'Balacheruvu, Pedaganthyada', coords: { lat: 17.7140, lng: 83.2250 }, crimeTypes: ['assault'] },
+    { street: 'Malkapuram', coords: { lat: 17.6880, lng: 83.2450 }, crimeTypes: ['murder'] },
+    { street: 'Sundharayya Colony', coords: { lat: 17.6900, lng: 83.2180 }, crimeTypes: ['accident'] },
+    { street: 'Kurmannapalem', coords: { lat: 17.6900, lng: 83.1700 }, crimeTypes: ['accident'] },
   ],
 
   // Ghat Road - 1 crime
@@ -285,13 +285,13 @@ export const areaStreetCoordinates: Record<string, StreetLocation[]> = {
     { street: 'Rickshaw Colony, Srinivasa Nagar', coords: { lat: 17.8025, lng: 83.3515 }, crimeTypes: ['murder'] },
   ],
 
-  // Malkapuram - 5 crimes
+  // Malkapuram - 5 crimes (real location near Gangavaram)
   'Malkapuram': [
-    { street: 'Malkapuram Area', coords: { lat: 17.6880, lng: 83.2450 }, crimeTypes: ['robbery'] },
-    { street: 'Signal Junction, Agnampudi', coords: { lat: 17.6900, lng: 83.2470 }, crimeTypes: ['murder'] },
-    { street: 'Janatha Colony', coords: { lat: 17.6870, lng: 83.2440 }, crimeTypes: ['robbery'] },
-    { street: 'Coast Guard Quarters', coords: { lat: 17.6890, lng: 83.2460 }, crimeTypes: ['murder'] },
-    { street: 'Malkapuram Road', coords: { lat: 17.6860, lng: 83.2430 }, crimeTypes: ['assault'] },
+    { street: 'Malkapuram Area', coords: { lat: 17.6580, lng: 83.2350 }, crimeTypes: ['robbery'] },
+    { street: 'Signal Junction, Aganampudi', coords: { lat: 17.6295, lng: 83.1895 }, crimeTypes: ['murder'] },
+    { street: 'Janatha Colony', coords: { lat: 17.6560, lng: 83.2330 }, crimeTypes: ['robbery'] },
+    { street: 'Coast Guard Quarters', coords: { lat: 17.6600, lng: 83.2370 }, crimeTypes: ['murder'] },
+    { street: 'Malkapuram Road', coords: { lat: 17.6540, lng: 83.2310 }, crimeTypes: ['assault'] },
   ],
 
   // Marikavalasa - 4 crimes
@@ -578,6 +578,33 @@ const dbToStreetKeyMap: Record<string, string[]> = {
   'tagarapuvalasa': ['Tagarapuvalasa'],
   'vizianagaram rural': ['Vizianagaram'],
   'vizianagaram town': ['Vizianagaram'],
+  // Additional mappings for typo handling
+  'aganampudi': ['Gajuwaka'],
+  'agnampudi': ['Gajuwaka'],
+  'kommadhi': ['Kommadi'],
+  'endada': ['Yendada'],
+  'sheela nagar': ['Sheela Nagar'],
+  'railway new colony': ['Railway new Colony'],
+  'poorna market': ['Poorna Market'],
+  'kurmannapalem': ['Kurmannapalem'],
+  'malkapuram': ['Malkapuram'],
+  'boyapalem': ['Boyapalem'],
+  'siripuram': ['Siripuram'],
+  'dabagardens': ['Dabagardens'],
+  'daspalla hills': ['Daspalla Hills'],
+  'gopalapatnam': ['Gopalapatnam'],
+  'waltair': ['Waltair'],
+  'andhra university': ['Andhra University'],
+  'port area': ['Port Area'],
+  'balayya sastri layout': ['Balayya Sastri Layout'],
+  'vishalakshinagar': ['Vishalakshinagar'],
+  'venkojipalem': ['Venkojipalem'],
+  'scindia': ['Scindia'],
+  'ghat road': ['Ghat road'],
+  'marikavalasa': ['Marikavalasa'],
+  'bhogapuram': ['Bhogapuram'],
+  'rtc complex': ['RTC Complex'],
+  'allipuram': ['Allipuram'],
 };
 
 // Get streetCoordinates keys that match a DB area name
@@ -644,7 +671,18 @@ export const getStreetLocationsForCrimeType = (
   area: string, 
   crimeType: CrimeType
 ): StreetLocation[] => {
-  const allLocations = getStreetLocations(area);
+  // Try direct lookup first, then DB key mapping
+  let allLocations = getStreetLocations(area);
+  if (allLocations.length === 0) {
+    // Try via dbToStreetKeyMap
+    const keys = getStreetKeysForDbArea(area);
+    for (const key of keys) {
+      const locs = areaStreetCoordinates[key];
+      if (locs && locs.length > 0) {
+        allLocations = [...allLocations, ...locs];
+      }
+    }
+  }
   if (allLocations.length === 0) return [];
   
   const matched = allLocations.filter(loc => 
@@ -652,13 +690,7 @@ export const getStreetLocationsForCrimeType = (
   );
   
   // If no streets match this crime type at all, return all streets
-  // so the DB crime count still gets distributed across the area
   if (matched.length === 0) {
-    return allLocations;
-  }
-  
-  // If very few streets match but area has many, return all to spread markers
-  if (matched.length < 2 && allLocations.length >= 4) {
     return allLocations;
   }
   
