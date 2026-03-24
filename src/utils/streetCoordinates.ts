@@ -148,8 +148,9 @@ export const areaStreetCoordinates: Record<string, StreetLocation[]> = {
 
   // Daspalla Hills - 2 crimes
   'Daspalla Hills': [
-    { street: '75 Feet Service Road', coords: { lat: 17.7220, lng: 83.3100 }, crimeTypes: ['robbery'] },
-    { street: 'Harbour Park, Jagannadha Swamy Temple', coords: { lat: 17.7200, lng: 83.3080 }, crimeTypes: ['kidnap'] },
+    { street: '75 Feet Service Road', coords: { lat: 17.7220, lng: 83.3100 }, crimeTypes: ['robbery', 'assault'] },
+    { street: 'Harbour Park, Jagannadha Swamy Temple', coords: { lat: 17.7200, lng: 83.3080 }, crimeTypes: ['kidnap', 'murder'] },
+    { street: 'Daspalla Hills View Point', coords: { lat: 17.7210, lng: 83.3090 }, crimeTypes: ['accident'] },
   ],
 
   // Dwaraka Nagar - 11 crimes
