@@ -153,17 +153,20 @@ export const areaStreetCoordinates: Record<string, StreetLocation[]> = {
     { street: 'Daspalla Hills View Point', coords: { lat: 17.7210, lng: 83.3090 }, crimeTypes: ['accident'] },
   ],
 
-  // Dwaraka Nagar - 11 crimes
+  // Dwaraka Nagar - 21 crimes (DB: 5 Accident, 11 Assault, 1 Kidnap, 1 Murder, 3 Robbery)
   'Dwaraka Nagar': [
-    { street: 'Dwaraka Nagar Road', coords: { lat: 17.7287, lng: 83.3086 }, crimeTypes: ['assault'] },
-    { street: 'Indian Bank, VIP Road', coords: { lat: 17.7260, lng: 83.3050 }, crimeTypes: ['robbery'] },
-    { street: 'DRM Office Road, Dondaparthy', coords: { lat: 17.7310, lng: 83.3110 }, crimeTypes: ['kidnap'] },
-    { street: 'Madhuranagar', coords: { lat: 17.7295, lng: 83.3070 }, crimeTypes: ['robbery'] },
+    { street: 'Dwaraka Nagar Road', coords: { lat: 17.7287, lng: 83.3086 }, crimeTypes: ['assault', 'accident'] },
+    { street: 'Indian Bank, VIP Road', coords: { lat: 17.7260, lng: 83.3050 }, crimeTypes: ['robbery', 'assault'] },
+    { street: 'DRM Office Road, Dondaparthy', coords: { lat: 17.7310, lng: 83.3110 }, crimeTypes: ['kidnap', 'assault'] },
+    { street: 'Madhuranagar', coords: { lat: 17.7295, lng: 83.3070 }, crimeTypes: ['robbery', 'assault'] },
+    { street: 'Dwaraka Nagar Center', coords: { lat: 17.7280, lng: 83.3080 }, crimeTypes: ['assault', 'murder'] },
+    { street: 'VIP Road Junction', coords: { lat: 17.7275, lng: 83.3060 }, crimeTypes: ['assault', 'accident'] },
+    { street: 'Dwaraka Nagar Market Area', coords: { lat: 17.7290, lng: 83.3095 }, crimeTypes: ['assault', 'robbery'] },
   ],
   'Dwarakanagar': [
-    { street: 'Satyam Junction, Rama Talkies', coords: { lat: 17.7287, lng: 83.3086 }, crimeTypes: ['accident'] },
-    { street: 'Dwarakanagar 5th Lane', coords: { lat: 17.7270, lng: 83.3070 }, crimeTypes: ['accident'] },
-    { street: 'Sangam Sarath Theatre Junction', coords: { lat: 17.7300, lng: 83.3100 }, crimeTypes: ['accident'] },
+    { street: 'Satyam Junction, Rama Talkies', coords: { lat: 17.7287, lng: 83.3086 }, crimeTypes: ['accident', 'assault'] },
+    { street: 'Dwarakanagar 5th Lane', coords: { lat: 17.7270, lng: 83.3070 }, crimeTypes: ['accident', 'assault'] },
+    { street: 'Sangam Sarath Theatre Junction', coords: { lat: 17.7300, lng: 83.3100 }, crimeTypes: ['accident', 'assault'] },
   ],
 
   // Gajuwaka - 27 crimes
