@@ -377,11 +377,14 @@ export const areaStreetCoordinates: Record<string, StreetLocation[]> = {
     { street: 'PM Palem Road', coords: { lat: 17.7990, lng: 83.3520 }, crimeTypes: ['kidnap'] },
   ],
 
-  // Poorna Market - 12 crimes
+  // Poorna Market - 12 crimes (spread across all types)
   'Poorna Market': [
-    { street: 'Panda Street', coords: { lat: 17.7064, lng: 83.2982 }, crimeTypes: ['murder'] },
+    { street: 'Panda Street', coords: { lat: 17.7064, lng: 83.2982 }, crimeTypes: ['murder', 'robbery'] },
     { street: 'Market Road', coords: { lat: 17.7050, lng: 83.2960 }, crimeTypes: ['murder', 'kidnap', 'assault'] },
-    { street: 'Shopping Area', coords: { lat: 17.7080, lng: 83.3000 }, crimeTypes: ['accident'] },
+    { street: 'Shopping Area', coords: { lat: 17.7080, lng: 83.3000 }, crimeTypes: ['accident', 'robbery'] },
+    { street: 'Poorna Market Main Entrance', coords: { lat: 17.7070, lng: 83.2990 }, crimeTypes: ['assault', 'kidnap'] },
+    { street: 'Fish Market Road', coords: { lat: 17.7055, lng: 83.2970 }, crimeTypes: ['murder', 'assault'] },
+    { street: 'Poorna Market Back Gate', coords: { lat: 17.7060, lng: 83.2975 }, crimeTypes: ['robbery', 'kidnap'] },
   ],
 
   // Port Area - 1 crime
