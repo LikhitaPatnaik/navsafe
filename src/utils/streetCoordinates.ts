@@ -204,14 +204,17 @@ export const areaStreetCoordinates: Record<string, StreetLocation[]> = {
     { street: 'Baji Junction Area', coords: { lat: 17.7481, lng: 83.2187 }, crimeTypes: ['robbery'] },
   ],
 
-  // Jagadamba Junction - 15 crimes
+  // Jagadamba Junction - 24 crimes (DB: 3 Accident, 4 Assault, 5 Kidnap, 5 Murder, 7 Robbery)
   'Jagadamba Junction': [
-    { street: 'Karakachettu Polamamba Temple', coords: { lat: 17.7105, lng: 83.2980 }, crimeTypes: ['robbery'] },
-    { street: 'Near Public Sector Bank', coords: { lat: 17.7090, lng: 83.2960 }, crimeTypes: ['robbery'] },
+    { street: 'Karakachettu Polamamba Temple', coords: { lat: 17.7105, lng: 83.2980 }, crimeTypes: ['robbery', 'kidnap'] },
+    { street: 'Near Public Sector Bank', coords: { lat: 17.7090, lng: 83.2960 }, crimeTypes: ['robbery', 'assault'] },
     { street: 'Jagadamba Road', coords: { lat: 17.7120, lng: 83.3000 }, crimeTypes: ['murder', 'kidnap', 'accident', 'assault'] },
-    { street: 'Maharanipeta', coords: { lat: 17.7080, lng: 83.2940 }, crimeTypes: ['murder'] },
-    { street: 'Fishing Harbour Area', coords: { lat: 17.7070, lng: 83.2950 }, crimeTypes: ['accident'] },
-    { street: 'KGH Hospital', coords: { lat: 17.7100, lng: 83.2990 }, crimeTypes: ['assault'] },
+    { street: 'Maharanipeta', coords: { lat: 17.7080, lng: 83.2940 }, crimeTypes: ['murder', 'robbery'] },
+    { street: 'Fishing Harbour Area', coords: { lat: 17.7070, lng: 83.2950 }, crimeTypes: ['accident', 'kidnap'] },
+    { street: 'KGH Hospital', coords: { lat: 17.7100, lng: 83.2990 }, crimeTypes: ['assault', 'robbery'] },
+    { street: 'Jagadamba Centre Main Road', coords: { lat: 17.7110, lng: 83.2985 }, crimeTypes: ['robbery', 'murder'] },
+    { street: 'Seethammadhara Junction', coords: { lat: 17.7095, lng: 83.2970 }, crimeTypes: ['kidnap', 'assault'] },
+    { street: 'Collector Office Road', coords: { lat: 17.7115, lng: 83.2995 }, crimeTypes: ['murder', 'accident'] },
   ],
 
   // Kancharapalem - 22 crimes
