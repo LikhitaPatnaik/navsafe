@@ -418,11 +418,15 @@ export const areaStreetCoordinates: Record<string, StreetLocation[]> = {
     { street: 'Dwaraka Bus Stop', coords: { lat: 17.7190, lng: 83.3090 }, crimeTypes: ['accident'] },
   ],
 
-  // Rushikonda - 19 crimes
+  // Rushikonda - 19 crimes (DB: spread across types)
   'Rushikonda': [
     { street: 'Rushikonda Beach Road', coords: { lat: 17.7920, lng: 83.3850 }, crimeTypes: ['assault', 'murder', 'robbery', 'accident', 'kidnap'] },
-    { street: 'Balaji Bay Mount Road', coords: { lat: 17.7900, lng: 83.3830 }, crimeTypes: ['kidnap'] },
-    { street: 'Radisson Blue Junction', coords: { lat: 17.7940, lng: 83.3870 }, crimeTypes: ['accident'] },
+    { street: 'Balaji Bay Mount Road', coords: { lat: 17.7900, lng: 83.3830 }, crimeTypes: ['kidnap', 'murder'] },
+    { street: 'Radisson Blue Junction', coords: { lat: 17.7940, lng: 83.3870 }, crimeTypes: ['accident', 'robbery'] },
+    { street: 'Rushikonda Hill Road', coords: { lat: 17.7910, lng: 83.3840 }, crimeTypes: ['assault', 'murder'] },
+    { street: 'TDP Office Road', coords: { lat: 17.7930, lng: 83.3860 }, crimeTypes: ['robbery', 'accident'] },
+    { street: 'Rushikonda IT Park Entrance', coords: { lat: 17.7950, lng: 83.3880 }, crimeTypes: ['kidnap', 'assault'] },
+    { street: 'Sagar Nagar to Rushikonda Road', coords: { lat: 17.7935, lng: 83.3855 }, crimeTypes: ['accident', 'murder'] },
   ],
 
   // Scindia - 1 crime
