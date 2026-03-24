@@ -690,10 +690,10 @@ const MapView = ({ routes = [], sourceCoords, destinationCoords, selectedRoute, 
           const circle = L.circleMarker([centerCoords.lat, centerCoords.lng], {
             radius: markerRadius,
             fillColor: color,
-            color: '#000000',
-            weight: 3.5,
+            color: isCritical ? '#450a0a' : isRisky ? '#7f1d1d' : color,
+            weight: isCritical ? 4 : isRisky ? 3 : 2,
             opacity: 1,
-            fillOpacity: 0.9,
+            fillOpacity: isCritical ? 0.7 : isRisky ? 0.5 : 0.4,
           });
 
           const localPopupContent = `
