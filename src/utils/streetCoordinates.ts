@@ -334,14 +334,17 @@ export const areaStreetCoordinates: Record<string, StreetLocation[]> = {
     { street: 'Viman Nagar', coords: { lat: 17.7430, lng: 83.2330 }, crimeTypes: ['murder'] },
   ],
 
-  // One Town - 15 crimes
+  // One Town - 19 crimes (DB: 0 Accident, 8 Assault, 7 Kidnap, 2 Murder, 2 Robbery)
   'One Town': [
     { street: 'Town Kotha Road', coords: { lat: 17.7000, lng: 83.2900 }, crimeTypes: ['assault', 'kidnap'] },
-    { street: 'Kurupam Market', coords: { lat: 17.7020, lng: 83.2920 }, crimeTypes: ['robbery'] },
-    { street: 'KGH Hospital', coords: { lat: 17.6990, lng: 83.2890 }, crimeTypes: ['kidnap'] },
-    { street: 'Relliveedhi', coords: { lat: 17.7010, lng: 83.2910 }, crimeTypes: ['murder'] },
-    { street: 'Fishing Harbour Area', coords: { lat: 17.6980, lng: 83.2880 }, crimeTypes: ['murder'] },
-    { street: 'Chilakapeta', coords: { lat: 17.7030, lng: 83.2930 }, crimeTypes: ['murder'] },
+    { street: 'Kurupam Market', coords: { lat: 17.7020, lng: 83.2920 }, crimeTypes: ['robbery', 'assault'] },
+    { street: 'KGH Hospital', coords: { lat: 17.6990, lng: 83.2890 }, crimeTypes: ['kidnap', 'assault'] },
+    { street: 'Relliveedhi', coords: { lat: 17.7010, lng: 83.2910 }, crimeTypes: ['murder', 'assault'] },
+    { street: 'Fishing Harbour Area', coords: { lat: 17.6980, lng: 83.2880 }, crimeTypes: ['murder', 'kidnap'] },
+    { street: 'Chilakapeta', coords: { lat: 17.7030, lng: 83.2930 }, crimeTypes: ['assault', 'kidnap'] },
+    { street: 'Poorna Gate', coords: { lat: 17.7015, lng: 83.2915 }, crimeTypes: ['kidnap', 'assault'] },
+    { street: 'Muthyalamma Temple Area', coords: { lat: 17.6995, lng: 83.2895 }, crimeTypes: ['assault', 'robbery'] },
+    { street: 'Bangaramma Guddi Street', coords: { lat: 17.7025, lng: 83.2925 }, crimeTypes: ['kidnap', 'assault'] },
   ],
 
   // Pendurthi - 20 crimes
