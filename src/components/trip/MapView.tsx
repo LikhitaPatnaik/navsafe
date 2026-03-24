@@ -394,16 +394,20 @@ const MapView = ({ routes = [], sourceCoords, destinationCoords, selectedRoute, 
             return;
           }
           
-          // Helper: Check if a specific coordinate is along any non-safest route path (within 1km radius)
+          // Helper: Check if a specific coordinate is along any non-safest route path (within 1.5km radius)
           const isPointAlongRoute = (coords: LatLng): boolean => {
-            const maxDistance = 1000; // 1km detection radius
-            const sampleRate = Math.max(1, Math.floor(selectedRoute.path.length / 100));
-            
-            for (let i = 0; i < selectedRoute.path.length; i += sampleRate) {
-              const point = selectedRoute.path[i];
-              const distance = haversineDistance(point, coords);
-              if (distance < maxDistance) {
-                return true;
+            const maxDistance = 1500; // 1.5km detection radius for better coverage
+            // Check against selected route AND all non-safest routes
+            const routesToCheck = [selectedRoute, ...nonSafestRoutes.filter(r => r.id !== selectedRoute.id)];
+            for (const route of routesToCheck) {
+              if (!route.path || route.path.length === 0) continue;
+              const sampleRate = Math.max(1, Math.floor(route.path.length / 150));
+              for (let i = 0; i < route.path.length; i += sampleRate) {
+                const point = route.path[i];
+                const distance = haversineDistance(point, coords);
+                if (distance < maxDistance) {
+                  return true;
+                }
               }
             }
             return false;
