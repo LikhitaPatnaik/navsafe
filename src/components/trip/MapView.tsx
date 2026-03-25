@@ -463,8 +463,8 @@ const MapView = ({ routes = [], sourceCoords, destinationCoords, selectedRoute, 
                 const streetCount = countPerStreet + (streetIndex < remainder ? 1 : 0);
                 if (streetCount === 0) return;
                 
-                // Large bold marker sizes matching reference style
-                const markerRadius = streetCount > 3 ? 14 : streetCount > 1 ? 12 : 10;
+                // Medium marker sizes matching reference style
+                const markerRadius = streetCount > 3 ? 10 : streetCount > 1 ? 8 : 7;
                 
                 const circle = L.circleMarker([streetLoc.coords.lat, streetLoc.coords.lng], {
                   radius: markerRadius,
