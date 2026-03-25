@@ -394,9 +394,9 @@ const MapView = ({ routes = [], sourceCoords, destinationCoords, selectedRoute, 
             return;
           }
           
-          // Helper: Check if a specific coordinate is along any non-safest route path (within 1.5km radius)
+          // Helper: Check if a specific coordinate is along any non-safest route path (within 1km radius)
           const isPointAlongRoute = (coords: LatLng): boolean => {
-            const maxDistance = 1500; // 1.5km detection radius for better coverage
+            const maxDistance = 1000; // 1km detection radius
             // Check against selected route AND all non-safest routes
             const routesToCheck = [selectedRoute, ...nonSafestRoutes.filter(r => r.id !== selectedRoute.id)];
             for (const route of routesToCheck) {

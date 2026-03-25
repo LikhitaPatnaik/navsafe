@@ -86,8 +86,8 @@ export const findCrimeZonesAlongRoute = (
 ): CrimeZone[] => {
   const foundZones = new Map<string, { zone: CrimeZone; minDistance: number }>();
   
-  // Use wider detection radius (1.5km) to catch zones near the route
-  const maxDistance = options?.maxDistanceMeters ?? 1500;
+  // Detection radius (1km) to catch zones near the route
+  const maxDistance = options?.maxDistanceMeters ?? 1000;
   // Include zones with safety_score below 85 (anything not "very safe")
   const maxScoreThreshold = options?.maxSafetyScore ?? 85;
   
