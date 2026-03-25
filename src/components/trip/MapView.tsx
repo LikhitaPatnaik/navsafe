@@ -463,17 +463,16 @@ const MapView = ({ routes = [], sourceCoords, destinationCoords, selectedRoute, 
                 const streetCount = countPerStreet + (streetIndex < remainder ? 1 : 0);
                 if (streetCount === 0) return;
                 
-                // Medium marker sizes for visibility
-                const markerRadius = streetCount > 3 ? 10 : streetCount > 1 ? 8 : 7;
-                const areaRadius = streetCount > 3 ? 300 : streetCount > 1 ? 220 : 150;
+                // Large bold marker sizes matching reference style
+                const markerRadius = streetCount > 3 ? 14 : streetCount > 1 ? 12 : 10;
                 
                 const circle = L.circleMarker([streetLoc.coords.lat, streetLoc.coords.lng], {
                   radius: markerRadius,
                   fillColor: color,
-                  color: '#000000',
-                  weight: 3.5,
+                  color: '#1a1a2e',
+                  weight: 3,
                   opacity: 1,
-                  fillOpacity: 0.9,
+                  fillOpacity: 0.85,
                 });
                 
                 let riskLabel = 'LOW RISK';
