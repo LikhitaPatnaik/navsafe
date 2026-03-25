@@ -508,17 +508,6 @@ const MapView = ({ routes = [], sourceCoords, destinationCoords, selectedRoute, 
                 circle.addTo(mapRef.current!);
                 safetyZoneLayersRef.current.push(circle);
                 
-                // Smaller area circle
-                const areaCircle = L.circle([streetLoc.coords.lat, streetLoc.coords.lng], {
-                  radius: areaRadius,
-                  fillColor: color,
-                  color: '#000000',
-                  weight: 2,
-                  fillOpacity: 0.15,
-                });
-                areaCircle.bindPopup(popupContent);
-                areaCircle.addTo(mapRef.current!);
-                safetyZoneLayersRef.current.push(areaCircle as unknown as L.CircleMarker);
               });
             });
           });
