@@ -82,11 +82,10 @@ const MapView = ({ routes = [], sourceCoords, destinationCoords, selectedRoute, 
         zoomControl: true,
       });
 
-      // CARTO Voyager tiles - works reliably in WebView/mobile apps
-      L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
-        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/">CARTO</a>',
-        maxZoom: 20,
-        subdomains: 'abcd',
+      // Add OSM tiles (using standard OSM for better reliability)
+      L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+        maxZoom: 19,
       }).addTo(map);
 
       mapRef.current = map;
