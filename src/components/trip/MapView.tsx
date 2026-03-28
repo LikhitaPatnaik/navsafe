@@ -82,11 +82,36 @@ const MapView = ({ routes = [], sourceCoords, destinationCoords, selectedRoute, 
         zoomControl: true,
       });
 
-      // Use direct OSM tiles for web, proxy is available for mobile at /functions/v1/osm-tiles/
-      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+      const tileAttribution = '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors';
+      const proxyTileLayer = L.tileLayer(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/osm-tiles/{z}/{x}/{y}.png`, {
+        attribution: tileAttribution,
         maxZoom: 19,
-      }).addTo(map);
+        crossOrigin: true,
+      });
+
+      let proxyTileErrorCount = 0;
+      let hasFallenBackToDirectTiles = false;
+
+      proxyTileLayer.on('tileerror', () => {
+        proxyTileErrorCount += 1;
+
+        if (hasFallenBackToDirectTiles || proxyTileErrorCount < 4) {
+          return;
+        }
+
+        hasFallenBackToDirectTiles = true;
+        console.warn('OSM proxy tiles failed, falling back to direct tiles');
+        map.removeLayer(proxyTileLayer);
+
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+          attribution: tileAttribution,
+          maxZoom: 19,
+          subdomains: 'abc',
+          crossOrigin: true,
+        }).addTo(map);
+      });
+
+      proxyTileLayer.addTo(map);
 
       mapRef.current = map;
       mapContainer.current = node;
