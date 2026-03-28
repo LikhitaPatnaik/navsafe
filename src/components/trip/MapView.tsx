@@ -82,8 +82,8 @@ const MapView = ({ routes = [], sourceCoords, destinationCoords, selectedRoute, 
         zoomControl: true,
       });
 
-      // Add OSM tiles (using standard OSM for better reliability)
-      L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      // Keep the same OSM map style, but proxy tiles through the backend so mobile WebViews don't get blocked.
+      L.tileLayer(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/osm-tiles/{z}/{x}/{y}.png`, {
         attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
         maxZoom: 19,
       }).addTo(map);
