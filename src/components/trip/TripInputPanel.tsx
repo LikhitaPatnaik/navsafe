@@ -4,6 +4,7 @@ import { MapPin, Navigation, Locate, ArrowRight, Loader2 } from 'lucide-react';
 import { useTrip } from '@/context/TripContext';
 import LocationAutocomplete from './LocationAutocomplete';
 import { LatLng } from '@/types/route';
+import { getFunctionUrl } from '@/lib/lovableCloud';
 
 interface TripInputPanelProps {
   onFindRoutes: () => void;
@@ -26,10 +27,18 @@ const TripInputPanel = ({ onFindRoutes, isLoading = false }: TripInputPanelProps
           
           // Reverse geocode to get address
           try {
-            const response = await fetch(
-              `https://nominatim.openstreetmap.org/reverse?format=json&lat=${coords.lat}&lon=${coords.lng}`,
-              { headers: { 'Accept-Language': 'en' } }
-            );
+            const reverseUrl = new URL(getFunctionUrl('nominatim-proxy/reverse'));
+            reverseUrl.searchParams.set('lat', String(coords.lat));
+            reverseUrl.searchParams.set('lon', String(coords.lng));
+
+            const response = await fetch(reverseUrl.toString(), {
+              headers: { 'Accept-Language': 'en' },
+            });
+
+            if (!response.ok) {
+              throw new Error(`Reverse geocoding failed with ${response.status}`);
+            }
+
             const data = await response.json();
             setSource(data.display_name || 'Current Location', coords);
           } catch {

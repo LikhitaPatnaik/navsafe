@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import { Input } from '@/components/ui/input';
 import { LatLng } from '@/types/route';
 import { MapPin, Loader2 } from 'lucide-react';
+import { getFunctionUrl } from '@/lib/lovableCloud';
 
 interface LocationSuggestion {
   display_name: string;
@@ -48,16 +49,22 @@ const LocationAutocomplete = ({ value, onChange, placeholder, className }: Locat
 
     setIsLoading(true);
     try {
-      const response = await fetch(
-        `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}&limit=5&addressdetails=1`,
-        {
-          headers: {
-            'Accept-Language': 'en',
-          },
-        }
-      );
+      const searchUrl = new URL(getFunctionUrl('nominatim-proxy/search'));
+      searchUrl.searchParams.set('q', query);
+      searchUrl.searchParams.set('limit', '5');
+
+      const response = await fetch(searchUrl.toString(), {
+        headers: {
+          'Accept-Language': 'en',
+        },
+      });
+
+      if (!response.ok) {
+        throw new Error(`Autocomplete failed with ${response.status}`);
+      }
+
       const data = await response.json();
-      setSuggestions(data);
+      setSuggestions(Array.isArray(data) ? data : []);
       setShowSuggestions(true);
     } catch (error) {
       console.error('Error fetching suggestions:', error);
