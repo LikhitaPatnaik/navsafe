@@ -82,8 +82,8 @@ const MapView = ({ routes = [], sourceCoords, destinationCoords, selectedRoute, 
         zoomControl: true,
       });
 
-      // Keep the same OSM map style, but proxy tiles through the backend so mobile WebViews don't get blocked.
-      L.tileLayer(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/osm-tiles/{z}/{x}/{y}.png`, {
+      // Use direct OSM tiles for web, proxy is available for mobile at /functions/v1/osm-tiles/
+      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
         attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
         maxZoom: 19,
       }).addTo(map);
