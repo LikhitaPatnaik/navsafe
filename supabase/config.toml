@@ -5,6 +5,3 @@ verify_jwt = false
 
 [functions.osm-tiles]
 verify_jwt = false
-
-[functions.nominatim-proxy]
-verify_jwt = false

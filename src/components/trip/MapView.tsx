@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, useCallback } from 'react';
+import { useEffect, useRef, useState, useCallback, useMemo } from 'react';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import 'leaflet-routing-machine';
@@ -8,7 +8,6 @@ import { fetchSafetyZones } from '@/services/routingService';
 import { CrimeType, crimeTypeConfig } from '@/utils/crimeTypeMapping';
 import { supabase } from '@/integrations/supabase/client';
 import { areaStreetCoordinates, getStreetLocationsForCrimeType, getStreetKeysForDbArea, StreetLocation } from '@/utils/streetCoordinates';
-import { getFunctionUrl } from '@/lib/lovableCloud';
 // Fix default marker icons
 delete (L.Icon.Default.prototype as any)._getIconUrl;
 L.Icon.Default.mergeOptions({
@@ -84,29 +83,44 @@ const MapView = ({ routes = [], sourceCoords, destinationCoords, selectedRoute, 
       });
 
       const tileAttribution = '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors';
-      const proxyTileLayer = L.tileLayer(getFunctionUrl('osm-tiles/{z}/{x}/{y}.png'), {
+      const proxyTileLayer = L.tileLayer(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/osm-tiles/{z}/{x}/{y}.png`, {
         attribution: tileAttribution,
         maxZoom: 19,
+        crossOrigin: true,
       });
 
-      const markMapReady = () => {
-        requestAnimationFrame(() => {
-          map.invalidateSize();
-          setMapReady(true);
-        });
-      };
+      let proxyTileErrorCount = 0;
+      let hasFallenBackToDirectTiles = false;
 
-      proxyTileLayer.once('load', markMapReady);
       proxyTileLayer.on('tileerror', () => {
-        console.warn('OSM proxy tile failed to load');
+        proxyTileErrorCount += 1;
+
+        if (hasFallenBackToDirectTiles || proxyTileErrorCount < 4) {
+          return;
+        }
+
+        hasFallenBackToDirectTiles = true;
+        console.warn('OSM proxy tiles failed, falling back to direct tiles');
+        map.removeLayer(proxyTileLayer);
+
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+          attribution: tileAttribution,
+          maxZoom: 19,
+          subdomains: 'abc',
+          crossOrigin: true,
+        }).addTo(map);
       });
 
       proxyTileLayer.addTo(map);
 
       mapRef.current = map;
       mapContainer.current = node;
-
-      window.setTimeout(markMapReady, 250);
+      
+      // Force map to recalculate size
+      requestAnimationFrame(() => {
+        map.invalidateSize();
+        setMapReady(true);
+      });
     } catch (error) {
       console.error('Map initialization error:', error);
     }
