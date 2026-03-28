@@ -27,7 +27,7 @@ const TripInputPanel = ({ onFindRoutes, isLoading = false }: TripInputPanelProps
           
           // Reverse geocode to get address
           try {
-            const reverseUrl = new URL(getFunctionUrl('nominatim-proxy/reverse'));
+            const reverseUrl = new URL(getFunctionUrl('nominatim-proxy'));
             reverseUrl.searchParams.set('lat', String(coords.lat));
             reverseUrl.searchParams.set('lon', String(coords.lng));
 

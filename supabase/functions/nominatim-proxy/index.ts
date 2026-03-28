@@ -27,9 +27,11 @@ serve(async (req) => {
   const acceptLanguage = req.headers.get("accept-language") ?? "en";
 
   let upstreamUrl: URL | null = null;
+  const query = requestUrl.searchParams.get("q")?.trim() ?? "";
+  const lat = requestUrl.searchParams.get("lat")?.trim();
+  const lon = requestUrl.searchParams.get("lon")?.trim();
 
-  if (pathname.endsWith("/search")) {
-    const query = requestUrl.searchParams.get("q")?.trim() ?? "";
+  if (pathname.endsWith("/search") || query.length > 0) {
     const limit = Math.min(10, Math.max(1, Number.parseInt(requestUrl.searchParams.get("limit") ?? "5", 10) || 5));
 
     if (query.length < 3) {
@@ -44,10 +46,7 @@ serve(async (req) => {
     upstreamUrl.searchParams.set("addressdetails", "1");
     upstreamUrl.searchParams.set("limit", String(limit));
     upstreamUrl.searchParams.set("q", query);
-  } else if (pathname.endsWith("/reverse")) {
-    const lat = requestUrl.searchParams.get("lat")?.trim();
-    const lon = requestUrl.searchParams.get("lon")?.trim();
-
+  } else if (pathname.endsWith("/reverse") || (lat && lon)) {
     if (!lat || !lon) {
       return new Response(JSON.stringify({ error: "Missing lat/lon" }), {
         status: 400,

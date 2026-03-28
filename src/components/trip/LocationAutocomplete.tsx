@@ -49,7 +49,7 @@ const LocationAutocomplete = ({ value, onChange, placeholder, className }: Locat
 
     setIsLoading(true);
     try {
-      const searchUrl = new URL(getFunctionUrl('nominatim-proxy/search'));
+      const searchUrl = new URL(getFunctionUrl('nominatim-proxy'));
       searchUrl.searchParams.set('q', query);
       searchUrl.searchParams.set('limit', '5');
 
