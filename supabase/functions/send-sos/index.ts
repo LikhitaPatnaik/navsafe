@@ -14,33 +14,27 @@ interface SOSRequest {
   landmark?: string;
   message?: string;
   contactIds?: string[];
-  channels?: ('sms' | 'whatsapp')[];
 }
 
 const formatOSMUrl = (lat: number, lng: number): string => {
   return `https://www.openstreetmap.org/?mlat=${lat}&mlon=${lng}&zoom=17`;
 };
 
-const sendTwilioMessage = async (
+const sendTwilioSMS = async (
   to: string, 
-  body: string, 
-  channel: 'sms' | 'whatsapp'
-): Promise<{ success: boolean; error?: string; channel: string }> => {
+  body: string
+): Promise<{ success: boolean; error?: string }> => {
   const accountSid = Deno.env.get('TWILIO_ACCOUNT_SID');
   const authToken = Deno.env.get('TWILIO_AUTH_TOKEN');
   const fromNumber = Deno.env.get('TWILIO_PHONE_NUMBER');
-  const whatsappSandbox = 'whatsapp:+14155238886';
 
   if (!accountSid || !authToken || !fromNumber) {
-    return { success: false, error: 'Missing Twilio credentials', channel };
+    return { success: false, error: 'Missing Twilio credentials' };
   }
-
-  const fromAddr = channel === 'whatsapp' ? whatsappSandbox : fromNumber;
-  const toAddr = channel === 'whatsapp' ? `whatsapp:${to}` : to;
 
   try {
     const url = `https://api.twilio.com/2010-04-01/Accounts/${accountSid}/Messages.json`;
-    console.log(`[SOS] Sending ${channel} to: ${toAddr}`);
+    console.log(`[SOS] Sending SMS to: ${to}`);
 
     const response = await fetch(url, {
       method: 'POST',
@@ -48,32 +42,30 @@ const sendTwilioMessage = async (
         'Authorization': 'Basic ' + btoa(`${accountSid}:${authToken}`),
         'Content-Type': 'application/x-www-form-urlencoded',
       },
-      body: new URLSearchParams({ To: toAddr, From: fromAddr, Body: body }),
+      body: new URLSearchParams({ To: to, From: fromNumber, Body: body }),
     });
 
     const result = await response.json();
     if (response.ok) {
-      console.log(`[SOS] ✅ ${channel} sent to ${to} - SID: ${result.sid}`);
-      return { success: true, channel };
+      console.log(`[SOS] ✅ SMS sent to ${to} - SID: ${result.sid}`);
+      return { success: true };
     } else {
-      console.error(`[SOS] ❌ ${channel} error for ${to}:`, JSON.stringify(result));
-      return { success: false, error: result.message || `${channel} API error`, channel };
+      console.error(`[SOS] ❌ SMS error for ${to}:`, JSON.stringify(result));
+      return { success: false, error: result.message || 'SMS API error' };
     }
   } catch (error) {
-    console.error(`[SOS] ❌ Exception sending ${channel} to ${to}:`, error);
-    return { success: false, error: error instanceof Error ? error.message : 'Unknown error', channel };
+    console.error(`[SOS] ❌ Exception sending SMS to ${to}:`, error);
+    return { success: false, error: error instanceof Error ? error.message : 'Unknown error' };
   }
 };
 
 const handler = async (req: Request): Promise<Response> => {
-  // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
 
   try {
-    const { location, landmark, message, contactIds, channels }: SOSRequest = await req.json();
-    const activeChannels: ('sms' | 'whatsapp')[] = channels && channels.length > 0 ? channels : ['sms', 'whatsapp'];
+    const { location, landmark, message, contactIds }: SOSRequest = await req.json();
 
     if (!location || typeof location.lat !== 'number' || typeof location.lng !== 'number') {
       return new Response(
@@ -82,18 +74,15 @@ const handler = async (req: Request): Promise<Response> => {
       );
     }
 
-    // Initialize Supabase client
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
     const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
     const supabase = createClient(supabaseUrl, supabaseKey);
 
-    // Fetch emergency contacts
     let query = supabase.from('emergency_contacts').select('*');
     
     if (contactIds && contactIds.length > 0) {
       query = query.in('id', contactIds);
     } else {
-      // Get primary contacts first, or all if none specified
       query = query.order('is_primary', { ascending: false });
     }
 
@@ -119,29 +108,22 @@ const handler = async (req: Request): Promise<Response> => {
     const sosMessage = message || 
       `ALERT: I'm at ${landmarkText}, Visakhapatnam. Exact loc: ${locationUrl} (${location.lat.toFixed(6)},${location.lng.toFixed(6)})`;
 
-    console.log(`Sending SOS to ${contacts.length} contacts`);
+    console.log(`Sending SOS SMS to ${contacts.length} contacts`);
 
-    // Send to all contacts via selected channels in parallel
-    const sendPromises = contacts.flatMap(contact =>
-      activeChannels.map(channel => sendTwilioMessage(contact.phone, sosMessage, channel))
-    );
-
+    const sendPromises = contacts.map(contact => sendTwilioSMS(contact.phone, sosMessage));
     const results = await Promise.all(sendPromises);
-    const smsResults = results.filter(r => r.channel === 'sms');
-    const waResults = results.filter(r => r.channel === 'whatsapp');
-    const smsSuccess = smsResults.filter(r => r.success).length;
-    const waSuccess = waResults.filter(r => r.success).length;
-    const errors = results.filter(r => !r.success).map(r => `${r.channel}: ${r.error}`);
+    
+    const successCount = results.filter(r => r.success).length;
+    const errors = results.filter(r => !r.success).map(r => r.error);
 
-    console.log(`[SOS] SMS: ${smsSuccess}/${contacts.length}, WhatsApp: ${waSuccess}/${contacts.length}`);
+    console.log(`[SOS] SMS sent: ${successCount}/${contacts.length}`);
 
-    const totalSuccess = smsSuccess + waSuccess;
     return new Response(
       JSON.stringify({
-        success: totalSuccess > 0,
-        sent: { sms: smsSuccess, whatsapp: waSuccess },
+        success: successCount > 0,
+        sent: successCount,
         total: contacts.length,
-        message: `SOS: SMS ${smsSuccess}/${contacts.length}, WhatsApp ${waSuccess}/${contacts.length}`,
+        message: `SOS SMS sent to ${successCount}/${contacts.length} contacts`,
         errors: errors.length > 0 ? errors : undefined,
       }),
       { status: 200, headers: { 'Content-Type': 'application/json', ...corsHeaders } }
