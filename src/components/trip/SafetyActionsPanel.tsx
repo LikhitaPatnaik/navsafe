@@ -166,7 +166,7 @@ const SafetyActionsPanel = () => {
   const handleVoiceTrigger = useCallback(async () => {
     console.log('[Voice] SOS trigger detected! Auto-sending via SMS...');
     toast.info('Voice SOS detected! Sending SMS alert...');
-    await sendSosAlert(['sms']);
+    await sendSosAlert();
   }, [sendSosAlert]);
 
   const { isListening, isSupported, toggleListening } = useVoiceCommand({
