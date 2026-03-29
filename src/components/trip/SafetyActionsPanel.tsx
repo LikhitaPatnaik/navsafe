@@ -111,7 +111,7 @@ const SafetyActionsPanel = () => {
   const [reportLocation, setReportLocation] = useState<{ lat: number; lng: number; area: string; street: string | null } | null>(null);
 
   // Send SOS alert function with channel selection
-  const sendSosAlert = useCallback(async (channels: ('sms' | 'whatsapp')[] = ['sms', 'whatsapp']) => {
+  const sendSosAlert = useCallback(async () => {
     try {
       let location = trip.currentPosition;
       
