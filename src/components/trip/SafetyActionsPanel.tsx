@@ -360,24 +360,11 @@ const SafetyActionsPanel = () => {
           variant="sos"
           size="default"
           className="flex-1 sm:flex-none shadow-lg text-xs sm:text-sm py-3 sm:py-2"
-          onClick={() => openSosModal(['sms'])}
+          onClick={() => openSosModal()}
         >
           <MessageSquare className="w-4 h-4 sm:w-5 sm:h-5 sm:mr-2" />
           <span className="hidden sm:inline">SMS SOS</span>
         </Button>
-
-        {/* WhatsApp SOS Button - Only shown when enabled in settings */}
-        {whatsappSosEnabled && (
-          <Button
-            variant="sos"
-            size="default"
-            className="flex-1 sm:flex-none shadow-lg text-xs sm:text-sm py-3 sm:py-2 bg-green-600 hover:bg-green-700"
-            onClick={() => openSosModal(['whatsapp'])}
-          >
-            <MessageCircle className="w-4 h-4 sm:w-5 sm:h-5 sm:mr-2" />
-            <span className="hidden sm:inline">WhatsApp SOS</span>
-          </Button>
-        )}
       </div>
 
       {/* Report Modal */}
