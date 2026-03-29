@@ -12,7 +12,7 @@ import { ArrowLeft, Bell, MapPin, Shield, Volume2, Palette, Sun, Moon, Mic } fro
 const Settings = () => {
   const { user, loading } = useAuth();
   const { theme, setTheme } = useTheme();
-  const { voiceSosEnabled, setVoiceSosEnabled, whatsappSosEnabled, setWhatsappSosEnabled } = useSettings();
+  const { voiceSosEnabled, setVoiceSosEnabled } = useSettings();
   const navigate = useNavigate();
 
   React.useEffect(() => {
