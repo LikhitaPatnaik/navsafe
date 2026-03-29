@@ -462,10 +462,10 @@ const SafetyActionsPanel = () => {
           <DialogHeader>
             <DialogTitle className="text-destructive flex items-center gap-2">
               <AlertOctagon className="w-5 h-5" />
-              Emergency SOS — {sosChannel.includes('whatsapp') ? 'WhatsApp' : 'SMS'}
+              Emergency SOS — SMS
             </DialogTitle>
             <DialogDescription className="text-muted-foreground">
-              This will send your live location to emergency contacts via {sosChannel.includes('whatsapp') ? 'WhatsApp' : 'SMS'}
+              This will send your live location to emergency contacts via SMS
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4 mt-4">
