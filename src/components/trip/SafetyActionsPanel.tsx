@@ -101,10 +101,9 @@ const findNearestStreet = (lat: number, lng: number, areaName: string): string |
 
 const SafetyActionsPanel = () => {
   const { trip } = useTrip();
-  const { voiceSosEnabled, whatsappSosEnabled } = useSettings();
+  const { voiceSosEnabled } = useSettings();
   const [showReportModal, setShowReportModal] = useState(false);
   const [showSosModal, setShowSosModal] = useState(false);
-  const [sosChannel, setSosChannel] = useState<('sms' | 'whatsapp')[]>(['sms']);
   const [reportReason, setReportReason] = useState<string>('');
   const [reportSeverity, setReportSeverity] = useState<'low' | 'medium' | 'high'>('medium');
   const [isSending, setIsSending] = useState(false);
