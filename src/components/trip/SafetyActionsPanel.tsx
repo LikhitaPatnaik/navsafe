@@ -1,7 +1,7 @@
 import { useState, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { RefreshCw, Flag, AlertOctagon, Loader2, Mic, MicOff, MapPin, MessageSquare, MessageCircle } from 'lucide-react';
+import { RefreshCw, Flag, AlertOctagon, Loader2, Mic, MicOff, MapPin, MessageSquare } from 'lucide-react';
 import { useTrip } from '@/context/TripContext';
 import { useSettings } from '@/contexts/SettingsContext';
 import { supabase } from '@/integrations/supabase/client';
