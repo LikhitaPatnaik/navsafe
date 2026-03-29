@@ -107,21 +107,6 @@ const Settings = () => {
                 onCheckedChange={setVoiceSosEnabled}
               />
             </div>
-            <div className="flex items-center justify-between">
-              <div className="flex-1">
-                <Label htmlFor="whatsapp-sos" className="cursor-pointer">
-                  Enable WhatsApp SOS
-                </Label>
-                <p className="text-sm text-muted-foreground mt-1">
-                  Show WhatsApp SOS button on the map to send alerts via WhatsApp
-                </p>
-              </div>
-              <Switch 
-                id="whatsapp-sos" 
-                checked={whatsappSosEnabled}
-                onCheckedChange={setWhatsappSosEnabled}
-              />
-            </div>
           </CardContent>
         </Card>
 
