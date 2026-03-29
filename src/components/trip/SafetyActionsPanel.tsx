@@ -153,8 +153,7 @@ const SafetyActionsPanel = () => {
         return false;
       }
 
-      const channelLabel = channels.join(' & ').toUpperCase();
-      toast.success(`SOS sent via ${channelLabel}!`);
+      toast.success('SOS sent via SMS!');
       return true;
     } catch (err) {
       console.error('[SOS] Error:', err);
