@@ -299,7 +299,7 @@ const SafetyActionsPanel = () => {
 
   const handleSos = async () => {
     setIsSending(true);
-    const success = await sendSosAlert(sosChannel);
+    const success = await sendSosAlert();
     if (success) {
       setShowSosModal(false);
     }
