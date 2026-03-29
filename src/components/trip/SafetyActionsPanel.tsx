@@ -133,13 +133,12 @@ const SafetyActionsPanel = () => {
       }
 
       const landmark = findNearestLandmark(location.lat, location.lng);
-      console.log('[SOS] Sending via', channels.join(' + '), 'with location:', location, 'Landmark:', landmark);
+      console.log('[SOS] Sending via SMS with location:', location, 'Landmark:', landmark);
       
       const { data, error } = await supabase.functions.invoke('send-sos', {
         body: {
           landmark,
           location: { lat: location.lat, lng: location.lng },
-          channels,
         },
       });
 
