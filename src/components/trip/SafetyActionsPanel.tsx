@@ -482,7 +482,7 @@ const SafetyActionsPanel = () => {
               </Button>
               <Button
                 variant="sos"
-                className={`flex-1 ${sosChannel.includes('whatsapp') ? 'bg-green-600 hover:bg-green-700' : ''}`}
+                className="flex-1"
                 onClick={handleSos}
                 disabled={isSending}
               >
@@ -492,7 +492,7 @@ const SafetyActionsPanel = () => {
                     Sending...
                   </>
                 ) : (
-                  `Send ${sosChannel.includes('whatsapp') ? 'WhatsApp' : 'SMS'} SOS`
+                  'Send SMS SOS'
                 )}
               </Button>
             </div>
