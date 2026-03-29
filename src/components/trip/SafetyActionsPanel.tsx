@@ -308,8 +308,7 @@ const SafetyActionsPanel = () => {
     setIsSending(false);
   };
 
-  const openSosModal = (channels: ('sms' | 'whatsapp')[]) => {
-    setSosChannel(channels);
+  const openSosModal = () => {
     setShowSosModal(true);
   };
 
