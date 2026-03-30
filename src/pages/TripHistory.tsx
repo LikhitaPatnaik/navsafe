@@ -21,6 +21,19 @@ interface TripRecord {
   created_at: string;
 }
 
+const normalizeSafetyScore = (value: unknown) => {
+  if (typeof value === 'number' && Number.isFinite(value)) {
+    return Math.max(0, Math.min(100, Math.round(value)));
+  }
+
+  const parsed = Number(value);
+  if (Number.isFinite(parsed)) {
+    return Math.max(0, Math.min(100, Math.round(parsed)));
+  }
+
+  return 0;
+};
+
 const TripHistory = () => {
   const { user, loading: authLoading } = useAuth();
   const navigate = useNavigate();
@@ -48,7 +61,10 @@ const TripHistory = () => {
       toast.error('Failed to load trip history');
       console.error(error);
     } else {
-      setTrips(data || []);
+      setTrips((data || []).map((trip) => ({
+        ...trip,
+        safety_score: normalizeSafetyScore(trip.safety_score),
+      })));
     }
     setLoading(false);
   };
@@ -68,6 +84,8 @@ const TripHistory = () => {
     if (score >= 40) return 'text-warning';
     return 'text-destructive';
   };
+
+  const formatSafetyScore = (score: number) => `${normalizeSafetyScore(score)}/100`;
 
   const getRouteEmoji = (type: string) => {
     switch (type) {
@@ -156,7 +174,7 @@ const TripHistory = () => {
                   </div>
                   <div className="p-2 rounded-lg bg-secondary/50">
                     <Shield className="w-3.5 h-3.5 mx-auto mb-1 text-muted-foreground" />
-                    <p className={`text-xs font-medium ${getSafetyColor(trip.safety_score)}`}>{trip.safety_score}/100</p>
+                    <p className={`text-xs font-medium ${getSafetyColor(trip.safety_score)}`}>{formatSafetyScore(trip.safety_score)}</p>
                   </div>
                   <div className="p-2 rounded-lg bg-secondary/50">
                     <AlertTriangle className="w-3.5 h-3.5 mx-auto mb-1 text-muted-foreground" />
