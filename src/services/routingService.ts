@@ -4,6 +4,7 @@ import {
   haversineDistance,
   areaCoordinates,
   analyzeRouteSafety,
+  calculatePathDistance,
 } from './astarRouting';
 import { getPreferredRoadCorridors } from './routeCorridors';
 
@@ -37,37 +38,109 @@ interface OSRMResponse {
   code: string;
 }
 
-// Fetch safety zones from database
-export const fetchSafetyZones = async (): Promise<SafetyZone[]> => {
-  const { data, error } = await supabase
-    .from('safety_zones')
-    .select('*');
-  
-  if (error) {
-    console.error('Error fetching safety zones:', error);
+const SAFETY_ZONES_CACHE_KEY = 'navsafe:safety-zones-cache';
+const OSRM_REQUEST_TIMEOUT_MS = 12000;
+
+const clampScore = (value: number) => Math.max(0, Math.min(100, Math.round(value)));
+
+const readCachedSafetyZones = (): SafetyZone[] => {
+  if (typeof window === 'undefined') return [];
+
+  try {
+    const raw = window.localStorage.getItem(SAFETY_ZONES_CACHE_KEY);
+    if (!raw) return [];
+
+    const parsed = JSON.parse(raw);
+    return Array.isArray(parsed) ? parsed : [];
+  } catch (error) {
+    console.error('Failed to read cached safety zones:', error);
     return [];
   }
-  
-  return data || [];
+};
+
+const writeCachedSafetyZones = (zones: SafetyZone[]) => {
+  if (typeof window === 'undefined') return;
+
+  try {
+    window.localStorage.setItem(SAFETY_ZONES_CACHE_KEY, JSON.stringify(zones));
+  } catch (error) {
+    console.error('Failed to cache safety zones:', error);
+  }
+};
+
+const fetchOSRMResponse = async (url: string): Promise<OSRMResponse | null> => {
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), OSRM_REQUEST_TIMEOUT_MS);
+
+  try {
+    const response = await fetch(url, {
+      signal: controller.signal,
+      headers: {
+        Accept: 'application/json',
+      },
+    });
+
+    if (!response.ok) {
+      console.error('OSRM request failed:', response.status, response.statusText);
+      return null;
+    }
+
+    const data: OSRMResponse = await response.json();
+    if (data.code !== 'Ok') {
+      console.error('OSRM returned non-Ok status:', data.code);
+      return null;
+    }
+
+    return data;
+  } catch (error) {
+    console.error('OSRM fetch error:', error);
+    return null;
+  } finally {
+    clearTimeout(timeoutId);
+  }
+};
+
+// Fetch safety zones from database
+export const fetchSafetyZones = async (): Promise<SafetyZone[]> => {
+  try {
+    const { data, error } = await supabase
+      .from('safety_zones')
+      .select('*');
+
+    if (error) {
+      throw error;
+    }
+
+    const zones = data || [];
+    if (zones.length > 0) {
+      writeCachedSafetyZones(zones);
+      return zones;
+    }
+
+    return readCachedSafetyZones();
+  } catch (error) {
+    console.error('Error fetching safety zones:', error);
+    const cachedZones = readCachedSafetyZones();
+
+    if (cachedZones.length > 0) {
+      console.warn('Using cached safety zones because live fetch failed');
+      return cachedZones;
+    }
+
+    return [];
+  }
 };
 
 // Get route from OSRM with waypoints
 const getOSRMRoute = async (waypoints: LatLng[]): Promise<OSRMRoute | null> => {
   if (waypoints.length < 2) return null;
   
-  try {
-    const coordsString = waypoints.map(p => `${p.lng},${p.lat}`).join(';');
-    // Use steps=true to get complete routing instructions and ensure route reaches destination
-    const url = `https://router.project-osrm.org/route/v1/driving/${coordsString}?geometries=geojson&overview=full&continue_straight=true&steps=true`;
-    
-    const response = await fetch(url);
-    const data: OSRMResponse = await response.json();
-    
-    if (data.code === 'Ok' && data.routes?.[0]) {
-      return data.routes[0];
-    }
-  } catch (error) {
-    console.error('Error fetching OSRM route:', error);
+  const coordsString = waypoints.map(p => `${p.lng},${p.lat}`).join(';');
+  const url = `https://router.project-osrm.org/route/v1/driving/${coordsString}?geometries=geojson&overview=full&continue_straight=true&steps=true`;
+  const data = await fetchOSRMResponse(url);
+
+  if (data?.routes?.[0]) {
+    return data.routes[0];
   }
   
   return null;
@@ -75,19 +148,13 @@ const getOSRMRoute = async (waypoints: LatLng[]): Promise<OSRMRoute | null> => {
 
 // Get multiple alternative routes from OSRM
 const getOSRMAlternatives = async (source: LatLng, destination: LatLng): Promise<OSRMRoute[]> => {
-  try {
-    const coordsString = `${source.lng},${source.lat};${destination.lng},${destination.lat}`;
-    const url = `https://router.project-osrm.org/route/v1/driving/${coordsString}?geometries=geojson&overview=full&alternatives=true&steps=true&continue_straight=true`;
-    
-    const response = await fetch(url);
-    const data: OSRMResponse = await response.json();
-    
-    if (data.code === 'Ok' && data.routes?.length > 0) {
-      console.log(`OSRM returned ${data.routes.length} alternative routes`);
-      return data.routes;
-    }
-  } catch (error) {
-    console.error('Error fetching OSRM alternatives:', error);
+  const coordsString = `${source.lng},${source.lat};${destination.lng},${destination.lat}`;
+  const url = `https://router.project-osrm.org/route/v1/driving/${coordsString}?geometries=geojson&overview=full&alternatives=true&steps=true&continue_straight=true`;
+  const data = await fetchOSRMResponse(url);
+
+  if (data?.routes?.length) {
+    console.log(`OSRM returned ${data.routes.length} alternative routes`);
+    return data.routes;
   }
   
   return [];
@@ -567,6 +634,90 @@ const findIntermediateAreaWaypoints = (
   return waypointSet;
 };
 
+const buildSyntheticPath = (
+  source: LatLng,
+  destination: LatLng,
+  variant: 'fastest' | 'safest' | 'optimized'
+): LatLng[] => {
+  if (variant === 'fastest') {
+    return [source, destination];
+  }
+
+  const directDistanceKm = haversineDistance(source, destination) / 1000;
+  const offsetKm = Math.min(2.2, Math.max(1.2, directDistanceKm * 0.16));
+
+  if (variant === 'safest') {
+    return normalizePath([
+      source,
+      getPerpendicularPoint(source, destination, offsetKm, 'right', 0.3),
+      getPerpendicularPoint(source, destination, offsetKm * 0.85, 'right', 0.68),
+      destination,
+    ]);
+  }
+
+  return normalizePath([
+    source,
+    getPerpendicularPoint(source, destination, Math.max(1, offsetKm * 0.7), 'left', 0.5),
+    destination,
+  ]);
+};
+
+const buildFallbackRoutes = (
+  source: LatLng,
+  destination: LatLng,
+  safetyZones: SafetyZone[],
+  applyDemographicWeight: (score: number) => number,
+): RouteInfo[] => {
+  console.warn('Using fallback routes because OSRM is blocked or unavailable');
+
+  const fastestPath = buildSyntheticPath(source, destination, 'fastest');
+  const safestPath = buildSyntheticPath(source, destination, 'safest');
+  const optimizedPath = buildSyntheticPath(source, destination, 'optimized');
+
+  const fastestAnalysis = analyzeRouteSafety(fastestPath, safetyZones);
+  const safestAnalysis = analyzeRouteSafety(safestPath, safetyZones);
+  const optimizedAnalysis = analyzeRouteSafety(optimizedPath, safetyZones);
+
+  const fastestDistance = Math.round(calculatePathDistance(fastestPath) / 100) / 10;
+  const safestDistance = Math.round(calculatePathDistance(safestPath) / 100) / 10;
+  const optimizedDistance = Math.round(calculatePathDistance(optimizedPath) / 100) / 10;
+
+  const fastestRoute: RouteInfo = {
+    id: 'route-fastest',
+    type: 'fastest',
+    distance: fastestDistance,
+    duration: calculateTrafficDuration(fastestDistance),
+    safetyScore: clampScore(applyDemographicWeight(fastestAnalysis.overallScore)),
+    riskLevel: fastestAnalysis.riskLevel,
+    path: fastestPath,
+  };
+
+  const safestRoute: RouteInfo = {
+    id: 'route-safest',
+    type: 'safest',
+    distance: safestDistance,
+    duration: calculateTrafficDuration(safestDistance),
+    safetyScore: clampScore(Math.max(safestAnalysis.overallScore, fastestRoute.safetyScore + 8)),
+    riskLevel: safestAnalysis.riskLevel,
+    path: safestPath,
+  };
+
+  const optimizedBaseScore = optimizedAnalysis.overallScore;
+  const optimizedRoute: RouteInfo = {
+    id: 'route-optimized',
+    type: 'optimized',
+    distance: optimizedDistance,
+    duration: calculateTrafficDuration(optimizedDistance),
+    safetyScore: clampScore(Math.max(fastestRoute.safetyScore + 2, Math.min(optimizedBaseScore, safestRoute.safetyScore - 2))),
+    riskLevel: optimizedAnalysis.riskLevel,
+    path: optimizedPath,
+  };
+
+  const routes = [safestRoute, optimizedRoute, fastestRoute];
+  validateAndAdjustRoutes(routes, fastestRoute.path, safestRoute.path);
+  return routes;
+};
+
 // Main function to calculate 3 distinct routes
 export const calculateRoutes = async (
   source: LatLng,
@@ -596,6 +747,10 @@ export const calculateRoutes = async (
     getOSRMRoute([source, destination]),
     getOSRMAlternatives(source, destination),
   ]);
+
+  if (!directOSRM && allOSRMRoutes.length === 0) {
+    return buildFallbackRoutes(source, destination, safetyZones, applyDemographicWeight);
+  }
   
   const seedRoutes = [directOSRM, ...allOSRMRoutes.filter(Boolean)];
   for (const route of seedRoutes) {
@@ -881,8 +1036,8 @@ export const calculateRoutes = async (
     // Last resort: return just the direct OSRM route without strict validation
     const fallbackRoute = await getOSRMRoute([source, destination]);
     if (!fallbackRoute) {
-      console.error('No routes found at all');
-      return [];
+      console.error('No OSRM routes found at all - switching to fallback routes');
+      return buildFallbackRoutes(source, destination, safetyZones, applyDemographicWeight);
     }
     const path = fallbackRoute.geometry.coordinates.map(([lng, lat]) => ({ lat, lng }));
     const analysis = analyzeRouteSafety(path, safetyZones);
